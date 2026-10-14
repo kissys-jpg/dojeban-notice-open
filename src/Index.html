@@ -612,7 +612,7 @@ function boardDlg(p={}){
  form.querySelector('[name="category"]').onchange=e=>{form.querySelector('#contestFields').hidden=e.target.value!=='대회';};
  bindFilePicker();
 }
-async function readBoardUploads(){if(boardDraftFiles.length>5)throw new Error('한 번에 최대 5개 파일을 선택해 주세요');let total=0;for(const f of boardDraftFiles){if(!f.size||f.size>MAX_MB*1024*1024)throw new Error('파일당 0바이트 초과, 10MB 이하여야 합니다');total+=f.size;}if(total>20*1024*1024)throw new Error('첨부 합계를 20MB 이하로 줄여 주세요');const uploads=[];for(const f of boardDraftFiles)uploads.push(await new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve({name:f.name,base64:String(r.result).split(',')[1]});r.onerror=()=>reject(new Error('파일을 읽지 못했습니다'));r.readAsDataURL(f);}));return uploads;}
+async function readBoardUploads(){if(boardDraftFiles.length>5)throw new Error('한 번에 최대 5개 파일을 선택해 주세요');for(const f of boardDraftFiles){if(!f.size||f.size>MAX_MB*1024*1024)throw new Error(f.name+': 파일당 '+sizeLimitText()+' 이하만 올릴 수 있습니다');}const uploads=[];for(const f of boardDraftFiles)uploads.push(await toUpload(f));return uploads;}
 function bindBoardComment(){const f=$('#boardCommentForm');if(!f)return;f.onsubmit=async e=>{e.preventDefault();const text=$('#boardCommentText').value,button=f.querySelector('button');button.disabled=true;const ok=await act('boardComment',{post:boardOpen,body:text},'댓글을 올렸습니다');if(!ok)button.disabled=false;};}
 $('#main').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const x=b.dataset;if(x.freq)return folderReqDlg(x.freq,x.freqLabel||'폴더');if(x.freqOk){b.disabled=true;return act('decideFolderAccess',{id:x.freqOk,approve:true},'공유했습니다');}if(x.freqNo){if(!arm(b,'fq'+x.freqNo))return;return act('decideFolderAccess',{id:x.freqNo,approve:false},'거절했습니다');}if(x.contestPost){go('contest');boardOpen=x.contestPost;return render();}if(x.contestNew!==undefined)return boardDlg({category:'대회',status:'준비'});if(x.goContests!==undefined){boardOpen=null;return go('contest');}if(x.contestCalendar){const p=(D.boardPosts||[]).find(p=>p.id===x.contestCalendar),date=p&&(p.date||p.applyEnd||p.applyStart);if(date){calSel=date;calMonth=parse(date);calMonth.setDate(1);}schedMode='cal';return go('schedule');}if(x.projsub){boardOpen=null;if(x.projsub==='materials')return go('materials');projSub=x.projsub;return go('projects');}if(x.certNew!==undefined)return boardDlg({category:'자격증',status:'준비'});if(x.projShare){const p=D.projects.find(q=>q.id===x.projShare);if(p)return boardDlg({category:'프로젝트',status:'진행 중',subject:p.team+' · '+p.product});return;}if(x.boardNew!==undefined)return boardDlg();if(x.boardOpen){boardOpen=x.boardOpen;return render();}if(x.boardBack!==undefined){boardOpen=null;return render();}if(x.boardFilter){boardFilter=x.boardFilter;return render();}if(x.boardEdit)return boardDlg((D.boardPosts||[]).find(p=>p.id===x.boardEdit));if(x.boardDelete){if(!arm(b,x.boardDelete))return;return act('deleteBoard',{id:x.boardDelete},'게시글을 목록에서 삭제했습니다');}if(x.boardCommentDelete){if(!arm(b,x.boardCommentDelete))return;return act('deleteBoardComment',{id:x.boardCommentDelete},'댓글을 삭제했습니다');}});
 $('#main').addEventListener('input',e=>{if(e.target.id==='boardQuery'){boardQuery=e.target.value;const pos=e.target.selectionStart;render();const q=$('#boardQuery');if(q){q.focus();q.setSelectionRange(pos,pos);}}});
@@ -848,8 +848,8 @@ async function uploadMaterialsFiles(files){
   if(!T()||materialsUploading)return;const list=Array.from(files||[]);if(!list.length)return;if(list.length>20)return toast('한 번에 20개 이하로 올려 주세요');
   const target=$('#dropTarget')?.value||'all';materialsUploading=true;let uploaded=0,errors=[];
   try{for(const file of list){const status=$('#materialsUploadStatus');if(status)status.textContent='업로드 중 '+(uploaded+errors.length+1)+' / '+list.length+' · '+file.name;
-    try{if(!file.size||file.size>MAX_MB*1024*1024)throw new Error('파일 크기는 0바이트 초과, '+MAX_MB+'MB 이하여야 합니다');
-      const upload=await new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve({name:file.name,base64:String(r.result).split(',')[1]});r.onerror=()=>reject(new Error('파일 읽기 실패'));r.readAsDataURL(file);});
+    try{if(!file.size||file.size>MAX_MB*1024*1024)throw new Error('파일 크기는 0바이트 초과, '+sizeLimitText()+' 이하여야 합니다');
+      const upload=await toUpload(file);
       await call('uploadDriveMaterial',{target,upload});uploaded++;
     }catch(e){errors.push(file.name+': '+e.message);}
   }}finally{materialsUploading=false;await reload();const status=$('#materialsUploadStatus');if(status)status.textContent=uploaded+'개 업로드 완료'+(errors.length?' · 실패 '+errors.length+'개: '+errors.join(' / '):'');toast(uploaded+'개 업로드 완료'+(errors.length?' · 일부 파일 실패':''));}
@@ -990,7 +990,22 @@ const sel = (label,name,choices,value) => `<label class="fld"><span>${esc(label)
 const unitChoices = () => [['','선택 안 함'],...D.units.filter(u=>u.active).map(u=>[u.id,u.title])];
 const studentChoices = () => (D.roster||[]).map(r=>[r.name,r.name]);
 const FILE_ACCEPT = ".pdf,.png,.jpg,.jpeg,.gif,.webp,.heic,.txt,.csv,.md,.zip,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.hwp,.hwpx,.mp4,.mov,.mp3,.stl,.step,.stp,.dxf,.dwg,.f3d,.gbr,.kicad_pcb,.ino,.py,.c,.cpp,.h,.json";
-const MAX_MB = 10;
+const MAX_MB = 1024, DIRECT_MB = 8;
+const sizeLimitText = () => (MAX_MB >= 1024 ? (MAX_MB / 1024) + "GB" : MAX_MB + "MB");
+const blobB64 = b => new Promise((resolve, reject) => { const r = new FileReader(); r.onload = () => resolve(String(r.result).split(",")[1] || ""); r.onerror = () => reject(new Error("파일을 읽지 못했습니다")); r.readAsDataURL(b); });
+/* 8MB 이하는 한 번에, 큰 파일은 4MB씩 나눠 Drive에 바로 이어 올린 뒤 {staged: 파일ID}로 넘김 */
+async function toUpload(f){
+  if (f.size <= DIRECT_MB * 1024 * 1024) return { name: f.name, base64: await blobB64(f) };
+  const s = await call("uploadStart", { name: f.name, size: f.size });
+  let off = 0, tries = 0;
+  while (off < f.size) {
+    const b64 = await blobB64(f.slice(off, Math.min(f.size, off + s.chunk)));
+    let r; try { r = await call("uploadChunk", { id: s.id, offset: off, base64: b64 }); tries = 0; } catch (e) { if (++tries > 2) throw new Error(f.name + ": " + e.message); continue; }
+    off = r.got; toast(f.name + " 올리는 중 " + Math.min(100, Math.round(off / f.size * 100)) + "%");
+    if (r.staged) return { name: f.name, staged: r.staged };
+  }
+  throw new Error(f.name + ": 업로드를 마치지 못했습니다");
+}
 const fileInput = (keepNote = true, max = 1) => `<div class="fld"><span>첨부파일 (${keepNote ? "선택" : "필수"})</span></div>${filePicker(max)}${keepNote ? `<span class="ev-s">파일을 고르지 않으면 기존 첨부가 유지됩니다. 파일은 선생님 구글 드라이브에 저장됩니다.</span>` : ""}`;
 const driveLink = id => T() && id ? `<a class="btn sm ghost" href="https:\/\/drive.google.com/file/d/${esc(id)}/view" target="_blank" rel="noopener">Drive에서 열기 ↗</a>` : "";
 const fmtSize = n => n >= 1048576 ? (n / 1048576).toFixed(1) + "MB" : Math.max(1, Math.round(n / 1024)) + "KB";
@@ -1007,7 +1022,7 @@ function filePicker(max, note){
 function addDraftFiles(list){
   const add = Array.from(list || []);
   for (const f of add) {
-    if (!f.size || f.size > MAX_MB * 1024 * 1024) { toast(f.name + ": 파일당 " + MAX_MB + "MB 이하만 올릴 수 있습니다"); continue; }
+    if (!f.size || f.size > MAX_MB * 1024 * 1024) { toast(f.name + ": 파일당 " + sizeLimitText() + " 이하만 올릴 수 있습니다"); continue; }
     if (draftMax === 1) draftFiles = [f];
     else if (draftFiles.some(x => x.name === f.name && x.size === f.size)) continue;
     else if (draftFiles.length >= draftMax) { toast("한 번에 최대 " + draftMax + "개까지 올릴 수 있습니다"); break; }
@@ -1026,12 +1041,12 @@ function bindFilePicker(){
   input.onchange = () => { addDraftFiles(input.files); input.value = ""; };
   dlgDrop = addDraftFiles;
 }
-const fileToUpload = f => new Promise((resolve, reject) => { const r = new FileReader(); r.onload = () => resolve({ name: f.name, base64: String(r.result).split(",")[1] }); r.onerror = () => reject(new Error(f.name + " 파일을 읽지 못했습니다")); r.readAsDataURL(f); });
+const fileToUpload = f => toUpload(f);
 async function readDraftUploads(maxTotalMB){ let total = 0; for (const f of draftFiles) total += f.size; if (maxTotalMB && total > maxTotalMB * 1024 * 1024) throw new Error("첨부 합계를 " + maxTotalMB + "MB 이하로 줄여 주세요"); const out = []; for (const f of draftFiles) out.push(await fileToUpload(f)); return out; }
 async function readUpload(){
   const file=draftFiles[0]||$('#extraFile')?.files[0]; if(!file)return null;
-  if(file.size>MAX_MB*1024*1024)throw new Error(`첨부파일은 ${MAX_MB}MB 이하로 줄여 주세요. 큰 영상은 Drive 링크로 넣어 주세요`);
-  return new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve({name:file.name,base64:String(reader.result).split(',')[1]});reader.onerror=()=>reject(new Error('파일을 읽지 못했습니다'));reader.readAsDataURL(file);});
+  if(file.size>MAX_MB*1024*1024)throw new Error(`첨부파일은 ${sizeLimitText()} 이하로 줄여 주세요`);
+  return toUpload(file);
 }
 async function actUpload(action,payload,msg){try{payload.upload=await readUpload();return await act(action,payload,msg);}catch(e){toast(e.message);return false;}}
 async function downloadExtra(id){

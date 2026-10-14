@@ -120,6 +120,8 @@ function dispatch_(me, action, p) {
     case "deleteBoardComment": return deleteBoardComment_(me,p);
     case "anonHide":     need_(me, "teacher"); return anonHide_(p);
     case "uploadProjectFile": return uploadProjectFile_(me, p);
+    case "uploadStart": return uploadStart_(me, p);
+    case "uploadChunk": return uploadChunk_(me, p);
     case "deleteFile":   return deleteFile_(me, p.id);
     case "shareProjectFolder": need_(me, "teacher"); return shareProjectFolder_(p.id);
     case "projectFolder": need_(me, "teacher"); return projectFolderInfo_(p.id);
@@ -802,7 +804,10 @@ function saveProgress_(p) { return withLock_(function(){const st=student_(p.name
  *   (루트) / 자료실 · 포트폴리오/학생이름 · 팀프로젝트/팀명 · 제품명
  * 설정에서 원하는 Drive 폴더 주소를 넣으면 그 폴더를 루트로 씁니다. 파일은 비공개(선생님만)로 저장되고,
  * 학생은 앱을 통해서만 내려받습니다. */
-const MAX_FILE_MB_ = 10;
+const MAX_FILE_MB_ = 1024;          /* 파일 하나 최대 1GB (큰 파일은 나눠 올리기) */
+const DIRECT_UPLOAD_MB_ = 8;         /* 이보다 작은 파일은 한 번에 보냄, 큰 파일은 uploadStart/uploadChunk로 Drive에 직접 이어 올림 */
+const MAX_DOWNLOAD_MB_ = 30;         /* 앱 안에서 바로 내려받기(base64)는 30MB까지, 그 이상은 Drive에서 열기 */
+const UPLOAD_CHUNK_ = 4 * 1024 * 1024;
 const MIME_BY_EXT_ = {pdf:"application/pdf",png:"image/png",jpg:"image/jpeg",jpeg:"image/jpeg",gif:"image/gif",webp:"image/webp",heic:"image/heic",txt:"text/plain",csv:"text/csv",md:"text/markdown",zip:"application/zip",
   doc:"application/msword",docx:"application/vnd.openxmlformats-officedocument.wordprocessingml.document",xls:"application/vnd.ms-excel",xlsx:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",ppt:"application/vnd.ms-powerpoint",pptx:"application/vnd.openxmlformats-officedocument.presentationml.presentation",
   hwp:"application/x-hwp",hwpx:"application/hwp+zip",mp4:"video/mp4",mov:"video/quicktime",mp3:"audio/mpeg",
@@ -815,6 +820,50 @@ function driveRoot_() {
   if (id) { try { return DriveApp.getFolderById(id); } catch (e) { if (props.getProperty("DRIVE_ROOT")) throw new Error("설정한 Drive 폴더에 접근할 수 없습니다"); } }
   const f = DriveApp.createFolder("도제반 알림판 자료 (비공개)"); props.setProperty("APP_FOLDER", f.getId()); return f;
 }
+/* ---------- 큰 파일 나눠 올리기: Drive 이어 올리기(resumable) 세션을 서버가 열고, 4MB씩 받아 그대로 전달 ---------- */
+function uploadStart_(me, p) {
+  const name = required_(p.name, 180).replace(/[\\\/]/g, "_"), ext = name.split(".").pop().toLowerCase(), mime = MIME_BY_EXT_[ext];
+  if (!mime) throw new Error("올릴 수 없는 파일 형식입니다 (." + ext + ")");
+  const size = Number(p.size);
+  if (!Number.isSafeInteger(size) || size < 1 || size > MAX_FILE_MB_ * 1024 * 1024) throw new Error("파일은 0바이트 초과, " + MAX_FILE_MB_ + "MB 이하여야 합니다");
+  const stage = withLock_(function () { return folderFor_(["업로드 임시"]); });
+  try { const old = Date.now() - 2 * 86400000, it = stage.getFiles(); let n = 0; while (it.hasNext() && n < 20) { const f = it.next(); if (f.getDateCreated().getTime() < old) { f.setTrashed(true); n++; } } } catch (e) {}
+  const res = UrlFetchApp.fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&supportsAllDrives=true", {
+    method: "post", contentType: "application/json; charset=UTF-8", muteHttpExceptions: true,
+    headers: { Authorization: "Bearer " + ScriptApp.getOAuthToken(), "X-Upload-Content-Type": mime, "X-Upload-Content-Length": String(size) },
+    payload: JSON.stringify({ name: name, parents: [stage.getId()], description: "도제반 알림판 · 올리는 중 · " + me.name })
+  });
+  const h = res.getAllHeaders(), url = h.Location || h.location;
+  if (res.getResponseCode() !== 200 || !url) throw new Error("Drive 업로드를 시작하지 못했습니다 (" + res.getResponseCode() + ")");
+  const id = uid_("up");
+  CacheService.getScriptCache().put("up_" + id, JSON.stringify({ url: url, size: size, name: name, mime: mime, user: me.name, got: 0 }), 21600);
+  return { id: id, chunk: UPLOAD_CHUNK_ };
+}
+function uploadChunk_(me, p) {
+  const cache = CacheService.getScriptCache(), key = "up_" + String(p.id || ""), raw = cache.get(key);
+  if (!raw) throw new Error("업로드 시간이 지났습니다. 다시 올려 주세요");
+  const u = JSON.parse(raw); if (u.user !== me.name) throw new Error("내가 시작한 업로드만 이어 올릴 수 있습니다");
+  const offset = Number(p.offset); if (offset !== u.got) throw new Error("업로드 순서가 맞지 않습니다. 다시 올려 주세요");
+  const bytes = Utilities.base64Decode(String(p.base64 || "")), len = bytes.length, last = offset + len >= u.size;
+  if (!len || len > UPLOAD_CHUNK_ || (!last && len % (256 * 1024)) || offset + len > u.size) throw new Error("업로드 조각 크기가 맞지 않습니다");
+  const res = UrlFetchApp.fetch(u.url, { method: "put", muteHttpExceptions: true, contentType: u.mime, payload: bytes,
+    headers: { "Content-Range": "bytes " + offset + "-" + (offset + len - 1) + "/" + u.size } });
+  const code = res.getResponseCode();
+  if (code === 308) { const r = (res.getAllHeaders().Range || res.getAllHeaders().range || ""), m = String(r).match(/-(\d+)$/); u.got = m ? Number(m[1]) + 1 : offset + len; cache.put(key, JSON.stringify(u), 21600); return { got: u.got }; }
+  if (code === 200 || code === 201) {
+    const fileId = JSON.parse(res.getContentText()).id; cache.remove(key);
+    cache.put("stg_" + fileId, JSON.stringify({ user: me.name, name: u.name, size: u.size }), 21600);
+    return { got: u.size, staged: fileId };
+  }
+  throw new Error("Drive 업로드가 중단되었습니다 (" + code + "). 다시 올려 주세요");
+}
+function stagedFile_(me, upload) {
+  const raw = CacheService.getScriptCache().get("stg_" + String(upload.staged || ""));
+  if (!raw) throw new Error("올린 파일을 찾지 못했습니다. 다시 올려 주세요");
+  const s = JSON.parse(raw); if (s.user !== me.name) throw new Error("내가 올린 파일만 연결할 수 있습니다");
+  return { file: DriveApp.getFileById(String(upload.staged)), name: s.name, size: s.size };
+}
+const hasUpload_ = function (u) { return !!(u && (u.base64 || u.staged)); };
 function childFolder_(parent, name) { const it = parent.getFoldersByName(name); return it.hasNext() ? it.next() : parent.createFolder(name); }
 /** 경로(예: ["팀프로젝트","A팀 · 스마트팜"])의 폴더를 찾거나 만들고, ID를 속성에 기억합니다. */
 function folderFor_(path, propKey) {
@@ -832,11 +881,17 @@ function projectFolder_(projectRow) {
 }
 function projectFolderInfo_(id) { return withLock_(function(){return {url:projectFolder_(record_("projects",id)).getUrl()};}); }
 function storeFile_(me,upload,kind,ref,folder,memo) {
-  if(!upload||!upload.base64) return "";
+  if(!hasUpload_(upload)) return "";
+  if(upload.staged){
+    const st=stagedFile_(me,upload),ext=st.name.split(".").pop().toLowerCase();if(!MIME_BY_EXT_[ext]) throw new Error("올릴 수 없는 파일 형식입니다 (."+ext+")");
+    const sdir=folder||folderFor_([kind==="materials"?"자료실":kind==="portfolio"?"포트폴리오":"기타"]);
+    st.file.moveTo(sdir);st.file.setDescription("도제반 알림판 · 올린 사람: "+me.name+(memo?" · "+memo:""));CacheService.getScriptCache().remove("stg_"+upload.staged);
+    append_("files",[st.file.getId(),me.name,st.name,MIME_BY_EXT_[ext],st.size,kind,ref,now_(),clean_(memo,300)]);return st.file.getId();
+  }
   const name=required_(upload.name,180).replace(/[\\\/]/g,"_");
   const ext=name.split(".").pop().toLowerCase(),mime=MIME_BY_EXT_[ext];if(!mime) throw new Error("올릴 수 없는 파일 형식입니다 (."+ext+")");
-  if(String(upload.base64).length>MAX_FILE_MB_*1024*1024*1.37+100) throw new Error("첨부는 "+MAX_FILE_MB_+"MB 이하로 줄여 주세요");
-  const bytes=Utilities.base64Decode(String(upload.base64));if(bytes.length>MAX_FILE_MB_*1024*1024||!bytes.length) throw new Error("첨부는 0바이트 초과, "+MAX_FILE_MB_+"MB 이하여야 합니다");
+  if(String(upload.base64).length>DIRECT_UPLOAD_MB_*1024*1024*1.37+100) throw new Error("큰 파일은 나눠 올리기로 보내야 합니다. 화면을 새로고침한 뒤 다시 올려 주세요");
+  const bytes=Utilities.base64Decode(String(upload.base64));if(!bytes.length) throw new Error("빈 파일은 올릴 수 없습니다");
   const dir=folder||folderFor_([kind==="materials"?"자료실":kind==="portfolio"?"포트폴리오":"기타"]);
   const f=dir.createFile(Utilities.newBlob(bytes,mime,name));
   try{f.setDescription("도제반 알림판 · 올린 사람: "+me.name+(memo?" · "+memo:""));append_("files",[f.getId(),me.name,name,mime,bytes.length,kind,ref,now_(),clean_(memo,300)]);return f.getId();}catch(e){f.setTrashed(true);throw e;}
@@ -844,7 +899,7 @@ function storeFile_(me,upload,kind,ref,folder,memo) {
 function uploadProjectFile_(me,p) {
   return withLock_(function(){
     const pr=project_(me,p.project);
-    if(!p.upload||!p.upload.base64) throw new Error("올릴 파일을 골라 주세요");
+    if(!hasUpload_(p.upload)) throw new Error("올릴 파일을 골라 주세요");
     const sh=sheet_("files"); if(!String(sh.getRange(1,9).getValue()).trim()) sh.getRange(1,9).setValue("메모");
     return storeFile_(me,p.upload,"project",pr.v[0],projectFolder_(pr),clean_(p.memo,300));
   });
@@ -874,7 +929,7 @@ function savePortfolio_(me,p) {
     const name=old?old.v[1]:(me.role==="teacher"?student_(p.name).name:me.name),id=old?old.v[0]:uid_("pf");
     const date=dateValid_(p.date),title=required_(p.title,150),link=urlValid_(p.link);let unit="";
     if(p.unit){const u=record_("units",p.unit);if(!matches_(targetKey_(u.v[3]),student_(name).group)) throw new Error("대상 능력단위를 확인해 주세요");unit=u.v[0];}
-    const file=storeFile_(me,p.upload,"portfolio",id,p.upload&&p.upload.base64?folderFor_(["포트폴리오",name]):null)||(old?old.v[7]:"");
+    const file=storeFile_(me,p.upload,"portfolio",id,hasUpload_(p.upload)?folderFor_(["포트폴리오",name]):null)||(old?old.v[7]:"");
     upsert_("portfolio",id,[id,name,date,title,unit,clean_(p.body,6000),link,file,old?old.v[8]:"","제출",now_()]);return id;
   });
 }
@@ -898,7 +953,7 @@ function downloadFile_(me,id) {
   if(r.v[5]==="project"){project_(me,r.v[6]);visible=true;}
   if(r.v[5]==="board"){const entry=record_("board",r.v[6]);visible=entry.v[12]!=="1"&&boardFileIds_(entry.v[9]).indexOf(id)>=0;}
   if(!visible) throw new Error("이 첨부파일을 볼 권한이 없습니다");
-  const blob=DriveApp.getFileById(id).getBlob(),bytes=blob.getBytes();if(bytes.length>MAX_FILE_MB_*1024*1024) throw new Error("파일이 커서 앱에서 내려받을 수 없습니다. 선생님께 Drive 공유를 요청하세요");return {name:r.v[2],mime:r.v[3],base64:Utilities.base64Encode(bytes)};
+  const df=DriveApp.getFileById(id);if(df.getSize()>MAX_DOWNLOAD_MB_*1024*1024) throw new Error("파일이 커서("+MAX_DOWNLOAD_MB_+"MB 초과) 앱에서 바로 내려받을 수 없습니다. 선생님께 Drive 공유를 요청하세요");const blob=df.getBlob(),bytes=blob.getBytes();if(bytes.length>MAX_DOWNLOAD_MB_*1024*1024) throw new Error("파일이 커서("+MAX_DOWNLOAD_MB_+"MB 초과) 앱에서 바로 내려받을 수 없습니다. 선생님께 Drive 공유를 요청하세요");return {name:r.v[2],mime:r.v[3],base64:Utilities.base64Encode(bytes)};
 }
 function emailValid_(s) { s=clean_(s,254).trim();if(s&&!/^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]+$/.test(s)) throw new Error("이메일 주소를 확인해 주세요");return s; }
 function saveContact_(me,p) { return withLock_(function(){const name=me.role==="teacher"?student_(p.name).name:me.name,email=emailValid_(p.email);if(p.enabled&&!email) throw new Error("수신할 이메일 주소를 입력해 주세요");const r=rows_("contacts").find(function(x){return x.v[0]===name;});const v=[name,email,p.enabled===true?"1":"0"];if(r)writeCells_(sheet_("contacts"),r._row,v);else append_("contacts",v);return true;}); }
@@ -1118,7 +1173,7 @@ function saveBoard_(me,p){return withLock_(function(){
  if(applyStart&&applyEnd&&applyEnd<applyStart)throw new Error("접수 마감일은 시작일 이후로 입력해 주세요");if(eventEnd&&(!date||eventEnd<date))throw new Error("대회 종료일은 개최일 이후로 입력해 주세요");
  const prior=old?boardFileIds_(old.v[9]):[],keep=p.keepFiles===undefined?prior:(Array.isArray(p.keepFiles)?Array.from(new Set(p.keepFiles)):[]);if(keep.some(function(id){return prior.indexOf(id)<0;}))throw new Error("다른 글의 첨부는 연결할 수 없습니다");
  const uploads=Array.isArray(p.uploads)?p.uploads:[];if(uploads.length>5||keep.length+uploads.length>20)throw new Error("새 파일은 한 번에 5개, 글당 총 20개까지 올릴 수 있습니다");
- let total=0;uploads.forEach(function(u){const name=required_(u.name,180),ext=name.split('.').pop().toLowerCase();if(!MIME_BY_EXT_[ext])throw new Error("올릴 수 없는 파일 형식입니다");if(!u.base64||String(u.base64).length>MAX_FILE_MB_*1024*1024*1.37+100)throw new Error("파일당 10MB 이하로 올려 주세요");const n=Utilities.base64Decode(String(u.base64)).length;if(!n||n>MAX_FILE_MB_*1024*1024)throw new Error("파일 크기를 확인해 주세요");total+=n;});if(total>20*1024*1024)throw new Error("한 번에 올리는 파일 합계는 20MB 이하로 줄여 주세요");
+ uploads.forEach(function(u){if(u&&u.staged){stagedFile_(me,u);return;}const name=required_(u.name,180),ext=name.split('.').pop().toLowerCase();if(!MIME_BY_EXT_[ext])throw new Error("올릴 수 없는 파일 형식입니다");if(!u.base64||String(u.base64).length>DIRECT_UPLOAD_MB_*1024*1024*1.37+100)throw new Error("파일을 다시 골라 주세요");const n=Utilities.base64Decode(String(u.base64)).length;if(!n)throw new Error("파일 크기를 확인해 주세요");});
  const id=old?old.v[0]:uid_("bd"),created=[];try{const folder=uploads.length?folderFor_(["프로젝트게시판",category]):null;uploads.forEach(function(u){created.push(storeFile_(me,u,"board",id,folder));});const t=now_();upsert_("board",id,[id,old?old.v[1]:me.name,category,subject,title,body,status,date,link,JSON.stringify(keep.concat(created)),old?old.v[10]:t,t,"",organizer,place,applyStart,applyEnd,eventEnd]);sheet_("board").getRange(1,14,1,5).setValues([["주최기관","장소","접수시작","접수마감","대회종료"]]);return id;}catch(e){created.forEach(function(fid){try{DriveApp.getFileById(fid).setTrashed(true);}catch(ignored){}});throw e;}
  });}
 function deleteBoard_(me,p){return withLock_(function(){const r=record_("board",p.id);boardOwned_(me,r);sheet_("board").getRange(r._row,13).setValue("1");return true;});}
@@ -1325,9 +1380,9 @@ function driveMaterialFile_(me, id) {
   const file = DriveApp.getFileById(id);
   let blob, name = f0.name;
   if (/^application\/vnd\.google-apps\./.test(f0.mime)) { blob = file.getAs("application/pdf"); name = name + ".pdf"; }
-  else blob = file.getBlob();
+  else { if (file.getSize() > MAX_DOWNLOAD_MB_ * 1024 * 1024) throw new Error("파일이 커서(" + MAX_DOWNLOAD_MB_ + "MB 초과) 앱에서 바로 내려받을 수 없습니다. 선생님께 링크 공유를 요청하세요"); blob = file.getBlob(); }
   const bytes = blob.getBytes();
-  if (bytes.length > MAX_FILE_MB_ * 1024 * 1024) throw new Error("파일이 커서 앱에서 내려받을 수 없습니다. 선생님께 링크 공유를 요청하세요");
+  if (bytes.length > MAX_DOWNLOAD_MB_ * 1024 * 1024) throw new Error("파일이 커서(" + MAX_DOWNLOAD_MB_ + "MB 초과) 앱에서 바로 내려받을 수 없습니다. 선생님께 링크 공유를 요청하세요");
   return { name: name, mime: blob.getContentType(), base64: Utilities.base64Encode(bytes) };
 }
 
@@ -1353,7 +1408,7 @@ function saveMaterialsFolder_(p){
 }
 function uploadDriveMaterial_(me,p){
   const target=targetValid_(p.target||'all');
-  if(!p.upload||!p.upload.base64)throw new Error('올릴 파일을 선택해 주세요');
+  if(!hasUpload_(p.upload))throw new Error('올릴 파일을 선택해 주세요');
   return withLock_(function(){
     const props=PropertiesService.getScriptProperties();let id=props.getProperty('MATERIAL_FOLDER');
     let folder=id?DriveApp.getFolderById(id):folderFor_(['자료실'],'MATERIAL_FOLDER');
