@@ -16,6 +16,7 @@ const SPREADSHEET_ID = CFG_.getProperty("SPREADSHEET_ID") || "";
 const TAB_AFTER = "일정표";          // 방과후 시간표
 const TAB_PERSONAL = "학생별_일정표"; // 학생별·공통 일정
 const TAB_BOM = "BOM";               // 실습재료 구매 목록
+const APP_UPDATED_ = "";            // 앱 배포 시각 (자동 배포가 채웁니다. 직접 고치지 마세요)
 const SCHOOL_YEAR = 0;               // 0이면 자동(3월~이듬해 2월). 바꾸려면 2026처럼 숫자로.
 
 /* 앱이 새로 만드는 탭 (처음 열 때 자동 생성) */
@@ -40,10 +41,21 @@ function doGet(e) {
   const q = (e && e.parameter) || {};
   if (q.ics) return icsFeed_(String(q.ics));
   if (q.ev) return icsSingle_(q);
+  if (q.raw) return ContentService.createTextOutput(HtmlService.createHtmlOutputFromFile("Index").getContent()).setMimeType(ContentService.MimeType.TEXT);
   return HtmlService.createHtmlOutputFromFile("Index")
     .setTitle("도제반 알림판")
     .addMetaTag("viewport", "width=device-width, initial-scale=1, viewport-fit=cover")
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+}
+
+/** 외부 입구 페이지(GitHub Pages)용: 쿠키 없이 fetch로 부르므로 어떤 구글 계정으로 로그인해 있어도 동작합니다. */
+function doPost(e) {
+  let out;
+  try {
+    const body = JSON.parse((e && e.postData && e.postData.contents) || "{}");
+    out = body.fn === "api" ? api(body.req) : { ok: false, error: "알 수 없는 요청입니다" };
+  } catch (x) { out = { ok: false, error: String((x && x.message) || x) }; }
+  return ContentService.createTextOutput(JSON.stringify(out)).setMimeType(ContentService.MimeType.JSON);
 }
 
 /** 웹페이지가 부르는 단 하나의 입구. 모든 요청은 로그인 정보를 함께 보냅니다.
@@ -90,6 +102,7 @@ function dispatch_(me, action, p) {
     case "markRead":     return markRead_(me, p.id);
     case "addPurchase":  return addPurchase_(me, p);
     case "saveStudent":  need_(me, "teacher"); return saveStudent_(p);
+    case "deleteStudent": need_(me, "teacher"); return deleteStudent_(p);
     case "makePins":     need_(me, "teacher"); return makePins_();
     case "legacyAttendance": need_(me, "teacher"); { const v = readSheet_("출석부"); return v ? { exists: true, rows: v } : { exists: false, rows: [] }; }
     case "saveNotionPortfolio": return saveNotionPortfolio_(me,p);
@@ -109,6 +122,7 @@ function dispatch_(me, action, p) {
     case "uploadProjectFile": return uploadProjectFile_(me, p);
     case "deleteFile":   return deleteFile_(me, p.id);
     case "shareProjectFolder": need_(me, "teacher"); return shareProjectFolder_(p.id);
+    case "projectFolder": need_(me, "teacher"); return projectFolderInfo_(p.id);
     case "saveCompany":  need_(me, "teacher"); return saveCompany_(p);
     case "removeCompany": need_(me, "teacher"); return removeCompany_(p.id);
     case "saveAssign":   need_(me, "teacher"); return saveAssign_(p);
@@ -294,11 +308,55 @@ function saveStudent_(p) {
     if (p.row) {
       const old = roster_().find(function(r){ return r.row === Number(p.row); });
       if (!old) throw new Error("학생을 찾지 못했습니다");
-      if (old.name !== vals[0]) throw new Error("기록 연결을 위해 기존 학생 이름은 바꿀 수 없습니다. 메모로 구분해 주세요");
-      sh.getRange(old.row, 4).setNumberFormat("@"); writeCells_(sh, old.row, vals); return true;
+      if (old.name !== vals[0] && roster_().some(function (r) { return r.name === vals[0]; })) throw new Error("같은 이름이 이미 있습니다. 동명이인은 ‘김하늘2’처럼 구분해 주세요");
+      sh.getRange(old.row, 4).setNumberFormat("@"); writeCells_(sh, old.row, vals);
+      if (old.name !== vals[0]) renameStudentRecords_(old.name, vals[0]);
+      return true;
     }
     if (roster_().some(function (r) { return r.name === vals[0]; })) throw new Error("같은 이름이 이미 있습니다. 동명이인은 ‘김하늘2’처럼 구분해 주세요");
     sh.getRange(sh.getLastRow() + 1, 4).setNumberFormat("@"); append_("roster", vals); return true;
+  });
+}
+/* 학생 이름이 들어가는 칸: 이름을 바꾸면 기록도 함께 바꿔 연결을 유지합니다 (탭 키: 0부터 센 열 번호) */
+const STUDENT_NAME_COLS_ = { personal: [1], requests: [2], replies: [2], acks: [1], buys: [1], attendance: [2], progress: [1], portfolio: [1], tasks: [3], files: [1], contacts: [0], anon: [2], anonReports: [2], board: [1], boardComments: [2], anonCmt: [3], assign: [0], icsTokens: [0] };
+function renameStudentRecords_(from, to) {
+  let n = 0;
+  Object.keys(STUDENT_NAME_COLS_).forEach(function (key) {
+    if (!APP_TABS[key]) return;
+    let sh = null;
+    rows_(key).forEach(function (x) {
+      STUDENT_NAME_COLS_[key].forEach(function (c) {
+        if (String(x.v[c] == null ? "" : x.v[c]).trim() === from) { sh = sh || sheet_(key); sh.getRange(x._row, c + 1).setValue(to); n++; }
+      });
+    });
+  });
+  if (APP_TABS.projects) {
+    let psh = null;
+    rows_("projects").forEach(function (x) {
+      let m; try { m = JSON.parse(x.v[3] || "[]"); } catch (e) { return; }
+      if (Array.isArray(m) && m.indexOf(from) >= 0) { psh = psh || sheet_("projects"); psh.getRange(x._row, 4).setValue(JSON.stringify(m.map(function (s) { return s === from ? to : s; }))); n++; }
+    });
+  }
+  const ps = ss_().getSheetByName(TAB_PERSONAL);
+  if (ps && ps.getLastRow() > 0) {
+    ps.getDataRange().getDisplayValues().forEach(function (r, i) {
+      if (String(r[0]).trim() === from) { ps.getRange(i + 1, 1).setValue(to); DIRTY_[TAB_PERSONAL] = true; n++; }
+    });
+  }
+  return n;
+}
+/* 학생 삭제: 명단·메일 수신·캘린더 구독만 지우고, 출결·이수·포트폴리오 등 훈련 기록은 보고용으로 남깁니다 */
+function deleteStudent_(p) {
+  return withLock_(function () {
+    const st = roster_().find(function (r) { return r.row === Number(p.row); });
+    if (!st || (p.name && st.name !== String(p.name))) throw new Error("학생을 찾지 못했습니다. 새로고침 후 다시 시도해 주세요");
+    ["contacts", "icsTokens"].forEach(function (key) {
+      if (!APP_TABS[key]) return;
+      const rows = rows_(key).filter(function (x) { return String(x.v[0]).trim() === st.name; }).sort(function (a, b) { return b._row - a._row; });
+      if (rows.length) { const sh = sheet_(key); rows.forEach(function (x) { sh.deleteRow(x._row); }); }
+    });
+    sheet_("roster").deleteRow(st.row);
+    return true;
   });
 }
 function makePins_() {
@@ -322,6 +380,7 @@ function parseDateCell_(v, sy) {
 }
 function hhmm_(h, mi) { h = parseInt(h, 10); mi = parseInt(mi || "0", 10) || 0; if (isNaN(h)) return ""; if (h < 10) h += 12; return pad_(h) + ":" + pad_(mi); }
 const HOLIDAY_ = /(휴일|공휴일|성탄절|신년|노동절|정기고사|지필|체육대회|종업식|방학|이브|개교기념|국외연수|의무검정|대체공휴)/;
+function isAfterschoolTitle_(title) { return /^\([^()\r\n]+\)/.test(String(title || "").trim()); }
 function cell_(row, i) { return String((row && row[i]) == null ? "" : row[i]).trim(); }
 function parseAfterschool_(rows, sy) {
   const gradeCols = [];
@@ -358,8 +417,21 @@ function parseAfterschool_(rows, sy) {
   return Object.keys(slots).map(function (key) {
     const parts = key.split("|"), times = slots[key].sort();
     const last = times[times.length - 1].split(":").map(Number), em = last[0] * 60 + last[1] + 50;
-    return { date: parts[0], grade: +parts[1], title: parts[2], times: times, start: times[0], end: pad_(Math.floor(em / 60)) + ":" + pad_(em % 60), info: HOLIDAY_.test(parts[2]) };
+    const afterschool = isAfterschoolTitle_(parts[2]);
+    return { date: parts[0], grade: +parts[1], title: parts[2], times: times, start: times[0], end: pad_(Math.floor(em / 60)) + ":" + pad_(em % 60), afterschool: afterschool, info: !afterschool, allDay: !afterschool && HOLIDAY_.test(parts[2]) };
   }).sort(function (a, b) { return (a.date + a.start + a.grade).localeCompare(b.date + b.start + b.grade); });
+}
+/* 일반 일정은 학년 열에 반복되더라도 날짜·제목·시간이 같으면 한 일정으로 묶습니다. */
+function sheetScheduleEvents_(rows, grade) {
+  const byKey = {}, out = [];
+  (rows || []).forEach(function(a) {
+    if (isAfterschoolTitle_(a.title) || (grade && a.grade !== grade)) return;
+    const time = a.allDay ? "" : a.start + "–" + a.end, key = a.date + "|" + String(a.title).trim() + "|" + time;
+    if (byKey[key]) { if (byKey[key].grades.indexOf(a.grade) < 0) byKey[key].grades.push(a.grade); return; }
+    const id = "sheet-" + icsHash_(key), event = { id: id, uid: id, key: id, date: a.date, title: a.title, time: time, kind: "EVT", grades: [a.grade] };
+    byKey[key] = event; out.push(event);
+  });
+  return out;
 }
 function parseStudentSheet_(rows, sy) {
   const out = { gradeLabel: "", common: [], byName: {} };
@@ -435,6 +507,8 @@ function load_(me) {
     sheetData = { after: ar ? parseAfterschool_(ar, sy) : [], personal: pr ? parseStudentSheet_(pr, sy) : { common: [], byName: {}, gradeLabel: "" }, tabsMissing: [!ar ? TAB_AFTER : "", !pr ? TAB_PERSONAL : ""].filter(String) };
     try { cache.put("sheetData_v1", JSON.stringify(sheetData), 120); } catch (e) {}
   }
+  /* 배포 전 캐시에 남은 기존 분류도 제목 기준으로 다시 판단합니다. 원본 시트는 수정하지 않습니다. */
+  const scheduleRows = (sheetData.after || []).map(function(a) { const afterschool = isAfterschoolTitle_(a.title); return Object.assign({}, a, { afterschool: afterschool, info: !afterschool, allDay: !afterschool && HOLIDAY_.test(a.title) }); });
   const gm = String(sheetData.personal.gradeLabel || "").match(/([1-3])/);
   const commonTarget = gm ? ({ 1: "pre1", 2: "pre2", 3: "learner" })[gm[1]] : "all";
 
@@ -456,7 +530,7 @@ function load_(me) {
 
   const out = {
     me: me, loginDisabled: NO_LOGIN_TEST_MODE, today: today_(), schoolYear: sy, tabsMissing: sheetData.tabsMissing.concat(bom.missing ? [TAB_BOM] : []),
-    notices: notices, events: events, afterschool: sheetData.after,
+    notices: notices, events: events, afterschool: scheduleRows.filter(function(a) { return a.afterschool; }), sheetEvents: scheduleRows.filter(function(a) { return !a.afterschool; }), sheetCalendar: sheetScheduleEvents_(scheduleRows, T ? 0 : ({learner:3,pre2:2,pre1:1})[me.group]),
     common: { target: commonTarget, items: sheetData.personal.common },
     personalSheet: T ? sheetData.personal.byName : { [me.name]: sheetData.personal.byName[me.name] || [] },
     personalApp: personalApp, requests: reqs, replies: replies, purchases: purchases
@@ -477,6 +551,7 @@ function load_(me) {
   out.school = { comciUrl: COMCI_URL_, mealUrl: MEAL_URL_ };
   out.meals = meals_(today_(), plusDate_(today_(), 6));
   out.icsToken = (rows_("icsTokens").filter(function (x) { return x.v[0] === who_(me); })[0] || { v: [] }).v[1] || "";
+  out.lastUpdate = lastUpdate_();
   return out;
 }
 function kindKey_(s) { s = String(s || "").trim(); for (var k in KIND_LABEL) if (KIND_LABEL[k] === s || k === s) return k; return "EVT"; }
@@ -617,7 +692,7 @@ Object.assign(APP_TABS, {
 Object.assign(APP_TABS, {
   anon: {name:"앱_익명게시판",head:["ID","시각","작성자","제목","내용","숨김","구분","이전요청ID","처리상태"]},
   anonReports: {name:"앱_익명신고",head:["ID","게시글ID","신고자","사유","시각","처리"]},
-  board: {name:"앱_프로젝트게시판",head:["ID","작성자","구분","프로젝트자격증명","제목","내용","진행상태","관련일","링크","첨부목록","등록시각","수정시각","삭제"]},
+  board: {name:"앱_프로젝트게시판",head:["ID","작성자","구분","프로젝트자격증명","제목","내용","진행상태","관련일","링크","첨부목록","등록시각","수정시각","삭제","주최기관","장소","접수시작","접수마감","대회종료"]},
   boardComments: {name:"앱_프로젝트댓글",head:["ID","게시글ID","작성자","내용","시각","삭제"]},
   anonCmt: {name:"앱_익명댓글",head:["ID","글ID","시각","작성자","내용","숨김","이전답변ID"]},
   companies: {name:"앱_기업",head:["ID","기업명","주소","기업현장교사","연락처","이메일","메모"]},
@@ -665,6 +740,8 @@ function extendedApi_(me,action,p) {
     case "removeExtended": return removeExtended_(me,p);
     case "downloadFile": return downloadFile_(me,p.id);
     case "saveContact": return saveContact_(me,p);
+    case "requestFolderAccess": return requestFolderAccess_(me,p);
+    case "decideFolderAccess": need_(me,"teacher"); return decideFolderAccess_(p);
     case "saveSettings": need_(me,"teacher"); return saveSettings_(p);
     case "createCalendar": need_(me,"teacher"); return createCalendar_();
     case "syncCalendar": need_(me,"teacher"); return syncCalendar_();
@@ -680,7 +757,7 @@ function extendedLoad_(me) {
   const visibleUnits = {}; units.forEach(function(x){visibleUnits[x.id]=true;});
   const projects = rows_("projects").map(function(x){const v=x.v;let members=[];try{members=JSON.parse(v[3]||"[]");}catch(e){}return {id:v[0],team:v[1],product:v[2],members:members,goal:v[4],due:v[5],status:v[6],link:v[7],at:v[8]};}).filter(function(x){return T||x.members.indexOf(me.name)>=0;});
   const projectIds={}; projects.forEach(function(x){projectIds[x.id]=true;});
-  const pp=props_(); if(T) projects.forEach(function(x){if(pp["PF_"+x.id])x.folderUrl="https://drive.google.com/drive/folders/"+pp["PF_"+x.id];});
+  const pp=props_(); projects.forEach(function(x){if(pp["PF_"+x.id])x.folderUrl="https://drive.google.com/drive/folders/"+pp["PF_"+x.id];});
   const projectFiles=rows_("files").filter(function(x){return x.v[5]==="project"&&projectIds[x.v[6]];}).map(function(x){const v=x.v;return {id:v[0],by:v[1],name:v[2],mime:v[3],size:Number(v[4])||0,project:v[6],at:v[7],memo:v[8]||""};});
   const out={
     attendance:rows_("attendance").map(function(x){const v=x.v;return {id:v[0],date:v[1],name:v[2],group:normGroup_(v[3]),lesson:v[4],status:v[5],note:v[6],at:v[7],minutes:v[8]===""||v[8]==null?null:Number(v[8])};}).filter(function(x){return T||x.name===me.name;}),
@@ -697,7 +774,9 @@ function extendedLoad_(me) {
     out.settings=settings_(); out.contacts=rows_("contacts").map(function(x){return {name:x.v[0],email:x.v[1],enabled:x.v[2]==="1"};});
     out.mailLog=rows_("mailLog").slice(-50).map(function(x){return {at:x.v[1],name:x.v[2],kind:x.v[3],result:x.v[5]};});
     out.calendarEvents=rows_("calendarIn").map(function(x){const v=x.v;return {id:v[0],date:v[1],endDate:v[2],time:v[3],title:v[4],place:v[5],note:v[6],kind:"EVT",target:"all",srcLabel:"교사 캘린더 · 교사만 표시"};});
-  }
+  }  out.folderReady={materials:!!props_().MATERIAL_FOLDER};
+  out.folderRequests=folderRequests_(me,T);
+
   return out;
 }
 function saveAttendance_(p) {
@@ -740,7 +819,11 @@ function folderFor_(path, propKey) {
   path.forEach(function (n) { f = childFolder_(f, String(n).replace(/[\\\/]/g, "_").slice(0, 100) || "기타"); });
   props.setProperty(key, f.getId()); return f;
 }
-function projectFolder_(projectRow) { return folderFor_(["팀프로젝트", projectRow.v[1] + " · " + projectRow.v[2]], "PF_" + projectRow.v[0]); }
+function projectFolder_(projectRow) {
+  const name = (projectRow.v[1] + " · " + projectRow.v[2]).slice(0,60) + " [" + projectRow.v[0] + "]";
+  const folder = folderFor_(["팀프로젝트", name], "PF_" + projectRow.v[0]); PROPS_ = null; return folder;
+}
+function projectFolderInfo_(id) { return withLock_(function(){return {url:projectFolder_(record_("projects",id)).getUrl()};}); }
 function storeFile_(me,upload,kind,ref,folder,memo) {
   if(!upload||!upload.base64) return "";
   const name=required_(upload.name,180).replace(/[\\\/]/g,"_");
@@ -771,11 +854,13 @@ function deleteFile_(me,id) {
 }
 /** 팀원 이메일(앱_알림연락처)로 프로젝트 Drive 폴더를 편집자 공유합니다. 구글 계정 이메일만 가능합니다. */
 function shareProjectFolder_(id) {
+  return withLock_(function(){
   const pr=record_("projects",id),members=JSON.parse(pr.v[3]||"[]"),folder=projectFolder_(pr);
   const mail={};rows_("contacts").forEach(function(x){if(x.v[1])mail[x.v[0]]=x.v[1];});
   const res={shared:[],failed:[],missing:[],url:folder.getUrl()};
   members.forEach(function(n){if(!mail[n]){res.missing.push(n);return;}try{folder.addEditor(mail[n]);res.shared.push(n);}catch(e){res.failed.push(n);}});
   return res;
+  });
 }
 function savePortfolio_(me,p) {
   return withLock_(function(){const old=p.id?record_("portfolio",p.id):null;if(old&&me.role!=="teacher"&&old.v[1]!==me.name) throw new Error("내 포트폴리오만 수정할 수 있습니다");
@@ -851,8 +936,10 @@ function syncCalendar_() {
     if(data.tabsMissing.indexOf(TAB_AFTER)>=0||data.tabsMissing.indexOf(TAB_PERSONAL)>=0)throw new Error("일정 원본 탭을 찾지 못했습니다. 탭 이름을 확인한 뒤 동기화하세요");
     const calendarEvents=cal.getEvents(new Date(start+"T00:00:00+09:00"),new Date(end+"T00:00:00+09:00")),existingEvents={};
     calendarEvents.forEach(function(ev){existingEvents[ev.getId()]=ev;});
+    boardContestEvents_(data.boardPosts).forEach(function(e){list.push(e);});
     data.events.forEach(function(e){list.push(Object.assign({},e,{key:"event:"+e.id,title:"[도제] "+e.title}));});
     data.afterschool.filter(function(a){return !a.info;}).forEach(function(a){list.push({key:"after:"+a.date+":"+a.grade+":"+a.title,date:a.date,time:a.start+"–"+a.end,title:"[도제 방과후 "+a.grade+"학년] "+a.title});});
+    sheetScheduleEvents_(data.sheetEvents).forEach(function(e){list.push(Object.assign({},e,{title:"[도제 일정] "+e.title}));});
     data.common.items.forEach(function(e,i){list.push(Object.assign({},e,{key:"common:"+e.date+":"+e.title+":"+i,title:"[도제 공통] "+e.title}));});
     if(s.calendarPersonal){data.personalApp.forEach(function(e){list.push(Object.assign({},e,{key:"personal:"+e.id,title:"[도제 개인 "+e.name+"] "+e.title}));});Object.keys(data.personalSheet).forEach(function(name){data.personalSheet[name].forEach(function(e,i){list.push(Object.assign({},e,{key:"sheetpersonal:"+name+":"+e.date+":"+i,title:"[도제 개인 "+name+"] "+e.title}));});});}
     const desired={};list.filter(function(e){return e.date>=start&&e.date<end;}).forEach(function(e){desired[e.key]=e;});
@@ -887,7 +974,8 @@ function sendNotifications_() {
       reqs.filter(function(r){return r.v[2]===st.name&&r.v[9]==="1";}).forEach(function(r){add(st.name,c.v[1],"요청답변",r.v[0]+":"+r.v[8],"선생님 답변을 확인해 주세요");});
       portfolios.filter(function(r){return r.v[1]===st.name&&r.v[9]!=="제출";}).forEach(function(r){add(st.name,c.v[1],"포트폴리오",r.v[0]+":"+r.v[10],"포트폴리오 확인 결과가 있습니다");});
       const nextDay=function(e){return e.date<=tomorrow&&(e.endDate||e.date)>=tomorrow;};
-      const relevant=agenda.events.some(function(e){return matches_(e.target,st.group)&&nextDay(e);})||(st.afterschool&&agenda.afterschool.some(function(e){return !e.info&&e.date===tomorrow&&({learner:3,pre2:2,pre1:1})[st.group]===e.grade;}))||agenda.personalApp.some(function(e){return e.name===st.name&&nextDay(e);})||(agenda.personalSheet[st.name]||[]).some(nextDay)||(matches_(agenda.common.target,st.group)&&agenda.common.items.some(nextDay));
+      const grade=({learner:3,pre2:2,pre1:1})[st.group];
+      const relevant=agenda.events.some(function(e){return matches_(e.target,st.group)&&nextDay(e);})||(st.afterschool&&agenda.afterschool.some(function(e){return !e.info&&e.date===tomorrow&&grade===e.grade;}))||sheetScheduleEvents_(agenda.sheetEvents,grade).some(nextDay)||agenda.personalApp.some(function(e){return e.name===st.name&&nextDay(e);})||(agenda.personalSheet[st.name]||[]).some(nextDay)||(matches_(agenda.common.target,st.group)&&agenda.common.items.some(nextDay));
       if(relevant)add(st.name,c.v[1],"다음날일정",tomorrow,"내일 일정을 확인해 주세요");
     });
     if(s.teacherEmail){reqs.filter(function(r){return r.v[10]==="1";}).forEach(function(r){add("선생님",s.teacherEmail,"학생요청",r.v[0]+":"+r.v[8],"새 학생 요청이 있습니다");});portfolios.filter(function(r){return r.v[9]==="제출";}).forEach(function(r){add("선생님",s.teacherEmail,"학생제출",r.v[0]+":"+r.v[10],"새 포트폴리오 제출이 있습니다");});}
@@ -1008,18 +1096,23 @@ function anonReport_(me,p){const reason=required_(p.reason,500);return withLock_
 function boardFileIds_(s){try{const a=JSON.parse(s||"[]");return Array.isArray(a)?a.filter(function(x){return typeof x==="string";}):[];}catch(e){return [];}}
 function boardLoad_(me){
  const files={};rows_("files").filter(function(r){return r.v[5]==="board";}).forEach(function(r){files[r.v[0]]={id:r.v[0],name:r.v[2],size:Number(r.v[4])||0};});
- const posts=rows_("board").filter(function(r){return r.v[0]&&r.v[12]!=="1";}).map(function(r){const v=r.v;return {id:v[0],author:v[1],category:v[2],subject:v[3],title:v[4],body:v[5],status:v[6],date:v[7],link:v[8],files:boardFileIds_(v[9]).filter(function(id){return files[id];}).map(function(id){return files[id];}),at:v[10],updated:v[11],mine:v[1]===me.name};});
+ const posts=rows_("board").filter(function(r){return r.v[0]&&r.v[12]!=="1";}).map(function(r){const v=r.v;return {id:v[0],author:v[1],category:v[2],subject:v[3],title:v[4],body:v[5],status:v[6],date:v[7],link:v[8],files:boardFileIds_(v[9]).filter(function(id){return files[id];}).map(function(id){return files[id];}),at:v[10],updated:v[11],mine:v[1]===me.name,organizer:v[13]||"",place:v[14]||"",applyStart:v[15]||"",applyEnd:v[16]||"",eventEnd:v[17]||""};});
  const ids={};posts.forEach(function(p){ids[p.id]=true;});return {boardPosts:posts,boardComments:rows_("boardComments").filter(function(r){return ids[r.v[1]]&&r.v[5]!=="1";}).map(function(r){return {id:r.v[0],post:r.v[1],author:r.v[2],body:r.v[3],at:r.v[4],mine:r.v[2]===me.name};})};
 }
+
+function boardContestEvents_(posts){const out=[];(posts||[]).filter(function(p){return p.category==="대회";}).forEach(function(p){const title=p.subject||p.title;const add=function(part,date,label,end){if(date)out.push({key:"contest:"+p.id+":"+part,uid:"contest-"+p.id+"-"+part,title:"대회 · "+title+" · "+label,date:date,endDate:end||"",place:p.place||"",note:[p.organizer,p.link].filter(Boolean).join("\n")});};if(p.applyStart!==p.applyEnd)add("apply-start",p.applyStart,"접수 시작");add("apply-end",p.applyEnd,"접수 마감");add("event",p.date,"개최",p.eventEnd);});return out;}
+
 function boardOwned_(me,r){if(r.v[12]==="1")throw new Error("삭제된 게시글입니다");if(me.role!=="teacher"&&r.v[1]!==me.name)throw new Error("내가 쓴 글만 수정하거나 삭제할 수 있습니다");}
 function saveBoard_(me,p){return withLock_(function(){
  const old=p.id?record_("board",p.id):null;if(old)boardOwned_(me,old);
- const category=String(p.category||"");if(["프로젝트","자격증"].indexOf(category)<0)throw new Error("프로젝트 또는 자격증을 선택해 주세요");
+ const category=String(p.category||"");if(["프로젝트","자격증","대회"].indexOf(category)<0)throw new Error("프로젝트·자격증·대회 중 구분을 선택해 주세요");
  const title=required_(p.title,150),subject=clean_(p.subject,100),body=required_(p.body,6000),link=urlValid_(p.link),date=dateValid_(p.date,true),status=String(p.status||"자료 공유");if(["준비","진행 중","완료","자료 공유"].indexOf(status)<0)throw new Error("진행 상태를 선택해 주세요");
+ const contest=category==="대회",organizer=contest?clean_(p.organizer,100):"",place=contest?clean_(p.place,150):"",applyStart=contest?dateValid_(p.applyStart,true):"",applyEnd=contest?dateValid_(p.applyEnd,true):"",eventEnd=contest?dateValid_(p.eventEnd,true):"";
+ if(applyStart&&applyEnd&&applyEnd<applyStart)throw new Error("접수 마감일은 시작일 이후로 입력해 주세요");if(eventEnd&&(!date||eventEnd<date))throw new Error("대회 종료일은 개최일 이후로 입력해 주세요");
  const prior=old?boardFileIds_(old.v[9]):[],keep=p.keepFiles===undefined?prior:(Array.isArray(p.keepFiles)?Array.from(new Set(p.keepFiles)):[]);if(keep.some(function(id){return prior.indexOf(id)<0;}))throw new Error("다른 글의 첨부는 연결할 수 없습니다");
  const uploads=Array.isArray(p.uploads)?p.uploads:[];if(uploads.length>5||keep.length+uploads.length>20)throw new Error("새 파일은 한 번에 5개, 글당 총 20개까지 올릴 수 있습니다");
  let total=0;uploads.forEach(function(u){const name=required_(u.name,180),ext=name.split('.').pop().toLowerCase();if(!MIME_BY_EXT_[ext])throw new Error("올릴 수 없는 파일 형식입니다");if(!u.base64||String(u.base64).length>MAX_FILE_MB_*1024*1024*1.37+100)throw new Error("파일당 10MB 이하로 올려 주세요");const n=Utilities.base64Decode(String(u.base64)).length;if(!n||n>MAX_FILE_MB_*1024*1024)throw new Error("파일 크기를 확인해 주세요");total+=n;});if(total>20*1024*1024)throw new Error("한 번에 올리는 파일 합계는 20MB 이하로 줄여 주세요");
- const id=old?old.v[0]:uid_("bd"),created=[];try{const folder=uploads.length?folderFor_(["프로젝트게시판",category]):null;uploads.forEach(function(u){created.push(storeFile_(me,u,"board",id,folder));});const t=now_();upsert_("board",id,[id,old?old.v[1]:me.name,category,subject,title,body,status,date,link,JSON.stringify(keep.concat(created)),old?old.v[10]:t,t,""]);return id;}catch(e){created.forEach(function(fid){try{DriveApp.getFileById(fid).setTrashed(true);}catch(ignored){}});throw e;}
+ const id=old?old.v[0]:uid_("bd"),created=[];try{const folder=uploads.length?folderFor_(["프로젝트게시판",category]):null;uploads.forEach(function(u){created.push(storeFile_(me,u,"board",id,folder));});const t=now_();upsert_("board",id,[id,old?old.v[1]:me.name,category,subject,title,body,status,date,link,JSON.stringify(keep.concat(created)),old?old.v[10]:t,t,"",organizer,place,applyStart,applyEnd,eventEnd]);sheet_("board").getRange(1,14,1,5).setValues([["주최기관","장소","접수시작","접수마감","대회종료"]]);return id;}catch(e){created.forEach(function(fid){try{DriveApp.getFileById(fid).setTrashed(true);}catch(ignored){}});throw e;}
  });}
 function deleteBoard_(me,p){return withLock_(function(){const r=record_("board",p.id);boardOwned_(me,r);sheet_("board").getRange(r._row,13).setValue("1");return true;});}
 function boardComment_(me,p){const body=required_(p.body,1500);return withLock_(function(){const r=record_("board",p.post);if(r.v[12]==="1")throw new Error("삭제된 게시글입니다");anonRate_(me,"boardcmt",5);const id=uid_("bc");append_("boardComments",[id,r.v[0],me.name,body,now_(),""]);return id;});}
@@ -1146,6 +1239,9 @@ function icsFeed_(token) {
   const d = load_(me), T = me.role === "teacher", from = plusDate_(today_(), -31), to = plusDate_(today_(), 366), out = [];
   const inRange = function (x) { return x.date && (x.endDate || x.date) >= from && x.date <= to; };
   d.events.filter(inRange).forEach(function (e) { const pre = KIND_PREFIX_[e.kind]; out.push({ uid: "ev-" + e.id, title: (pre ? pre + " · " : "") + e.title, date: e.date, endDate: e.endDate, time: e.time, place: e.place, note: e.note }); });
+  boardContestEvents_(d.boardPosts).filter(inRange).forEach(function(e){out.push(e);});
+  const sheetGrade = T ? 0 : ({ learner: 3, pre2: 2, pre1: 1 })[me.group];
+  sheetScheduleEvents_(d.sheetEvents, sheetGrade).filter(inRange).forEach(function(e){out.push(e);});
   if (!T) {
     const g = ({ learner: 3, pre2: 2, pre1: 1 })[me.group];
     d.afterschool.filter(function (a) { return me.afterschool && a.grade === g && !a.info && inRange(a); }).forEach(function (a) { out.push({ uid: "aft-" + a.date + "-" + icsHash_(a.title + a.start), title: "방과후 " + a.title, date: a.date, time: a.start + "–" + a.end }); });
@@ -1421,4 +1517,70 @@ function comciTimetable_(grade, cls, from) {
   const out = { grade: String(grade), cls: String(cls), from: from, days: days, times: j["일과시간"] || [], classes: j["학급수"] || [], updated: j["자료244"] || "", source: "컴시간알리미", weeks: weeks.map(function (x) { return x.start; }) };
   try { cache.put(ck, JSON.stringify(out), 300); } catch (e) {}
   return out;
+}
+
+/* ===================== Drive 폴더 접근 신청 =====================
+ * 학생이 자기 구글 계정(이메일)으로 자료실·프로젝트 자료실 폴더를 열 수 있게 신청하고, 선생님이 승인하면 공유됩니다.
+ * 다른 사람 이메일로 잘못 공유되는 일을 막기 위해 자동 공유하지 않고 선생님 승인을 거칩니다. */
+APP_TABS.folderReq = {name:"앱_폴더신청",head:["ID","시각","이름","이메일","대상","상태","처리시각","메모"]};
+function folderTarget_(target) {
+  target = String(target || "");
+  if (target === "materials") {
+    const id = props_().MATERIAL_FOLDER; if (!id) throw new Error("자료실 Drive 폴더가 아직 연결되지 않았습니다");
+    return { label: "자료실", folder: function () { return DriveApp.getFolderById(id); }, role: "viewer" };
+  }
+  const m = target.match(/^team:(.+)$/); if (!m) throw new Error("신청할 폴더를 골라 주세요");
+  const pr = record_("projects", m[1]); let members = []; try { members = JSON.parse(pr.v[3] || "[]"); } catch (e) {}
+  return { label: "프로젝트 자료실 · " + pr.v[1], members: members, folder: function () { return projectFolder_(pr); }, role: "editor" };
+}
+function requestFolderAccess_(me, p) {
+  if (me.role === "teacher") throw new Error("학생 계정에서 신청하는 기능입니다");
+  const email = emailValid_(p.email); if (!email) throw new Error("내 구글 계정 이메일을 넣어 주세요");
+  const target = String(p.target || ""), info = folderTarget_(target);
+  if (info.members && info.members.indexOf(me.name) < 0) throw new Error("내 프로젝트의 자료실만 신청할 수 있습니다");
+  return withLock_(function () {
+    const dup = rows_("folderReq").some(function (x) { return x.v[2] === me.name && x.v[4] === target && x.v[3].toLowerCase() === email.toLowerCase() && (x.v[5] === "대기" || x.v[5] === "완료"); });
+    if (dup) throw new Error("이미 신청했거나 공유된 폴더입니다");
+    append_("folderReq", [uid_("fq"), now_(), me.name, email, target, "대기", "", clean_(p.note, 200)]);
+    const c = rows_("contacts").find(function (x) { return x.v[0] === me.name; });
+    if (!c) append_("contacts", [me.name, email, "0"]); else if (!c.v[1]) sheet_("contacts").getRange(c._row, 2).setValue(email);
+    return true;
+  });
+}
+function decideFolderAccess_(p) {
+  return withLock_(function () {
+    const r = record_("folderReq", p.id); if (r.v[5] !== "대기" && r.v[5] !== "실패") throw new Error("이미 처리한 신청입니다");
+    let status = "거절", memo = r.v[7];
+    if (p.approve === true) {
+      try { const info = folderTarget_(r.v[4]), f = info.folder(); if (info.role === "editor") f.addEditor(r.v[3]); else f.addViewer(r.v[3]); status = "완료"; }
+      catch (e) { status = "실패"; memo = "공유 실패: " + String(e.message || e).slice(0, 150); }
+    }
+    writeCells_(sheet_("folderReq"), r._row, [r.v[0], r.v[1], r.v[2], r.v[3], r.v[4], status, now_(), memo]);
+    if (status === "실패") throw new Error(memo + " (폴더가 앱 계정 소유이거나 앱 계정에 편집 권한이 있는지, 공유 드라이브라면 외부 공유가 허용되는지 확인해 주세요)");
+    return true;
+  });
+}
+function folderRequests_(me, T) {
+  const teams = {}; rows_("projects").forEach(function (x) { teams[x.v[0]] = x.v[1] + " · " + x.v[2]; });
+  return rows_("folderReq").filter(function (x) { return T || x.v[2] === me.name; }).map(function (x) {
+    const v = x.v, m = String(v[4]).match(/^team:(.+)$/);
+    return { id: v[0], at: v[1], name: v[2], email: v[3], target: v[4], label: v[4] === "materials" ? "자료실" : "프로젝트 자료실 · " + (m && teams[m[1]] || "삭제된 팀"), status: v[5], doneAt: v[6], note: v[7] };
+  }).reverse().slice(0, 100);
+}
+
+/* ===================== 최근 업데이트 표시 =====================
+ * 공지·게시판·익명게시판·자료실의 가장 최근 글 시각과 앱 배포 시각 중 늦은 것을 화면 머리에 작게 보여 줍니다. */
+function lastUpdate_() {
+  let best = { at: "", what: "" };
+  const take = function (at, what) { at = String(at || "").trim().slice(0, 16); if (/^\d{4}-\d{2}-\d{2}/.test(at) && at > best.at) best = { at: at, what: what }; };
+  const scan = function (key, col, what, skip) { if (!APP_TABS[key]) return; rows_(key).forEach(function (x) { if (skip && skip(x.v)) return; take(x.v[col], what); }); };
+  scan("notices", 1, "새 공지");
+  scan("board", 10, "프로젝트 게시판", function (v) { return v[12] === "1"; });
+  scan("board", 11, "프로젝트 게시판", function (v) { return v[12] === "1"; });
+  scan("boardComments", 4, "게시판 댓글", function (v) { return v[5] === "1"; });
+  scan("anon", 1, "익명게시판", function (v) { return v[5] === "1"; });
+  scan("anonCmt", 2, "익명게시판 댓글", function (v) { return v[5] === "1"; });
+  scan("materials", 7, "자료실");
+  take(APP_UPDATED_, "앱 업데이트");
+  return best;
 }

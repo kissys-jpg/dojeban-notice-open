@@ -42,6 +42,7 @@ h1,h2,h3{text-wrap:balance;margin:0;line-height:1.3}
 .ttl{min-width:0;flex:1}
 .ttl h1{font-size:17px;font-weight:700;letter-spacing:-.01em}
 .ttl p{margin:0;font-size:12.5px;color:var(--muted)}
+.ttl .upd{font-size:11px;opacity:.85}
 .role{font-size:12px;padding:3px 9px;border-radius:99px;background:var(--sunk);color:var(--muted);white-space:nowrap}
 .role.t{background:var(--accent);color:var(--accent-ink)}
 .tabs{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;margin:0 -4px}
@@ -252,7 +253,7 @@ table.tt{width:100%;border-collapse:collapse;margin-top:6px}table.tt th,table.tt
     <div class="bar-in">
       <div class="bar-top">
         <div class="mark" aria-hidden="true">도</div>
-        <div class="ttl"><h1>도제반 알림판</h1><p>경기항공고 로봇자동화과 · 전자기기생산 L2 도제</p></div>
+        <div class="ttl"><h1>도제반 알림판</h1><p>경기항공고 로봇자동화과 · 전자기기생산 L2 도제</p><p class="upd" id="updAt" hidden></p></div>
         <span class="role" id="role"></span>
         <button class="btn sm ghost" id="logoutTop">나가기</button>
       </div>
@@ -267,6 +268,14 @@ table.tt{width:100%;border-collapse:collapse;margin-top:6px}table.tt th,table.tt
 <script>
 (() => {
 "use strict";
+/* 외부 입구 페이지에서 열린 경우: google.script.run 대신 웹앱 주소(DOJEBAN_API)를 쿠키 없이 부릅니다. */
+if ((typeof google === "undefined" || !google.script || !google.script.run) && window.DOJEBAN_API) {
+  const mkRun = (ok, fail) => new Proxy({}, { get: (_, k) => k === "withSuccessHandler" ? f => mkRun(f, fail) : k === "withFailureHandler" ? f => mkRun(ok, f) : req => {
+    fetch(window.DOJEBAN_API, { method: "POST", credentials: "omit", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ fn: k, req }) })
+      .then(r => r.json()).then(x => { if (ok) ok(x); }).catch(e => { if (fail) fail(e); });
+  } });
+  window.google = { script: { run: mkRun(null, null) } };
+}
 // google.script.run은 Apps Script가 제공한 웹 앱 페이지에서만 사용할 수 있습니다.
 if (typeof google === "undefined" || !google.script || !google.script.run) {
   document.querySelector("#shell").hidden = true;
@@ -295,7 +304,7 @@ const TARGET = {all:"전체", learner:"학습근로자", pre:"예비 전체", pr
 const KINDS = [
   {k:"OJT", label:"OJT(기업현장)", v:"--k-ojt"}, {k:"OFF", label:"OFF-JT(학교)", v:"--k-off"}, {k:"PRJ", label:"팀프로젝트", v:"--k-prj"},
   {k:"SCH", label:"학교수업", v:"--k-sch"}, {k:"EVAL", label:"평가", v:"--k-eval"}, {k:"EVT", label:"행사·기타", v:"--k-evt"},
-  {k:"AFT", label:"방과후", v:"--k-aft"}, {k:"PER", label:"개인 일정", v:"--k-per"}];
+  {k:"CT", label:"대회", v:"--k-prj"}, {k:"AFT", label:"방과후", v:"--k-aft"}, {k:"PER", label:"개인 일정", v:"--k-per"}];
 const kind = k => KINDS.find(x => x.k === k) || KINDS[5];
 const REQ_CATS = ["상담","서류·증명","OJT·기업 문의","출결·조퇴","건의","기타"];
 const REQ_STATUS = ["접수","처리중","완료"];
@@ -308,8 +317,8 @@ let anonOpen = null, anonFilter = 'all';
 let matCategory="all",matSort="latest";
 const ANON_GROUPS = {pre:'예비 도제반',after:'방과후',learner:'학습근로자'};
 const anonGroupLabel = category => ANON_GROUPS[category] || '공통';
-/* 선생님 화면: train=도제 훈련(학습근로자), pre=예비·방과후 */
-let tmode = lsGet("dj.tmode") === "pre" ? "pre" : "train";
+/* 예전 화면 구분의 저장 키는 보존합니다. 상단 메뉴는 이 값으로 바꾸지 않습니다. */
+
 const isLearner = () => !T() && myGroup() === "learner";
 let calSel = TODAY, schedMode = "cal", aftWeek = null, showPersonal = true, reqOpen = null, reqFilter = "active", openReaders = new Set(), armed = null, armT;
 const T = () => D && D.me.role === "teacher";
@@ -329,7 +338,8 @@ function callRaw(action, payload, c, withLoad){
   });
 }
 const call = (action, payload, c) => callRaw(action, payload, c).then(r => r.data);
-function setData(d){ if(!D)tab="today"; D = d; TODAY = D.today || TODAY; render(); }
+function setData(d){ if(!D)tab="today"; D = d; TODAY = D.today || TODAY; showUpdated(); render(); }
+function showUpdated(){ const el = $("#updAt"), u = D && D.lastUpdate; if (!el) return; if (!u || !u.at){ el.hidden = true; return; } const day = u.at.slice(0,10), hm = u.at.slice(11,16); el.textContent = "최근 업데이트 " + (day === TODAY ? "오늘" : Number(day.slice(5,7)) + "." + Number(day.slice(8,10))) + (hm ? " " + hm : "") + (u.what ? " · " + u.what : ""); el.hidden = false; }
 async function reload(){ try { setData(await call("load")); } catch (e) { if (/PIN|비밀번호|이름/.test(e.message)) { logout(e.message); } else toast(e.message); } }
 async function act(action, payload, msg){
   try { const r = await callRaw(action, payload, null, true); if (msg) toast(msg); if (r.load) setData(r.load); else await reload(); return true; }
@@ -374,28 +384,23 @@ const LEARNER_TABS = [['training','도제훈련'],['ojtcalendar','OJT 시간표'
 let learnerTab = LEARNER_TABS.some(([k]) => k === lsGet('dj.learnerTab')) ? lsGet('dj.learnerTab') : 'training';
 function isLearnerTab(k){ return LEARNER_TABS.some(([key]) => key === k); }
 function tabsFor(){
-  const inProject = D.projects && D.projects.length > 0;
   let t;
-  if (T() && tmode === "train") t = [["today","오늘"],["notices","공지"],["learner","학습근로자"],["schedule","일정"],["anon","익명게시판"],["portfolio","포트폴리오"],["materials","자료실"],["roster","명단"],["me","설정"]];
-  else if (T()) t = [["today","오늘"],["notices","공지"],["schedule","일정"],["attendance","방과후 출결"],["projects","팀프로젝트"],["purchases","구매요청"],["anon","익명게시판"],["portfolio","포트폴리오"],["materials","자료실"],["roster","명단"],["me","설정"]];
-  else if (isLearner()) t = [["today","오늘"],["notices","공지"],["learner","학습근로자"],["schedule","일정"],["anon","익명게시판"],["portfolio","포트폴리오"],["materials","자료실"]].concat(inProject ? [["projects","팀프로젝트"]] : []).concat([["me","내 정보"]]);
-  else t = [["today","오늘"],["notices","공지"],["schedule","일정"],["anon","익명게시판"],["projects","팀프로젝트"],["purchases","구매요청"],["attendance","출결"],["portfolio","포트폴리오"],["materials","자료실"],["me","내 정보"]];
-  t.splice(t.findIndex(([k])=>k==="portfolio"),0,["board","프로젝트 게시판"]);
+  if (T()) t = [["today","오늘"],["notices","공지"],["learner","학습근로자"],["schedule","일정"],["purchases","구매요청"],["anon","익명게시판"],["portfolio","포트폴리오"],["materials","자료실"],["roster","명단"],["me","설정"]];
+  else if (isLearner()) t = [["today","오늘"],["notices","공지"],["learner","학습근로자"],["schedule","일정"],["anon","익명게시판"],["portfolio","포트폴리오"],["materials","자료실"]].concat([["me","내 정보"]]);
+  else t = [["today","오늘"],["notices","공지"],["schedule","일정"],["anon","익명게시판"],["purchases","구매요청"],["portfolio","포트폴리오"],["materials","자료실"],["me","내 정보"]];
+  t.splice(t.findIndex(([k])=>k==="portfolio"),0,["projects","프로젝트"]);
   const si = t.findIndex(x => x[0] === "schedule"); t.splice(si < 0 ? 1 : si + 1, 0, ["school", "시간표·급식"]);
   if (T()) t.splice(t.findIndex(([k]) => k === 'roster'),0,['register','출석부']);
   return t;
 }
-function setTmode(m){
-  tmode = m; lsSet("dj.tmode", m);
-  attGroup = m === "train" ? "learner" : "pre"; attLesson = m === "train" ? "OJT" : "방과후";
-  render();
-}
 function go(k){
   if (k === 'requests') k = 'anon';
+  if (k === 'board') { projSub = 'board'; k = 'projects'; }
+  if (k === 'attendance' && !T() && !isLearner()) { schedMode = 'attendance'; k = 'schedule'; }
   if (k === 'learner') k = learnerTab;
   if (isLearnerTab(k) && tabsFor().some(([key]) => key === 'learner')) {
     learnerTab = k; lsSet('dj.learnerTab', k);
-    if (k === 'attendance') { attGroup = 'learner'; if (!['OJT','OFF-JT'].includes(attLesson)) attLesson = 'OJT'; }
+    if (k === 'attendance') prepareAttendanceScope('train');
   }
   tab = k; lsSet("dj.tab", k); reqOpen = null; anonOpen = null; render(); scrollTo({top:0}); }
 $("#tabs").addEventListener("click", e => { const b = e.target.closest("[data-tab]"); if (b) go(b.dataset.tab); });
@@ -414,8 +419,15 @@ function afterCalendarEvents(){
     else{e.targets=[g];e.grades=[a.grade];common.set(key,e);out.push(e);}
   });return out;
 }
+function sheetCalendarEvents(){return (D.sheetCalendar||[]).map(e=>({...e,src:'sheet',target:'all',targets:(e.grades||[]).map(g=>GRADE_GROUP[g]),srcLabel:'일정표 · 일반 일정'+(e.grades?.length?' · '+e.grades.slice().sort().join('·')+'학년':'')}));}
+
+function contestCalendarEvents(){const out=[];(D.boardPosts||[]).filter(p=>p.category==='대회').forEach(p=>{const title=p.subject||p.title;const add=(part,date,label,end)=>{if(date)out.push({id:'contest-'+p.id+'-'+part,post:p.id,title:'대회 · '+title+' · '+label,kind:'CT',date,endDate:end||'',target:'all',src:'board',srcLabel:'대회 정보',place:p.place||'',note:p.organizer||''});};if(p.applyStart!==p.applyEnd)add('apply-start',p.applyStart,'접수 시작');add('apply-end',p.applyEnd,'접수 마감');add('event',p.date,'개최',p.eventEnd);});return out;}
+function contestBoardFields(p){return '<div id="contestFields" '+(p.category==='대회'?'':'hidden')+'><div class="fgrid">'+field('주최기관','organizer',p.organizer||'','text','maxlength="100"')+field('장소','place',p.place||'','text','maxlength="150"')+field('접수 시작일','applyStart',p.applyStart||'','date')+field('접수 마감일','applyEnd',p.applyEnd||'','date')+field('대회 종료일 (여러 날인 경우)','eventEnd',p.eventEnd||'','date')+'</div><p class="ev-s">접수 시작·마감과 개최 기간은 일정 달력에도 표시됩니다. 날짜를 모르면 비워 두세요.</p></div>';}
+function contestBoardDetails(p){if(p.category!=='대회')return '';return '<div class="panel pad" style="margin:12px 0"><h3>대회 정보·일정</h3><div class="ev-s">'+esc(p.organizer||'주최기관 미입력')+(p.place?' · '+esc(p.place):'')+'</div><p>접수: '+esc(p.applyStart?fmtMD(p.applyStart):'시작일 미정')+' ~ '+esc(p.applyEnd?fmtMD(p.applyEnd):'마감일 미정')+'<br>개최: '+esc(p.date?fmtMD(p.date):'날짜 미정')+(p.eventEnd?' ~ '+esc(fmtMD(p.eventEnd)):'')+'</p><button class="btn sm" data-contest-calendar="'+esc(p.id)+'">일정 달력 보기</button></div>';}
+
 function allEvents(){
-  const out = [];
+  const out = contestCalendarEvents();
+  out.push(...sheetCalendarEvents());
   D.events.forEach(e => out.push({ ...e, src: "app" }));
   if (T()) (D.calendarEvents || []).forEach(e => out.push({ ...e, src: "calendar" }));
   out.push(...afterCalendarEvents());
@@ -443,6 +455,7 @@ function evRow(e){
   const x = kind(e.kind), range = e.endDate && e.endDate !== e.date ? ` ~ ${fmtMD(e.endDate)}` : "";
   const ek = "k" + evStore.size; evStore.set(ek, e);
   let actions = e.monthOnly ? "" : `<button class="btn sm ghost" data-caladd="${ek}">📅 내 캘린더에</button>`;
+  if(e.src==="board")actions+=`<button class="btn sm ghost" data-contest-post="${esc(e.post)}">대회 정보 보기</button>`;
   if (e.src === "app" && T()) actions += `<button class="btn sm ghost" data-editev="${esc(e.id)}">수정</button><button class="btn sm ghost danger" data-del="events|${esc(e.id)}">삭제</button>`;
   if (e.src === "pe" && (T() || e.by === "학생")) actions += `<button class="btn sm ghost danger" data-delpe="${esc(e.id)}">삭제</button>`;
   return `<div class="ev"><div class="ev-date"><b>${parse(e.date).getDate()}</b>${parse(e.date).getMonth()+1}월 ${DOW[parse(e.date).getDay()]}</div>
@@ -503,17 +516,18 @@ function todayActions(){
  const pf=(D.portfolio||[]).filter(p=>p.status==='제출').length;if(pf)items.push(['portfolio','포트폴리오 확인 대기 '+pf+'건']);
  const reports=(D.anonReports||[]).filter(r=>!r.done).length;if(reports)items.push(['anon','익명게시판 신고 '+reports+'건']);
  const missing=(D.roster||[]).filter(r=>!r.pin).length;if(missing)items.push(['roster','PIN 미발급 학생 '+missing+'명']);
+ const fq=(D.folderRequests||[]).filter(r=>r.status==='대기'||r.status==='실패').length;if(fq)items.push(['materials','Drive 폴더 접근 신청 '+fq+'건']);
  }else{const unread=(D.notices||[]).filter(n=>!(D.myAcks||[]).includes(n.id)).length;if(unread)items.push(['notices','확인할 공지 '+unread+'건']);const revise=(D.portfolio||[]).filter(p=>p.status==='보완').length;if(revise)items.push(['portfolio','포트폴리오 보완 '+revise+'건']);}
  tasks.slice(0,5).forEach(t=>items.push(['projects',(t.due&&t.due<TODAY?'마감 지남 · ':'')+t.title+(t.due?' · '+fmtMD(t.due)+' 마감':'')]));
  return '<section class="panel pad"><h3>오늘 할 일</h3>'+(items.length?items.map(([k,l])=>'<div class="row" style="margin-top:8px"><span>'+esc(l)+'</span><span class="spacer"></span><button class="btn sm" data-go="'+k+'">확인</button></div>').join(''):'<p class="ev-s">확인하거나 제출할 일이 없습니다.</p>')+'</section>';
 }
-function attendanceSummary(){
- const month=T()&&tab==='register'?bookMonth:TODAY.slice(0,7), rec=(D.attendance||[]).filter(a=>a.date.slice(0,7)===month);
- const kinds=['OJT','OFF-JT','방과후','기타'];const klass=l=>/OFF/i.test(l)?'OFF-JT':/OJT/i.test(l)?'OJT':/^방과후/.test(l)?'방과후':'기타';
+function attendanceSummary(scope){
+ const month=T()&&tab==='register'?bookMonth:scope&&T()?attDate.slice(0,7):TODAY.slice(0,7), rec=(D.attendance||[]).filter(a=>a.date.slice(0,7)===month&&(!scope||(scope==='after'?/^방과후/.test(a.lesson):!/^방과후/.test(a.lesson))));
+ const kinds=scope==='after'?['방과후']:scope==='train'?['OJT','OFF-JT','기타']:['OJT','OFF-JT','방과후','기타'];const klass=l=>/OFF/i.test(l)?'OFF-JT':/OJT/i.test(l)?'OJT':/^방과후/.test(l)?'방과후':'기타';
  const vals=kinds.map(k=>{const rows=rec.filter(a=>klass(a.lesson)===k),known=rows.filter(a=>a.minutes!==null&&a.minutes!==undefined&&Number.isFinite(Number(a.minutes)));return {k,count:rows.length,h:known.reduce((s,a)=>s+Number(a.minutes),0)/60,unknown:rows.length-known.length};});
- return '<section class="panel pad"><h3>'+esc(month)+' 실제 시간 합계'+(T()?' · 전체 학생':'')+'</h3><div class="stats">'+vals.map(v=>'<div class="stat"><div class="v">'+Number(v.h.toFixed(2))+'<small>시간</small></div><div class="k">'+v.k+' · '+v.count+'건'+(v.unknown?' · 시간 미입력 '+v.unknown+'건':'')+'</div></div>').join('')+'</div>'+attendanceStudentTotals(rec)+'<p class="ev-s">입력된 실제 시간만 합산합니다. 미입력·공결은 예정 시간으로 환산하지 않습니다. 학생별 기록은 아래 출결에서 확인하세요.</p></section>';
+ return '<section class="panel pad"><h3>'+esc(month)+(scope==='after'?' 방과후':'')+' 실제 시간 합계'+(T()?' · 전체 학생':'')+'</h3><div class="stats">'+vals.map(v=>'<div class="stat"><div class="v">'+Number(v.h.toFixed(2))+'<small>시간</small></div><div class="k">'+v.k+' · '+v.count+'건'+(v.unknown?' · 시간 미입력 '+v.unknown+'건':'')+'</div></div>').join('')+'</div>'+attendanceStudentTotals(rec,scope)+'<p class="ev-s">입력된 실제 시간만 합산합니다. 미입력·공결은 예정 시간으로 환산하지 않습니다. 학생별 기록은 아래 출결에서 확인하세요.</p></section>';
 }
-function attendanceStudentTotals(rec){if(!T())return '';const names=[...new Set(rec.map(a=>a.name))].sort((a,b)=>a.localeCompare(b,'ko'));if(!names.length)return '';return '<details><summary>학생별 시간 합계</summary><div class="tbl-wrap"><table><thead><tr><th>학생</th><th>OJT</th><th>OFF-JT</th><th>방과후</th><th>시간 미입력</th></tr></thead><tbody>'+names.map(n=>{const rows=rec.filter(a=>a.name===n);const sum=k=>Number((rows.filter(a=>k==='OFF-JT'?/OFF/i.test(a.lesson):k==='OJT'?/OJT/i.test(a.lesson)&&!/OFF/i.test(a.lesson):/^방과후/.test(a.lesson)).reduce((s,a)=>s+(a.minutes==null?0:Number(a.minutes)),0)/60).toFixed(2));return '<tr><td>'+esc(n)+'</td><td>'+sum('OJT')+'시간</td><td>'+sum('OFF-JT')+'시간</td><td>'+sum('방과후')+'시간</td><td>'+rows.filter(a=>a.minutes==null).length+'건</td></tr>';}).join('')+'</tbody></table></div></details>';}
+function attendanceStudentTotals(rec,scope){if(!T())return '';const names=[...new Set(rec.map(a=>a.name))].sort((a,b)=>a.localeCompare(b,'ko'));if(!names.length)return '';const cols=scope==='after'?['방과후']:scope==='train'?['OJT','OFF-JT']:['OJT','OFF-JT','방과후'];return '<details><summary>학생별 시간 합계</summary><div class="tbl-wrap"><table><thead><tr><th>학생</th>'+cols.map(k=>'<th>'+k+'</th>').join('')+'<th>시간 미입력</th></tr></thead><tbody>'+names.map(n=>{const rows=rec.filter(a=>a.name===n);const sum=k=>Number((rows.filter(a=>k==='OFF-JT'?/OFF/i.test(a.lesson):k==='OJT'?/OJT/i.test(a.lesson)&&!/OFF/i.test(a.lesson):/^방과후/.test(a.lesson)).reduce((s,a)=>s+(a.minutes==null?0:Number(a.minutes)),0)/60).toFixed(2));return '<tr><td>'+esc(n)+'</td>'+cols.map(k=>'<td>'+sum(k)+'시간</td>').join('')+'<td>'+rows.filter(a=>a.minutes==null).length+'건</td></tr>';}).join('')+'</tbody></table></div></details>';}
 function materialControls(){const cats=[...new Set([...(D.driveMaterials||[]).filter(f=>!f.error).map(f=>f.category||'기본'),...(D.materials||[]).map(m=>m.category||'일반'),'노션'])];return '<section class="panel pad"><div class="fgrid">'+field('자료 검색','matQ',matQ,'search','id="matQ" placeholder="제목·내용·분류 검색"')+sel('분류','matCategory',[['all','전체'],...cats.map(c=>[c,c])],matCategory).replace('name="matCategory"','id="matCategory"')+sel('정렬','matSort',[['latest','최신순'],['name','이름순']],matSort).replace('name="matSort"','id="matSort"')+'</div></section>';}
 function materialMatches(title,body,category){return (matCategory==='all'||matCategory===category)&&[title,body,category].join(' ').toLowerCase().includes(matQ.trim().toLowerCase());}
 function sortedMaterials(list,title,date){return [...list].sort((a,b)=>matSort==='name'?String(a[title]||'').localeCompare(String(b[title]||''),'ko'):String(b[date]||'').localeCompare(String(a[date]||'')));}
@@ -525,25 +539,35 @@ $('#main').addEventListener('click',e=>{const b=e.target.closest('button');if(!b
 });
 
 /* 프로젝트 게시판: 프로젝트·자격증 내용과 자료 공유 */
-let boardOpen=null,boardFilter='all',boardQuery='',boardDraftFiles=[];
+let projSub=null,boardOpen=null,boardFilter='all',boardQuery='',boardDraftFiles=[];
 function boardList(){const q=boardQuery.trim().toLowerCase();return [...(D.boardPosts||[])].filter(p=>(boardFilter==='all'||p.category===boardFilter)&&[p.title,p.subject,p.body].join(' ').toLowerCase().includes(q)).sort((a,b)=>String(b.updated).localeCompare(String(a.updated)));}
 function boardFilesHtml(files){return (files||[]).map(f=>'<div class="row" style="margin-top:8px"><span style="flex:1;overflow-wrap:anywhere">'+esc(f.name)+' <small class="muted">'+fmtSize(f.size)+'</small></span><button class="btn sm" data-file="'+esc(f.id)+'">받기</button></div>').join('');}
+/* 프로젝트: 공유 게시판(전체 공개)과 우리 팀(구성원 전용 과제·자료함)을 한 메뉴로 */
+function vProjectHub(){
+ const hasTeam=T()||(D.projects&&D.projects.length>0);
+ if(projSub!=='team'&&projSub!=='board')projSub='board';
+ if(projSub==='team'&&!hasTeam)projSub='board';
+ const tabs=[['board','공유 게시판']].concat(hasTeam?[['team',T()?'프로젝트 관리':'우리 팀']]:[]);
+ const bar='<div class="row" style="margin-bottom:12px" aria-label="프로젝트 보기">'+tabs.map(([k,l])=>'<button class="chipbtn" data-projsub="'+k+'" aria-pressed="'+(projSub===k)+'">'+l+'</button>').join('')+'</div>';
+ return bar+(projSub==='team'?vProjects():vBoard());
+}
 function vBoard(){
  const posts=D.boardPosts||[],comments=D.boardComments||[];
  if(boardOpen){const p=posts.find(p=>p.id===boardOpen);if(!p){boardOpen=null;return vBoard();}const cs=comments.filter(c=>c.post===p.id).sort((a,b)=>String(a.at).localeCompare(String(b.at)));
- return '<div class="sec-h"><button class="btn ghost" data-board-back>‹ 목록</button>'+(T()||p.mine?'<div class="row"><button class="btn" data-board-edit="'+esc(p.id)+'">수정</button><button class="btn ghost danger" data-board-delete="'+esc(p.id)+'">삭제</button></div>':'')+'</div><section class="panel pad"><div class="row"><span class="chip">'+esc(p.category)+'</span><span class="chip">'+esc(p.status)+'</span><span class="meta">전체 공유</span></div><h2>'+esc(p.title)+'</h2><p class="ev-s">'+esc(p.subject||'')+(p.date?' · 관련일 '+esc(fmtMD(p.date)):'')+' · '+esc(p.author)+' · '+esc(p.updated)+'</p><div class="body">'+esc(p.body)+'</div><div class="row" style="margin-top:12px">'+extraLink(p.link)+'</div>'+(p.files.length?'<h3>공유 자료</h3>'+boardFilesHtml(p.files):'')+'</section><section class="panel"><div class="pad"><h3>댓글 · '+cs.length+'</h3></div>'+cs.map(c=>'<div class="msg"><b>'+esc(c.author)+'</b> <span class="ev-s">'+esc(c.at)+'</span><p>'+esc(c.body)+'</p>'+(T()||c.mine?'<button class="btn sm ghost danger" data-board-comment-delete="'+esc(c.id)+'">댓글 삭제</button>':'')+'</div>').join('')+'<form id="boardCommentForm" class="pad"><label class="fld"><span>질문·의견</span><textarea id="boardCommentText" required maxlength="1500"></textarea></label><button class="btn pri" type="submit">댓글 달기</button></form></section>';
+ return '<div class="sec-h"><button class="btn ghost" data-board-back>‹ 목록</button>'+(T()||p.mine?'<div class="row"><button class="btn" data-board-edit="'+esc(p.id)+'">수정</button><button class="btn ghost danger" data-board-delete="'+esc(p.id)+'">삭제</button></div>':'')+'</div><section class="panel pad"><div class="row"><span class="chip">'+esc(p.category)+'</span><span class="chip">'+esc(p.status)+'</span><span class="meta">전체 공유</span></div><h2>'+esc(p.title)+'</h2><p class="ev-s">'+esc(p.subject||'')+(p.date?' · 관련일 '+esc(fmtMD(p.date)):'')+' · '+esc(p.author)+' · '+esc(p.updated)+'</p>'+contestBoardDetails(p)+'<div class="body">'+esc(p.body)+'</div><div class="row" style="margin-top:12px">'+extraLink(p.link)+'</div>'+(p.files.length?'<h3>공유 자료</h3>'+boardFilesHtml(p.files):'')+'</section><section class="panel"><div class="pad"><h3>댓글 · '+cs.length+'</h3></div>'+cs.map(c=>'<div class="msg"><b>'+esc(c.author)+'</b> <span class="ev-s">'+esc(c.at)+'</span><p>'+esc(c.body)+'</p>'+(T()||c.mine?'<button class="btn sm ghost danger" data-board-comment-delete="'+esc(c.id)+'">댓글 삭제</button>':'')+'</div>').join('')+'<form id="boardCommentForm" class="pad"><label class="fld"><span>질문·의견</span><textarea id="boardCommentText" required maxlength="1500"></textarea></label><button class="btn pri" type="submit">댓글 달기</button></form></section>';
  }
- const list=boardList();return extraHead('프로젝트 게시판','프로젝트 소개·진행 내용·결과물과 자격증 준비 자료를 함께 공유합니다.','<button class="btn pri" data-board-new>+ 글쓰기</button>')+'<section class="panel pad"><div class="row" aria-label="게시판 구분">'+[['all','전체'],['프로젝트','프로젝트'],['자격증','자격증']].map(([k,l])=>'<button class="chipbtn" data-board-filter="'+k+'" aria-pressed="'+(boardFilter===k)+'">'+l+'</button>').join('')+'</div><label class="fld" style="margin-top:12px"><span>검색</span><input type="search" id="boardQuery" value="'+esc(boardQuery)+'" placeholder="제목·프로젝트명·자격증명·내용 검색"></label><p class="ev-s">이 게시판의 새 글과 첨부는 전체 학생에게 공유됩니다. 개인 활동 기록은 포트폴리오에 남겨 주세요.</p></section><section class="panel">'+(list.length?list.map(p=>'<button class="listbtn" data-board-open="'+esc(p.id)+'"><div><div class="row"><span class="chip">'+esc(p.category)+'</span><span class="chip">'+esc(p.status)+'</span></div><h3>'+esc(p.title)+'</h3><div class="ev-s">'+esc(p.subject||'')+(p.date?' · '+esc(fmtMD(p.date)):'')+'</div><p>'+esc(p.body.slice(0,100))+(p.body.length>100?'…':'')+'</p><div class="ev-s">'+esc(p.author)+' · '+esc(p.updated)+' · 첨부 '+p.files.length+'개 · 댓글 '+comments.filter(c=>c.post===p.id).length+'</div></div></button>').join(''):emptyBox(posts.length?'검색 결과가 없습니다':'아직 공유한 글이 없습니다','글쓰기로 프로젝트나 자격증 자료를 올려 주세요.'))+'</section>';
+ const list=boardList();return extraHead('공유 게시판','프로젝트 결과물, 자격증 준비 자료, 대회 정보와 일정을 함께 공유합니다.','<button class="btn pri" data-board-new>+ 글쓰기</button>')+'<section class="panel pad"><div class="row" aria-label="게시판 구분">'+[['all','전체'],['프로젝트','프로젝트'],['자격증','자격증'],['대회','대회']].map(([k,l])=>'<button class="chipbtn" data-board-filter="'+k+'" aria-pressed="'+(boardFilter===k)+'">'+l+'</button>').join('')+'</div><label class="fld" style="margin-top:12px"><span>검색</span><input type="search" id="boardQuery" value="'+esc(boardQuery)+'" placeholder="제목·프로젝트명·자격증명·대회명·내용 검색"></label><p class="ev-s">이 게시판의 새 글과 첨부는 전체 학생에게 공유됩니다. 개인 활동 기록은 포트폴리오에 남겨 주세요.</p></section><section class="panel">'+(list.length?list.map(p=>'<button class="listbtn" data-board-open="'+esc(p.id)+'"><div><div class="row"><span class="chip">'+esc(p.category)+'</span><span class="chip">'+esc(p.status)+'</span></div><h3>'+esc(p.title)+'</h3><div class="ev-s">'+esc(p.subject||'')+(p.date?' · '+esc(fmtMD(p.date)):'')+'</div><p>'+esc(p.body.slice(0,100))+(p.body.length>100?'…':'')+'</p><div class="ev-s">'+esc(p.author)+' · '+esc(p.updated)+' · 첨부 '+p.files.length+'개 · 댓글 '+comments.filter(c=>c.post===p.id).length+'</div></div></button>').join(''):emptyBox(posts.length?'검색 결과가 없습니다':'아직 공유한 글이 없습니다','글쓰기로 프로젝트·자격증·대회 정보를 올려 주세요.'))+'</section>';
 }
 function boardDlg(p={}){
  boardDraftFiles=[];
  const kept=(p.files||[]).map(f=>'<label class="check"><input type="checkbox" name="keepBoardFile" value="'+esc(f.id)+'" checked> '+esc(f.name)+' 유지</label>').join('');
- openDlg(p.id?'프로젝트 게시글 수정':'프로젝트·자격증 글쓰기','<div class="fgrid">'+sel('글 구분','category',[['프로젝트','프로젝트'],['자격증','자격증']],p.category||'프로젝트')+sel('진행 상태','status',['준비','진행 중','완료','자료 공유'].map(s=>[s,s]),p.status||'자료 공유')+'</div>'+field('프로젝트명·자격증명','subject',p.subject||'','text','maxlength="100"')+field('제목','title',p.title||'','text','required maxlength="150"')+area('프로젝트 내용·자료 설명','body',p.body||'',6000).replace('<textarea ','<textarea required ')+field('관련일 (마감·시험일 등, 선택)','date',p.date||'','date')+field('관련 링크 (선택)','link',p.link||'','url')+'<div class="panel pad" id="boardDrop" style="border:2px dashed var(--line);margin:12px 0"><b>파일을 여기에 끌어다 놓으세요</b><label class="fld"><span>또는 파일 선택 · 최대 5개, 파일당 10MB, 합계 20MB</span><input type="file" id="boardUploadFiles" multiple accept="'+FILE_ACCEPT+'"></label><div id="boardFileStatus" class="ev-s" role="status"></div></div>'+kept+'<p class="ev-s">전체 학생에게 공유하는 글입니다. 새 파일은 Drive의 프로젝트게시판 폴더에 저장됩니다.</p>','저장',async fd=>{try{const uploads=await readBoardUploads();const keepFiles=[...form.querySelectorAll('input[name="keepBoardFile"]:checked')].map(e=>e.value);const r=await callRaw('saveBoard',{id:p.id,...fd,keepFiles,uploads},null,true);boardOpen=r.data;if(r.load)setData(r.load);else await reload();toast('게시글을 공유했습니다');return true;}catch(e){toast(e.message);return false;}});
+ openDlg(p.id?'프로젝트 게시글 수정':'프로젝트·자격증·대회 글쓰기','<div class="fgrid">'+sel('글 구분','category',[['프로젝트','프로젝트'],['자격증','자격증'],['대회','대회']],p.category||'프로젝트')+sel('진행 상태','status',['준비','진행 중','완료','자료 공유'].map(s=>[s,s]),p.status||'자료 공유')+'</div>'+field('프로젝트명·자격증명·대회명','subject',p.subject||'','text','maxlength="100"')+field('제목','title',p.title||'','text','required maxlength="150"')+area('프로젝트 내용·자료 설명','body',p.body||'',6000).replace('<textarea ','<textarea required ')+field('관련일·대회 개최일 (선택)','date',p.date||'','date')+contestBoardFields(p)+field('관련 링크 (선택)','link',p.link||'','url')+'<div class="panel pad" id="boardDrop" style="border:2px dashed var(--line);margin:12px 0"><b>파일을 여기에 끌어다 놓으세요</b><label class="fld"><span>또는 파일 선택 · 최대 5개, 파일당 10MB, 합계 20MB</span><input type="file" id="boardUploadFiles" multiple accept="'+FILE_ACCEPT+'"></label><div id="boardFileStatus" class="ev-s" role="status"></div></div>'+kept+'<p class="ev-s">전체 학생에게 공유하는 글입니다. 새 파일은 Drive의 프로젝트게시판 폴더에 저장됩니다.</p>','저장',async fd=>{try{const uploads=await readBoardUploads();const keepFiles=[...form.querySelectorAll('input[name="keepBoardFile"]:checked')].map(e=>e.value);const r=await callRaw('saveBoard',{id:p.id,...fd,keepFiles,uploads},null,true);boardOpen=r.data;if(r.load)setData(r.load);else await reload();toast('게시글을 공유했습니다');return true;}catch(e){toast(e.message);return false;}});
+ form.querySelector('[name="category"]').onchange=e=>{form.querySelector('#contestFields').hidden=e.target.value!=='대회';};
  const pick=files=>{boardDraftFiles=Array.from(files||[]);form.querySelector('#boardFileStatus').textContent=boardDraftFiles.map(f=>f.name+' ('+fmtSize(f.size)+')').join(' · ');};form.querySelector('#boardUploadFiles').onchange=e=>pick(e.target.files);const drop=form.querySelector('#boardDrop');drop.ondragover=e=>{e.preventDefault();drop.style.borderColor='var(--accent)';};drop.ondragleave=()=>{drop.style.borderColor='var(--line)';};drop.ondrop=e=>{e.preventDefault();drop.style.borderColor='var(--line)';pick(e.dataTransfer.files);};
 }
 async function readBoardUploads(){if(boardDraftFiles.length>5)throw new Error('한 번에 최대 5개 파일을 선택해 주세요');let total=0;for(const f of boardDraftFiles){if(!f.size||f.size>MAX_MB*1024*1024)throw new Error('파일당 0바이트 초과, 10MB 이하여야 합니다');total+=f.size;}if(total>20*1024*1024)throw new Error('첨부 합계를 20MB 이하로 줄여 주세요');const uploads=[];for(const f of boardDraftFiles)uploads.push(await new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve({name:f.name,base64:String(r.result).split(',')[1]});r.onerror=()=>reject(new Error('파일을 읽지 못했습니다'));r.readAsDataURL(f);}));return uploads;}
 function bindBoardComment(){const f=$('#boardCommentForm');if(!f)return;f.onsubmit=async e=>{e.preventDefault();const text=$('#boardCommentText').value,button=f.querySelector('button');button.disabled=true;const ok=await act('boardComment',{post:boardOpen,body:text},'댓글을 올렸습니다');if(!ok)button.disabled=false;};}
-$('#main').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const x=b.dataset;if(x.boardNew!==undefined)return boardDlg();if(x.boardOpen){boardOpen=x.boardOpen;return render();}if(x.boardBack!==undefined){boardOpen=null;return render();}if(x.boardFilter){boardFilter=x.boardFilter;return render();}if(x.boardEdit)return boardDlg((D.boardPosts||[]).find(p=>p.id===x.boardEdit));if(x.boardDelete){if(!arm(b,x.boardDelete))return;return act('deleteBoard',{id:x.boardDelete},'게시글을 목록에서 삭제했습니다');}if(x.boardCommentDelete){if(!arm(b,x.boardCommentDelete))return;return act('deleteBoardComment',{id:x.boardCommentDelete},'댓글을 삭제했습니다');}});
+$('#main').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const x=b.dataset;if(x.freq)return folderReqDlg(x.freq,x.freqLabel||'폴더');if(x.freqOk){b.disabled=true;return act('decideFolderAccess',{id:x.freqOk,approve:true},'공유했습니다');}if(x.freqNo){if(!arm(b,'fq'+x.freqNo))return;return act('decideFolderAccess',{id:x.freqNo,approve:false},'거절했습니다');}if(x.contestPost){boardOpen=x.contestPost;projSub='board';return go('board');}if(x.contestCalendar){const p=(D.boardPosts||[]).find(p=>p.id===x.contestCalendar),date=p&&(p.date||p.applyEnd||p.applyStart);if(date){calSel=date;calMonth=parse(date);calMonth.setDate(1);}schedMode='cal';return go('schedule');}if(x.projsub){projSub=x.projsub;boardOpen=null;return render();}if(x.projShare){const p=D.projects.find(q=>q.id===x.projShare);if(p)return boardDlg({category:'프로젝트',status:'진행 중',subject:p.team+' · '+p.product});return;}if(x.boardNew!==undefined)return boardDlg();if(x.boardOpen){boardOpen=x.boardOpen;return render();}if(x.boardBack!==undefined){boardOpen=null;return render();}if(x.boardFilter){boardFilter=x.boardFilter;return render();}if(x.boardEdit)return boardDlg((D.boardPosts||[]).find(p=>p.id===x.boardEdit));if(x.boardDelete){if(!arm(b,x.boardDelete))return;return act('deleteBoard',{id:x.boardDelete},'게시글을 목록에서 삭제했습니다');}if(x.boardCommentDelete){if(!arm(b,x.boardCommentDelete))return;return act('deleteBoardComment',{id:x.boardCommentDelete},'댓글을 삭제했습니다');}});
 $('#main').addEventListener('input',e=>{if(e.target.id==='boardQuery'){boardQuery=e.target.value;const pos=e.target.selectionStart;render();const q=$('#boardQuery');if(q){q.focus();q.setSelectionRange(pos,pos);}}});
 
 /* ---------- 오늘 ---------- */
@@ -598,13 +622,14 @@ function vNotices(){
 
 /* ---------- 일정 ---------- */
 function schedHead(){
-  return `<div class="sec-h"><div><h2>일정</h2><p>${schedMode === "aft" ? "시트 ‘일정표’ 탭의 방과후 시간표입니다." : "도제 일정, 방과후, 학생별 일정표, 개인 일정을 한 달력에서 봅니다."}</p></div>
-    <div class="row">${T() ? `<button class="btn" data-new="pevent">+ 학생 개인 일정</button><button class="btn pri" data-new="event">+ 일정 추가</button>` : `<button class="btn pri" data-new="pevent">+ 내 일정</button>`}</div></div>
-    <div class="row">${[["cal","달력"],["aft","방과후 시간표"]].map(([k,l]) => `<button class="chipbtn" data-schedmode="${k}" aria-pressed="${schedMode===k}">${l}</button>`).join("")}
+  return `<div class="sec-h"><div><h2>일정</h2><p>${schedMode === "aft" ? "제목이 소괄호로 시작하는 방과후 수업만 표시합니다." : schedMode === 'attendance' ? "방과후 출결을 확인하고 기록합니다. 훈련 출결은 학습근로자 메뉴에 있습니다." : "도제 일정, 학교·일반 일정, 방과후, 개인 일정을 한 달력에서 봅니다."}</p></div>
+    ${schedMode === 'attendance' ? '' : `<div class="row">${T() ? `<button class="btn" data-new="pevent">+ 학생 개인 일정</button><button class="btn pri" data-new="event">+ 일정 추가</button>` : `<button class="btn pri" data-new="pevent">+ 내 일정</button>`}</div>`}</div>
+    <div class="row">${[["cal","달력"],["aft","방과후 시간표"],["attendance",T()?"방과후 출결":"내 방과후 출결"]].map(([k,l]) => `<button class="chipbtn" data-schedmode="${k}" aria-pressed="${schedMode===k}">${l}</button>`).join("")}
     ${T() && schedMode === "cal" ? `<span class="spacer"></span><label class="check" style="font-size:13.5px"><input type="checkbox" id="showPersonal" ${showPersonal ? "checked" : ""}> 학생 개인 일정도 표시</label>` : ""}</div>`;
 }
 function vSchedule(){
   if (schedMode === "aft") return vAfter();
+  if (schedMode === 'attendance') return schedHead()+vAttendance('after');
   const y = calMonth.getFullYear(), m = calMonth.getMonth(), start = new Date(y, m, 1 - new Date(y, m, 1).getDay());
   let cells = "";
   for (let i = 0; i < 42; i++){
@@ -621,6 +646,7 @@ function vSchedule(){
 }
 function weekStart(s){ const d = parse(s); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return ymd(d); }
 function vAfter(){
+  if(!T()&&!D.me.afterschool)return schedHead()+`<section class="panel">${emptyBox('방과후 미참여','학교·일반 일정은 달력에서 확인하세요.')}</section>`;
   const ws = aftWeek || weekStart(TODAY), days = Array.from({length: 6}, (_, i) => addDays(ws, i));
   const grades = T() ? [1,2,3] : [GROUP_GRADE[myGroup()]];
   const items = D.afterschool.filter(a => a.date >= ws && a.date <= days[5]);
@@ -827,7 +853,7 @@ function vRoster(){
   return `<div class="sec-h"><div><h2>명단 · PIN</h2><p>학생은 여기 이름과 PIN으로 들어옵니다. 방과후에 참여하지 않는 학생도 등록할 수 있습니다. 학생 구분과 방과후 참여 여부를 따로 정해 주세요.</p></div>
     <div class="row"><button class="btn" data-makepins>빈 PIN 자동 생성</button><button class="btn pri" data-new="student">+ 학생 추가</button></div></div>
     <section class="panel tbl-wrap">${list.length ? `<table><thead><tr><th>이름</th><th>구분</th><th>학년반</th><th>방과후</th><th>PIN</th><th></th></tr></thead><tbody>
-      ${list.map(r => `<tr><td><b>${esc(r.name)}</b></td><td>${groupChip(r.group)}</td><td>${esc(r.klass)}</td><td><span class="chip ${r.afterschool ? 'ok' : 'pre'}">${r.afterschool ? '참여' : '미참여'}</span></td><td class="num">${r.pin ? esc(r.pin) : '<span class="chip bad">없음</span>'}</td><td><button class="btn sm ghost" data-editst="${r.row}">수정</button></td></tr>`).join("")}</tbody></table>`
+      ${list.map(r => `<tr><td><b>${esc(r.name)}</b></td><td>${groupChip(r.group)}</td><td>${esc(r.klass)}</td><td><span class="chip ${r.afterschool ? 'ok' : 'pre'}">${r.afterschool ? '참여' : '미참여'}</span></td><td class="num">${r.pin ? esc(r.pin) : '<span class="chip bad">없음</span>'}</td><td><div class="row" style="gap:4px;flex-wrap:nowrap"><button class="btn sm ghost" data-editst="${r.row}">수정</button><button class="btn sm ghost" data-delst="${r.row}">삭제</button></div></td></tr>`).join("")}</tbody></table>`
       : emptyBox("명단이 비어 있습니다", "‘학생 추가’로 넣거나 시트 ‘앱_명단’ 탭에 붙여넣은 뒤 ‘빈 PIN 자동 생성’을 누르세요.")}</section>
     ${list.length ? `<div class="panel pad row"><div style="flex:1;min-width:200px"><b>학생에게 나눠 줄 목록</b><div class="ev-s">이름과 PIN을 복사해 개별로 전달하세요. 단체방에 올리지 마세요.</div></div><button class="btn" data-copypins>이름·PIN 복사</button></div>` : ""}`;
 }
@@ -843,7 +869,7 @@ function bookModel(){
   return {days,students,records};
 }
 function vRegisterOriginal(){
-  if (!T()) return vAttendance();
+  if (!T()) return vAttendance(isLearner()?'train':'after');
   const {days,students,records}=bookModel(), lessons=[...new Set(['방과후','OJT','OFF-JT','일반 출결',...(D.attendance||[]).map(a=>a.lesson),bookLesson])];
   return extraHead('월별 출석부','학생별 출결을 날짜별로 확인하고 칸을 눌러 기록하세요. ‘—’는 미기록이며, 미참여는 결석이 아닙니다.','<button class="btn" data-book-export>출석부 CSV</button>')+
     '<section class="panel pad"><div class="fgrid">'+field('월','bookMonth',bookMonth,'month','id="bookMonth"')+sel('학생 구분','bookGroup',[['all','전체 학생'],...Object.entries(GROUP)],bookGroup).replace('name="bookGroup"','id="bookGroup"')+sel('방과후 참여','bookParticipation',[['all','참여·미참여 모두'],['join','참여 학생'],['skip','미참여 학생']],bookParticipation).replace('name="bookParticipation"','id="bookParticipation"')+sel('수업','bookLesson',lessons.map(l=>[l,l]),bookLesson).replace('name="bookLesson"','id="bookLesson"')+'</div></section>'+
@@ -891,7 +917,9 @@ function vMeOriginal(){
 }
 
 /* ---------- 확장 기능: 출결 · 이수 · 제출 · 팀 · 자료 · 설정 ---------- */
-let attDate = TODAY, attGroup = tmode === "train" ? 'learner' : 'pre', attLesson = tmode === "train" ? 'OJT' : '방과후';
+let attDate = TODAY, attGroup = 'learner', attLesson = 'OJT', attScope = 'train';
+const attViews = {train:{date:TODAY,group:'learner',lesson:'OJT'},after:{date:TODAY,group:'all',lesson:'방과후'}};
+function prepareAttendanceScope(scope){if(attScope===scope)return;attViews[attScope]={date:attDate,group:attGroup,lesson:attLesson};attScope=scope;const v=attViews[scope];attDate=v.date;attGroup=v.group;attLesson=v.lesson;}
 const attDrafts = new Map();
 const attKey = name => [attDate,attLesson,name].join('|');
 const field = (label,name,value='',type='text',extra='') => `<label class="fld"><span>${esc(label)}</span><input type="${type}" name="${name}" value="${esc(value)}" ${extra}></label>`;
@@ -918,13 +946,14 @@ async function downloadExtra(id){
   try{const f=await call('downloadFile',{id});const bytes=Uint8Array.from(atob(f.base64),c=>c.charCodeAt(0));const url=URL.createObjectURL(new Blob([bytes],{type:f.mime}));const a=document.createElement('a');a.href=url;a.download=f.name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);}catch(e){toast(e.message);}
 }
 function vRegister(){return attendanceSummary()+vRegisterOriginal();}
-function vAttendance(){return attendanceSummary()+vAttendanceOriginal();}
-function vAttendanceOriginal(){
-  const history=[...D.attendance].sort((a,b)=>(b.date+b.at).localeCompare(a.date+a.at));
+function vAttendance(scope='train'){prepareAttendanceScope(scope);return attendanceSummary(scope)+vAttendanceOriginal(scope);}
+function vAttendanceOriginal(scope='train'){
+  const train = scope === 'train';
+  const history=D.attendance.filter(a=>train?!/^방과후/.test(a.lesson):/^방과후/.test(a.lesson)).sort((a,b)=>(b.date+b.at).localeCompare(a.date+a.at));
   if(!T())return extraHead('내 출결','선생님이 기록한 내 출결입니다.')+`<section class="panel">${history.length?history.map(a=>`<div class="att"><div class="who"><b>${esc(fmtMD(a.date))} · ${esc(a.lesson)}</b><small>${esc(a.note)}</small></div><span class="ev-s">${a.minutes==null?'시간 미입력':Number((a.minutes/60).toFixed(2))+'시간'}</span><span class="chip ${a.status==='결석'?'bad':a.status==='출석'?'ok':'pre'}">${esc(a.status)}</span></div>`).join(''):emptyBox('출결 기록이 없습니다')}</section>`;
-  const roster=D.roster.filter(r=>(tmode==='train'||r.afterschool)&&(attGroup==='all'||r.group===attGroup||(attGroup==='pre'&&(r.group==='pre1'||r.group==='pre2'))));
+  const roster=D.roster.filter(r=>(train||r.afterschool)&&(attGroup==='all'||r.group===attGroup||(attGroup==='pre'&&(r.group==='pre1'||r.group==='pre2'))));
   const row=r=>{const old=attDrafts.get(attKey(r.name))||D.attendance.find(a=>a.date===attDate&&a.lesson===attLesson&&a.name===r.name);return `<div class="att" data-att-name="${esc(r.name)}"><div class="who"><b>${esc(r.name)}</b><small>${esc(GROUP[r.group])} · ${esc(r.klass)}</small></div><div class="row"><select class="attStatus" aria-label="${esc(r.name)} 출결">${[['','미기록'],...['출석','지각','조퇴','결석','공결'].map(x=>[x,x])].map(([k,l])=>opt(k,old?.status||'',l)).join('')}</select><input type="number" class="attHours" value="${old?.hours??(old?.minutes==null?'':Number(old.minutes)/60)}" min="0" max="24" step="any" placeholder="실제 시간" aria-label="${esc(r.name)} 실제 시간"><input type="text" class="attNote" value="${esc(old?.note||'')}" maxlength="300" placeholder="메모" aria-label="${esc(r.name)} 출결 메모"></div></div>`;};
-  return extraHead(tmode==='train'?'훈련 출결':'방과후 출결',tmode==='train'?'학습근로자의 OJT·OFF-JT 출결입니다. 수업명에 OJT 또는 OFF-JT를 고르세요.':'기록은 앱_출결에 저장됩니다. 방과후 참여 학생만 표시하고, 상태를 선택한 학생만 저장합니다. 전체 학생은 출석부에서 확인하세요.')+(tmode==='train'?`<div class="row">${['OJT','OFF-JT'].map(l=>`<button class="chipbtn" data-att-lesson="${l}" aria-pressed="${attLesson===l}">${l}</button>`).join('')}</div>`:'')+`<section class="panel pad"><div class="fgrid">${field('날짜','attDate',attDate,'date','id="attDate"')}${sel('구분','attGroup',[['all','전체'],['pre','예비 전체'],...Object.entries(GROUP)],attGroup).replace('name="attGroup"','name="attGroup" id="attGroup"')}${field('수업명','attLesson',attLesson,'text','id="attLesson" maxlength="80"')}</div><div class="row" style="margin-top:12px"><button class="btn" data-att-all>표시 학생 모두 출석</button><button class="btn pri" data-att-save>출결 저장</button><button class="btn" data-att-export>전체 기록 CSV</button></div></section><section class="panel">${roster.length?roster.map(row).join(''):emptyBox('명단을 먼저 등록하세요')}</section>
+  return extraHead(train?'훈련 출결':'방과후 출결',train?'학습근로자의 OJT·OFF-JT 출결입니다. 수업명에 OJT 또는 OFF-JT를 고르세요.':'방과후 참여 학생만 표시합니다. 상태를 선택한 학생의 출결을 저장하며, 미참여 학생은 결석으로 처리하지 않습니다.')+(train?`<div class="row">${['OJT','OFF-JT'].map(l=>`<button class="chipbtn" data-att-lesson="${l}" aria-pressed="${attLesson===l}">${l}</button>`).join('')}</div>`:'')+`<section class="panel pad"><div class="fgrid">${field('날짜','attDate',attDate,'date','id="attDate"')}${sel('구분','attGroup',[['all','전체'],['pre','예비 전체'],...Object.entries(GROUP)],attGroup).replace('name="attGroup"','name="attGroup" id="attGroup"')}${field('수업명','attLesson',attLesson,'text','id="attLesson" maxlength="80"')}</div><div class="row" style="margin-top:12px"><button class="btn" data-att-all>표시 학생 모두 출석</button><button class="btn pri" data-att-save>출결 저장</button><button class="btn" data-att-export>전체 기록 CSV</button></div></section><section class="panel">${roster.length?roster.map(row).join(''):emptyBox('명단을 먼저 등록하세요')}</section>
     <section class="panel pad"><details><summary>기존 ‘출석부’ 원본 보기 (교사 전용)</summary><p class="ev-s">원본 열 배치를 확인하기 위한 읽기 화면입니다. 앱_출결과 자동으로 합치거나 원본을 수정하지 않습니다.</p>${!D.legacyAttendance?`<button class="btn" data-legacy-load>원본 불러오기</button>`:D.legacyAttendance.exists?`<div class="tbl-wrap"><table><tbody>${D.legacyAttendance.rows.map(r=>`<tr>${r.map(v=>`<td>${esc(v)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`:emptyBox('출석부 탭이 없습니다')}</details></section>`;
 }
 function vUnits(){
@@ -940,10 +969,11 @@ function progressDlg(unit,name){const p=D.progress.find(x=>x.unit===unit&&x.name
 function vPortfolio(){return extraHead(T()?'학생 포트폴리오':'내 포트폴리오','노션 포트폴리오와 실습 기록·결과물을 모읍니다.','<button class="btn pri" data-extra-new="portfolio">+ 기록 제출</button>')+notionPortfolioBox()+`<section class="panel">${D.portfolio.length?[...D.portfolio].sort((a,b)=>(b.date+b.at).localeCompare(a.date+a.at)).map(p=>`<article class="notice"><div class="row"><span class="chip">${esc(p.status||'제출')}</span><span class="meta">${esc(p.date)}${T()?' · '+esc(p.name):''}</span></div><h3>${esc(p.title)}</h3><div class="ev-s">${esc(D.units.find(u=>u.id===p.unit)?.title||'능력단위 선택 안 함')}</div><div class="body">${esc(p.body)}</div><div class="row">${extraLink(p.link)}${extraFile(p.file)}<button class="btn sm" data-pf-edit="${esc(p.id)}">수정</button>${T()?`<button class="btn sm pri" data-pf-review="${esc(p.id)}">확인·피드백</button>`:''}${extraDelete('portfolio',p.id)}</div>${p.feedback?`<div class="fb"><b>선생님 피드백</b><br>${esc(p.feedback)}</div>`:''}</article>`).join(''):emptyBox('아직 제출한 기록이 없습니다')}</section>`;}
 function portfolioDlg(p={}){openDlg(p.id?'포트폴리오 수정':'포트폴리오 제출',T()&&!p.id?sel('학생','name',studentChoices(),D.roster[0]?.name||''):'','저장',()=>{});form.querySelector('.dlg-act').insertAdjacentHTML('beforebegin',`<div class="fgrid">${field('기록 날짜','date',p.date||TODAY,'date','required')}${sel('능력단위','unit',unitChoices(),p.unit||'')}</div>`+field('제목','title',p.title||'','text','required maxlength="150"')+area('활동·배운 점·결과','body',p.body||'',6000)+field('결과물 링크','link',p.link||'')+fileInput());onSubmit=fd=>actUpload('savePortfolio',{id:p.id,...fd},'포트폴리오를 제출했습니다');}
 function reviewDlg(p){openDlg(p.name+' · 확인 및 피드백',sel('확인 상태','status',[['확인','확인'],['보완요청','보완요청']],p.status==='보완요청'?'보완요청':'확인')+area('피드백','feedback',p.feedback||''),'저장',fd=>act('reviewPortfolio',{id:p.id,...fd},'피드백을 저장했습니다'));}
-function vProjects(){return extraHead('팀프로젝트','구성원과 교사만 팀 과제를 확인하고 수정합니다.',T()?'<button class="btn pri" data-extra-new="project">+ 프로젝트</button>':'')+`<div class="grid2">${D.projects.length?D.projects.map(p=>{const tasks=D.tasks.filter(t=>t.project===p.id),done=tasks.filter(t=>t.done).length;return `<section class="panel"><div class="team-h"><div class="row"><span class="chip">${esc(p.status)}</span><span class="ev-s">마감 ${esc(p.due||'미정')}</span></div><h3>${esc(p.team)} · ${esc(p.product)}</h3><div class="ev-s">${esc(p.members.join(' · '))}</div><div style="white-space:pre-wrap;overflow-wrap:anywhere">${esc(p.goal)}</div><div class="row">${extraLink(p.link)}${T()?`<button class="btn sm" data-project-edit="${esc(p.id)}">수정</button>${extraDelete('projects',p.id)}`:''}<button class="btn sm pri" data-task-new="${esc(p.id)}">+ 과제</button></div><span class="ev-s">완료 ${done}/${tasks.length}</span></div>${projectFilesBox(p)}${tasks.length?tasks.map(t=>`<div class="notice"><div class="row"><span class="chip ${t.done?'ok':''}">${t.done?'완료':'진행'}</span><b>${esc(t.title)}</b></div><div class="ev-s">담당 ${esc(t.assignee||'팀 전체')} · 마감 ${esc(t.due||'미정')}</div><div class="body">${esc(t.note)}</div><div class="row"><button class="btn sm" data-task-edit="${esc(t.id)}">과제 수정·완료</button>${extraDelete('tasks',t.id)}</div></div>`).join(''):emptyBox('등록한 과제가 없습니다')}</section>`;}).join(''):emptyBox('참여 중인 프로젝트가 없습니다')}</div>`;}
+function vProjects(){return extraHead(T()?'프로젝트 관리':'우리 팀','팀 과제와 자료함은 구성원과 선생님만 확인하고 수정합니다. 결과물을 모두에게 보여 주려면 ‘게시판에 공유’를 누르세요.',T()?'<button class="btn pri" data-extra-new="project">+ 프로젝트</button>':'')+`<div class="grid2">${D.projects.length?D.projects.map(p=>{const tasks=D.tasks.filter(t=>t.project===p.id),done=tasks.filter(t=>t.done).length;return `<section class="panel"><div class="team-h"><div class="row"><span class="chip">${esc(p.status)}</span><span class="ev-s">마감 ${esc(p.due||'미정')}</span></div><h3>${esc(p.team)} · ${esc(p.product)}</h3><div class="ev-s">${esc(p.members.join(' · '))}</div><div style="white-space:pre-wrap;overflow-wrap:anywhere">${esc(p.goal)}</div><div class="row">${extraLink(p.link)}<button class="btn sm ghost" data-proj-share="${esc(p.id)}">게시판에 공유</button>${T()?`<button class="btn sm" data-project-edit="${esc(p.id)}">수정</button>${extraDelete('projects',p.id)}`:''}<button class="btn sm pri" data-task-new="${esc(p.id)}">+ 과제</button></div><span class="ev-s">완료 ${done}/${tasks.length}</span></div>${projectFilesBox(p)}${tasks.length?tasks.map(t=>`<div class="notice"><div class="row"><span class="chip ${t.done?'ok':''}">${t.done?'완료':'진행'}</span><b>${esc(t.title)}</b></div><div class="ev-s">담당 ${esc(t.assignee||'팀 전체')} · 마감 ${esc(t.due||'미정')}</div><div class="body">${esc(t.note)}</div><div class="row"><button class="btn sm" data-task-edit="${esc(t.id)}">과제 수정·완료</button>${extraDelete('tasks',t.id)}</div></div>`).join(''):emptyBox('등록한 과제가 없습니다')}</section>`;}).join(''):emptyBox('참여 중인 프로젝트가 없습니다')}</div>`;}
 function projectFilesBox(p){
   const files = (D.projectFiles || []).filter(f => f.project === p.id).sort((a,b) => String(b.at).localeCompare(String(a.at)));
-  return `<div class="notice"><div class="row"><b>팀 자료함</b><span class="ev-s">${files.length}개 · 구글 드라이브</span><span class="spacer"></span>${T() && p.folderUrl ? `<a class="btn sm ghost" href="${esc(p.folderUrl)}" target="_blank" rel="noopener">Drive 폴더 ↗</a>` : ""}${T() ? `<button class="btn sm ghost" data-share-folder="${esc(p.id)}">팀원과 폴더 공유</button>` : ""}<button class="btn sm pri" data-pfile-new="${esc(p.id)}">+ 파일 올리기</button></div>
+  return `<div class="notice"><div class="row"><b>프로젝트 자료실</b><span class="ev-s">${files.length}개 · 구글 드라이브</span><span class="spacer"></span>${p.folderUrl ? `<a class="btn sm ghost" href="${esc(p.folderUrl)}" target="_blank" rel="noopener">Drive 자료실 열기 ↗</a>` : T()?`<button class="btn sm ghost" data-project-folder="${esc(p.id)}">자료실 만들기</button>`:""}${T() ? `<button class="btn sm ghost" data-share-folder="${esc(p.id)}">팀원 구글 계정에 공유</button>` : `<button class="btn sm ghost" data-freq="team:${esc(p.id)}" data-freq-label="${esc("프로젝트 자료실 · " + p.team)}">내 구글 계정으로 열기 신청</button>`}<button class="btn sm pri" data-pfile-new="${esc(p.id)}">+ 파일 올리기</button></div>
+    <p class="ev-s">프로젝트마다 별도 Drive 폴더를 사용합니다. ${T()?'팀원의 구글 이메일로 공유하거나 자료실 접근 신청을 승인할 수 있습니다.':'내 구글 계정으로 접근하려면 선생님의 공유 승인이 필요합니다.'}</p>
     ${files.length ? files.map(f => `<div class="row" style="border-top:1px solid var(--line);padding-top:8px"><div style="flex:1;min-width:0"><div style="overflow-wrap:anywhere"><b>${esc(f.name)}</b> <span class="ev-s">${fmtSize(f.size)}</span></div><div class="ev-s">${esc(f.by)} · ${esc(f.at)}${f.memo ? " · " + esc(f.memo) : ""}</div></div><button class="btn sm" data-file="${esc(f.id)}">받기</button>${driveLink(f.id)}${T() || f.by === D.me.name ? `<button class="btn sm ghost danger" data-file-del="${esc(f.id)}">삭제</button>` : ""}</div>`).join("") : `<div class="ev-s">설계도·코드·사진·보고서를 올려 팀원과 함께 보세요.</div>`}</div>`;
 }
 function projectFileDlg(id){
@@ -977,7 +1007,26 @@ function notionBox(){
 async function downloadDrive(id){
   try{const f=await call('driveMaterialFile',{id});const bytes=Uint8Array.from(atob(f.base64),c=>c.charCodeAt(0));const url=URL.createObjectURL(new Blob([bytes],{type:f.mime}));const a=document.createElement('a');a.href=url;a.download=f.name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);}catch(e){toast(e.message);}
 }
-function vMaterials(){return extraHead('자료실','구글 드라이브·노션·선생님이 올린 학습 자료입니다.',T()?'<div class="row"><button class="btn" data-materials-connect>Drive 연결 설정</button><button class="btn pri" data-extra-new="material">+ 자료</button></div>':'')+materialControls()+driveDropBox()+driveBox()+notionBox()+`<section class="panel"><div class="pad" style="padding-bottom:4px"><span class="label">선생님이 올린 자료</span></div>${D.materials.length?sortedMaterials(D.materials.filter(m=>materialMatches(m.title,m.body,m.category||"일반")),"title","at").map(m=>`<article class="notice"><div class="row">${targetChip(m.target)}<span class="chip">${esc(m.category||'일반')}</span><span class="meta">${esc(m.at)}</span></div><h3>${esc(m.title)}</h3><div class="body">${esc(m.body)}</div><div class="row">${extraLink(m.link)}${extraFile(m.file)}${T()?`<button class="btn sm" data-material-edit="${esc(m.id)}">수정</button>${extraDelete('materials',m.id)}`:''}</div></article>`).join(''):emptyBox('등록된 자료가 없습니다')}</section>`;}
+/* ---------- Drive 폴더 접근 신청 ---------- */
+const FREQ_CHIP = { "대기": "pre", "완료": "ok", "거절": "bad", "실패": "bad" };
+function folderReqBox(target,label){
+ if(target==='materials'&&!(D.folderReady||{}).materials)return '';
+ const mine=(D.folderRequests||[]).filter(r=>r.target===target);
+ return '<section class="panel pad"><div class="row"><div style="flex:1;min-width:200px"><b>내 구글 계정으로 '+esc(label)+' 폴더 열기</b><div class="ev-s">학교·개인 구글 계정 이메일로 신청하면 선생님 승인 후 구글 드라이브 ‘공유 문서함’에서 바로 열 수 있습니다.</div></div><button class="btn pri" data-freq="'+esc(target)+'" data-freq-label="'+esc(label)+'">접근 신청</button></div>'+freqList(mine,false)+'</section>';
+}
+function freqList(list,admin){
+ if(!list.length)return '';
+ return list.map(r=>'<div class="row" style="border-top:1px solid var(--line);padding-top:8px;margin-top:8px"><span class="chip '+(FREQ_CHIP[r.status]||'')+'">'+esc(r.status)+'</span><div style="flex:1;min-width:0;overflow-wrap:anywhere">'+(admin?'<b>'+esc(r.name)+'</b> · ':'')+esc(r.label)+'<div class="ev-s">'+esc(r.email)+' · '+esc(r.at)+(r.note?' · '+esc(r.note):'')+'</div></div>'+(admin&&(r.status==='대기'||r.status==='실패')?'<button class="btn sm pri" data-freq-ok="'+esc(r.id)+'">승인·공유</button><button class="btn sm ghost" data-freq-no="'+esc(r.id)+'">거절</button>':'')+'</div>').join('');
+}
+function folderReqAdmin(){
+ const all=D.folderRequests||[],open=all.filter(r=>r.status==='대기'||r.status==='실패'),done=all.filter(r=>!(r.status==='대기'||r.status==='실패')).slice(0,10);
+ if(!all.length)return '';
+ return '<section class="panel pad"><h3>Drive 폴더 접근 신청 '+(open.length?'· 대기 '+open.length+'건':'')+'</h3><p class="ev-s">승인하면 학생 이메일에 폴더를 공유합니다(자료실은 보기, 프로젝트 자료실은 편집). 이메일이 학생 본인 것인지 확인하세요.</p>'+(open.length?freqList(open,true):'<div class="ev-s">대기 중인 신청이 없습니다.</div>')+(done.length?'<details style="margin-top:10px"><summary>최근 처리 '+done.length+'건</summary>'+freqList(done,false)+'</details>':'')+'</section>';
+}
+function folderReqDlg(target,label){
+ openDlg(label+' · 폴더 접근 신청',field('내 구글 계정 이메일','email',(D.contact||{}).email||'','email','required placeholder="예: 이름@gmail.com 또는 학교 계정"')+field('메모 (선택)','note','','text','maxlength="200"')+'<p class="ev-s">이 이메일로 구글 드라이브에 로그인해야 폴더가 보입니다. 선생님이 승인하면 ‘공유 문서함’에 나타납니다.</p>','신청',fd=>act('requestFolderAccess',{target,...fd},'신청했습니다. 선생님이 승인하면 공유됩니다'));
+}
+function vMaterials(){return extraHead('자료실','구글 드라이브·노션·선생님이 올린 학습 자료입니다.',T()?'<div class="row"><button class="btn" data-materials-connect>Drive 연결 설정</button><button class="btn pri" data-extra-new="material">+ 자료</button></div>':'')+(T()?folderReqAdmin():folderReqBox('materials','자료실'))+materialControls()+driveDropBox()+driveBox()+notionBox()+`<section class="panel"><div class="pad" style="padding-bottom:4px"><span class="label">선생님이 올린 자료</span></div>${D.materials.length?sortedMaterials(D.materials.filter(m=>materialMatches(m.title,m.body,m.category||"일반")),"title","at").map(m=>`<article class="notice"><div class="row">${targetChip(m.target)}<span class="chip">${esc(m.category||'일반')}</span><span class="meta">${esc(m.at)}</span></div><h3>${esc(m.title)}</h3><div class="body">${esc(m.body)}</div><div class="row">${extraLink(m.link)}${extraFile(m.file)}${T()?`<button class="btn sm" data-material-edit="${esc(m.id)}">수정</button>${extraDelete('materials',m.id)}`:''}</div></article>`).join(''):emptyBox('등록된 자료가 없습니다')}</section>`;}
 function materialDlg(m={}){openDlg(m.id?'자료 수정':'자료 등록',field('제목','title',m.title||'','text','required maxlength="150"')+`<div class="fgrid">${targetSel(m.target)}${field('분류','category',m.category||'학습자료')}</div>`+area('설명','body',m.body||'',5000)+field('자료 링크','link',m.link||'')+fileInput(),'저장',fd=>actUpload('saveMaterial',{id:m.id,...fd},'자료를 저장했습니다'));}
 function vMe(){
   let h=vMeOriginal()+calSubSection();
@@ -1035,10 +1084,10 @@ function vSchool(){
   h += `<section class="panel"><div class="pad"><span class="label">급식</span>${err ? `<div class="banner">${esc(err)}</div>` : ""}<div class="meals">${mealRows}</div><p class="ev-s">알레르기 번호는 학교 홈페이지 식단에서 확인하세요.</p></div></section>`;
   return h;
 }
-function settingsDlg(){const s=D.settings;openDlg('연동 설정',field('전용 캘린더 ID','calendarId',s.calendarId)+`<label class="check"><input type="checkbox" name="calendarImport" ${s.calendarImport?'checked':''}> 캘린더에서 만든 일정도 교사 화면에 가져오기</label><label class="check"><input type="checkbox" name="calendarPersonal" ${s.calendarPersonal?'checked':''}> 학생 개인 일정도 교사 캘린더에 내보내기</label><p class="ev-s">가져온 일정은 교사만 봅니다. 앱 일정의 원본은 시트이며 캘린더에서 바꿔도 앱 일정은 바뀌지 않습니다. 개인 일정 내보내기는 비공개 교사 캘린더에서만 켜세요.</p>`+field('NEIS 인증키 (선택 · 컴시간이 안 될 때 대체용 · 지우려면 삭제 입력)','neisKey','','password','autocomplete="off" placeholder="'+(s.neisSet?'저장됨 · 바꿀 때만 입력':'open.neis.go.kr 에서 무료 발급')+'"')+`<p class="ev-s">시간표는 컴시간알리미에서 실시간으로 가져오므로 인증키가 없어도 됩니다. 인증키를 넣어 두면 컴시간 연결이 안 되거나 다른 주를 볼 때 나이스 시간표로 대신 보여 줍니다. 학생 시간표는 명단의 학년반(예: 2-3)으로 찾습니다.</p>`+field('자료실 드라이브 폴더 (이 폴더의 파일이 자료실에 자동 표시)','materialFolder',s.materialFolder||'')+`<p class="ev-s">폴더 안에 ‘학습근로자’, ‘예비’, ‘예비2’, ‘예비1’ 폴더를 만들면 그 대상에게만 보이고, 그 밖의 폴더 이름은 분류로 쓰입니다. 알림판을 배포한 계정이 접근할 수 있는 폴더를 연결하세요. 파일을 올리려면 편집 권한이 필요합니다.</p>`+field('노션 토큰 (secret_… 또는 ntn_… · 지우려면 삭제 입력)','notionToken','','password','autocomplete="off" placeholder="'+(s.notionSet?'저장됨 · 바꿀 때만 입력':'노션 통합 토큰')+'"')+field('노션 페이지 또는 데이터베이스 주소','notionRoot',s.notionRoot||'')+`<p class="ev-s">노션: 설정 → 연결 → 통합 만들기에서 토큰을 복사하고, 연결할 페이지 ··· → 연결 추가에서 그 통합을 고르세요. 노션 계정이 없는 학생도 보려면 페이지를 ‘웹에 게시’하세요.</p>`+field('업로드 파일 저장 폴더 (팀 자료함·포트폴리오 · 비우면 자동 생성)','driveRoot',s.driveCustom?s.driveRoot:'')+`<p class="ev-s">학생 프로젝트 파일·포트폴리오·자료실 첨부가 이 폴더 아래 ‘팀프로젝트/자료실/포트폴리오’ 폴더로 정리됩니다. 바꾸면 이후 올리는 파일부터 새 폴더에 저장됩니다.</p>`+field('교사 알림 이메일','teacherEmail',s.teacherEmail,'email')+field('배포한 웹 앱 주소','webUrl',s.webUrl)+`<label class="check"><input type="checkbox" name="mailEnabled" ${s.mailEnabled?'checked':''}> 이메일 알림 사용</label><p class="ev-s">메일에는 확인 안내만 보냅니다. 기존 미확인 공지도 최초 발송 대상이 됩니다. 카카오와 브라우저 푸시는 포함하지 않습니다.</p>`,'저장',fd=>act('saveSettings',fd,'연동 설정을 저장했습니다'));}
+function settingsDlg(){const s=D.settings;openDlg('연동 설정',field('전용 캘린더 ID','calendarId',s.calendarId)+`<label class="check"><input type="checkbox" name="calendarImport" ${s.calendarImport?'checked':''}> 캘린더에서 만든 일정도 교사 화면에 가져오기</label><label class="check"><input type="checkbox" name="calendarPersonal" ${s.calendarPersonal?'checked':''}> 학생 개인 일정도 교사 캘린더에 내보내기</label><p class="ev-s">가져온 일정은 교사만 봅니다. 앱 일정의 원본은 시트이며 캘린더에서 바꿔도 앱 일정은 바뀌지 않습니다. 개인 일정 내보내기는 비공개 교사 캘린더에서만 켜세요.</p>`+field('NEIS 인증키 (선택 · 컴시간이 안 될 때 대체용 · 지우려면 삭제 입력)','neisKey','','password','autocomplete="off" placeholder="'+(s.neisSet?'저장됨 · 바꿀 때만 입력':'open.neis.go.kr 에서 무료 발급')+'"')+`<p class="ev-s">시간표는 컴시간알리미에서 실시간으로 가져오므로 인증키가 없어도 됩니다. 인증키를 넣어 두면 컴시간 연결이 안 되거나 다른 주를 볼 때 나이스 시간표로 대신 보여 줍니다. 학생 시간표는 명단의 학년반(예: 2-3)으로 찾습니다.</p>`+field('자료실 드라이브 폴더 (이 폴더의 파일이 자료실에 자동 표시)','materialFolder',s.materialFolder||'')+`<p class="ev-s">폴더 안에 ‘학습근로자’, ‘예비’, ‘예비2’, ‘예비1’ 폴더를 만들면 그 대상에게만 보이고, 그 밖의 폴더 이름은 분류로 쓰입니다. 알림판을 배포한 계정이 접근할 수 있는 폴더를 연결하세요. 파일을 올리려면 편집 권한이 필요합니다.</p>`+field('노션 토큰 (secret_… 또는 ntn_… · 지우려면 삭제 입력)','notionToken','','password','autocomplete="off" placeholder="'+(s.notionSet?'저장됨 · 바꿀 때만 입력':'노션 통합 토큰')+'"')+field('노션 페이지 또는 데이터베이스 주소','notionRoot',s.notionRoot||'')+`<p class="ev-s">노션: 설정 → 연결 → 통합 만들기에서 토큰을 복사하고, 연결할 페이지 ··· → 연결 추가에서 그 통합을 고르세요. 노션 계정이 없는 학생도 보려면 페이지를 ‘웹에 게시’하세요.</p>`+field('업로드 파일 저장 폴더 (프로젝트 자료실·포트폴리오 · 비우면 자동 생성)','driveRoot',s.driveCustom?s.driveRoot:'')+`<p class="ev-s">학생 프로젝트 파일·포트폴리오·자료실 첨부가 이 폴더 아래 ‘팀프로젝트/자료실/포트폴리오’ 폴더로 정리됩니다. 바꾸면 이후 올리는 파일부터 새 폴더에 저장됩니다.</p>`+field('교사 알림 이메일','teacherEmail',s.teacherEmail,'email')+field('배포한 웹 앱 주소','webUrl',s.webUrl)+`<label class="check"><input type="checkbox" name="mailEnabled" ${s.mailEnabled?'checked':''}> 이메일 알림 사용</label><p class="ev-s">메일에는 확인 안내만 보냅니다. 기존 미확인 공지도 최초 발송 대상이 됩니다. 카카오와 브라우저 푸시는 포함하지 않습니다.</p>`,'저장',fd=>act('saveSettings',fd,'연동 설정을 저장했습니다'));}
 function csvDownload(){const rows=[['날짜','이름','구분','수업','상태','메모','실제시간(분)'],...D.attendance.map(a=>[a.date,a.name,GROUP[a.group],a.lesson,a.status,a.note,a.minutes??''])];const csv='\uFEFF'+rows.map(r=>r.map(v=>'"'+String(v||'').replace(/^[=+\-@]/,"'$&").replace(/"/g,'""')+'"').join(',')).join('\r\n');const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download='도제반_출결.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
 $('#main').addEventListener('input',e=>{const row=e.target.closest('[data-att-name]');if(row)attDrafts.set(attKey(row.dataset.attName),{status:row.querySelector('.attStatus').value,note:row.querySelector('.attNote').value,hours:row.querySelector('.attHours').value});});
-$('#main').addEventListener('change',e=>{const row=e.target.closest('[data-att-name]');if(row)attDrafts.set(attKey(row.dataset.attName),{status:row.querySelector('.attStatus').value,note:row.querySelector('.attNote').value,hours:row.querySelector('.attHours').value});if(e.target.id==='attDate'){attDate=e.target.value||TODAY;render();}if(e.target.id==='attGroup'){attGroup=e.target.value;render();}if(e.target.id==='attLesson'){attLesson=e.target.value.trim()||'방과후';render();}});
+$('#main').addEventListener('change',e=>{const row=e.target.closest('[data-att-name]');if(row)attDrafts.set(attKey(row.dataset.attName),{status:row.querySelector('.attStatus').value,note:row.querySelector('.attNote').value,hours:row.querySelector('.attHours').value});if(e.target.id==='attDate'){attDate=e.target.value||TODAY;render();}if(e.target.id==='attGroup'){attGroup=e.target.value;render();}if(e.target.id==='attLesson'){attLesson=e.target.value.trim()||'방과후';if(attScope==='after'&&!/^방과후/.test(attLesson))attLesson='방과후 · '+attLesson;render();}});
 $('#main').addEventListener('click',async e=>{
   const b=e.target.closest('button');if(!b)return;const x=b.dataset;
   if(x.extraNew)return ({unit:()=>unitDlg(),portfolio:()=>portfolioDlg(),project:()=>projectDlg(),material:()=>materialDlg()})[x.extraNew]();
@@ -1052,6 +1101,7 @@ $('#main').addEventListener('click',async e=>{
   if(x.materialEdit)return materialDlg(D.materials.find(m=>m.id===x.materialEdit));
   if(x.file)return downloadExtra(x.file);
   if(x.pfileNew)return projectFileDlg(x.pfileNew);
+  if(x.projectFolder){b.disabled=true;try{await act('projectFolder',{id:x.projectFolder},'프로젝트 자료실을 준비했습니다');}finally{b.disabled=false;}return;}
   if(x.fileDel){if(!arm(b,x.fileDel))return;return act('deleteFile',{id:x.fileDel},'파일을 지웠습니다');}
   if(x.shareFolder){b.disabled=true;try{const r=await call('shareProjectFolder',{id:x.shareFolder});openDlg('팀원과 Drive 폴더 공유',`<p>${r.shared.length?`공유함: ${esc(r.shared.join(', '))}<br>`:''}${r.missing.length?`이메일 없음: ${esc(r.missing.join(', '))} — ‘설정 → 학생 이메일 수신 설정’에서 구글 계정 이메일을 넣어 주세요.<br>`:''}${r.failed.length?`실패: ${esc(r.failed.join(', '))} — 구글 계정 이메일인지 확인해 주세요.`:''}</p><p class="ev-s">공유받은 학생은 자기 구글 드라이브 ‘공유 문서함’에서 폴더를 바로 열고 파일을 올릴 수 있습니다. 드라이브에서 직접 올린 파일은 앱 목록에는 나오지 않습니다.</p><a class="btn" href="${esc(r.url)}" target="_blank" rel="noopener">Drive 폴더 열기 ↗</a>`,'닫기',()=>{});await reload();}catch(err){toast(err.message);}finally{b.disabled=false;}return;}
   if(x.legacyLoad!==undefined){b.disabled=true;try{D.legacyAttendance=await call('legacyAttendance');render();}catch(err){toast(err.message);b.disabled=false;}return;}
@@ -1081,9 +1131,8 @@ function render(){
   $("#logoutTop").hidden = Boolean(D.loginDisabled);
   evStore.clear();
   const draft = $("#replyText") ? $("#replyText").value : null, anonDraft = $("#anonText") ? $("#anonText").value : null;
-  $("#main").innerHTML = ({today:vToday, notices:vNotices, schedule:vSchedule, requests:vRequests, anon:vAnon, training:vTraining, purchases:vPurchases, ojtcalendar:vOjtCalendar, roster:vRoster, register:vRegister, attendance:vAttendance, units:vUnits, portfolio:vPortfolio, board:vBoard, projects:vProjects, materials:vMaterials, school:vSchool, me:vMe}[tab] || vToday)();
+  $("#main").innerHTML = ({today:vToday, notices:vNotices, schedule:vSchedule, requests:vRequests, anon:vAnon, training:vTraining, purchases:vPurchases, ojtcalendar:vOjtCalendar, roster:vRoster, register:vRegister, attendance:vAttendance, units:vUnits, portfolio:vPortfolio, board:vProjectHub, projects:vProjectHub, materials:vMaterials, school:vSchool, me:vMe}[tab] || vToday)();
   if (learnerOpen) $("#main").insertAdjacentHTML("afterbegin", `<nav class="tabs" role="tablist" aria-label="학습근로자 하위 메뉴" style="margin:4px 0 16px">${LEARNER_TABS.map(([k,l]) => `<button class="tab" role="tab" data-learner-tab="${k}" aria-selected="${k===tab}">${esc(l)}</button>`).join('')}</nav>`);
-  if (T()) $("#main").insertAdjacentHTML("afterbegin", `<div class="row" role="group" aria-label="화면 구분" style="margin-bottom:4px">${[["train","학습근로자"],["pre","예비 · 방과후"]].map(([k,l]) => `<button class="chipbtn" data-tmode="${k}" aria-pressed="${tmode===k}">${l}</button>`).join("")}</div>`);
   if (D.loginDisabled) $("#main").insertAdjacentHTML("afterbegin", `<div class="banner" role="status">${D.localTest ? "PC 테스트 · 입력한 자료는 이 컴퓨터에만 저장됩니다. 실제 구글시트에는 반영되지 않습니다." : "로그인 없는 테스트 모드 · 주소를 아는 사람은 학생 기록 조회와 작성·관리를 할 수 있습니다."}</div>`);
   bindBoardComment();
   if (draft !== null && $("#replyText")) $("#replyText").value = draft;
@@ -1167,7 +1216,7 @@ function studentDlg(r){
   r = r || { group: "pre1" };
   openDlg(r.row ? "학생 수정" : "학생 추가", `<div class="fgrid"><label class="fld"><span>이름</span><input type="text" name="name" id="f-sname" required maxlength="30" value="${esc(r.name || "")}"></label>
       <label class="fld"><span>구분</span><select name="group" id="f-sgroup">${Object.entries(GROUP).map(([k,l]) => opt(k, r.group, l)).join("")}</select></label>
-      </div><p class="ev-s">학년은 위에서 선택한 학생 구분을 사용합니다. 반은 입력하지 않습니다.</p>
+      </div><p class="ev-s">학년은 위에서 선택한 학생 구분을 사용합니다. 반은 입력하지 않습니다.${r.row ? " 이름을 바꾸면 출결·게시글 등 기록의 이름도 함께 바뀌고, 학생은 새 이름으로 다시 로그인합니다." : ""}</p>
     <div class="fgrid"><label class="fld"><span>PIN (비우면 나중에 자동 생성)</span><input type="text" name="pin" id="f-spin" inputmode="numeric" maxlength="4" pattern="[0-9]{4}" value="${esc(r.pin || "")}"></label>
       <label class="fld"><span>메모</span><input type="text" name="note" id="f-snote" maxlength="200" value="${esc(r.note || "")}"></label></div><label class="check"><input type="checkbox" name="afterschool" ${r.afterschool !== undefined ? (r.afterschool ? "checked" : "") : ((r.group==='pre1'||r.group==='pre2') ? "checked" : "")}> 방과후 참여</label><p class="ev-s">미참여 학생도 명단과 출석부에 표시됩니다. 방과후 미참여를 결석으로 처리하지 않습니다.</p>`,
     "저장", fd => act("saveStudent", { row: r.row, ...fd }, "저장했습니다"));
@@ -1195,6 +1244,7 @@ $("#main").addEventListener("click", e => {
   if (d.editnotice) return noticeDlg(D.notices.find(n => n.id === d.editnotice));
   if (d.editev) return eventDlg(D.events.find(x => x.id === d.editev));
   if (d.editst) return studentDlg(D.roster.find(r => String(r.row) === d.editst));
+  if (d.delst){ const st = D.roster.find(r => String(r.row) === d.delst); if (!st || !arm(t, "st" + d.delst)) return; return act("deleteStudent", { row: st.row, name: st.name }, st.name + " 학생을 명단에서 삭제했습니다 (훈련 기록은 남아 있습니다)"); }
   if (d.readers){ openReaders.has(d.readers) ? openReaders.delete(d.readers) : openReaders.add(d.readers); return render(); }
   if (d.ack) return act("ack", { id: d.ack }, "확인했습니다");
   if (d.del){ if (!arm(t, d.del)) return; const [tabName, id] = d.del.split("|"); return act("deleteRow", { tab: tabName, id }, "삭제했습니다"); }
@@ -1211,7 +1261,6 @@ $("#main").addEventListener("click", e => {
   if (d.notionEdit !== undefined)return notionPortfolioDlg(d.notionEdit);
   if (d.materialsConnect !== undefined && T())return materialsFolderDlg();
   if (d.learnerTab && LEARNER_TABS.some(([k]) => k === d.learnerTab) && tabsFor().some(([k]) => k === 'learner')) return go(d.learnerTab);
-  if (d.tmode) return setTmode(d.tmode);
   if (d.coNew !== undefined) return companyDlg();
   if (d.coEdit) return companyDlg(D.companies.find(c => c.id === d.coEdit));
   if (d.coDel){ if (!arm(t, "co|" + d.coDel)) return; return act("removeCompany", { id: d.coDel }, "기업을 지웠습니다"); }
