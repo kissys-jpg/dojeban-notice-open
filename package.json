@@ -1,0 +1,12 @@
+{
+  "name": "dojeban-notice",
+  "private": true,
+  "description": "경기항공고 도제반 알림판 (Google Apps Script 웹앱)",
+  "scripts": {
+    "check": "node tools/check.js",
+    "test": "node tests/run.mjs"
+  },
+  "devDependencies": {
+    "playwright": "1.48.2"
+  }
+}

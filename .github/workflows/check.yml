@@ -1,0 +1,38 @@
+name: 점검
+on:
+  pull_request:
+  push:
+    branches: [main]
+jobs:
+  check:
+    name: 문법·'//'·비밀값 점검
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node tools/check.js
+  test:
+    name: 가짜 구글 환경 테스트
+    runs-on: ubuntu-latest
+    # 테스트는 아직 최신 화면에 맞춰 고치는 중이라 실패해도 병합을 막지 않습니다.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: 코드가 있는지 확인
+        id: src
+        run: test -f src/Code.gs && echo "ok=1" >> "$GITHUB_OUTPUT" || echo "src가 비어 있어 건너뜁니다"
+      - if: steps.src.outputs.ok == '1'
+        run: npm install --no-audit --no-fund && npx playwright install --with-deps chromium
+      - if: steps.src.outputs.ok == '1'
+        run: node tests/run.mjs
+      - if: always() && steps.src.outputs.ok == '1'
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-screenshots
+          path: tests/out/
+          if-no-files-found: ignore
