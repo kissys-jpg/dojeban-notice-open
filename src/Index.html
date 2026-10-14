@@ -389,7 +389,7 @@ function tabsFor(){
   if (T()) t = [["today","오늘"],["notices","공지"],["learner","학습근로자"],["schedule","일정"],["purchases","구매요청"],["anon","익명게시판(수정요청포함)"],["portfolio","포트폴리오"],["roster","명단"],["me","설정"]];
   else if (isLearner()) t = [["today","오늘"],["notices","공지"],["learner","학습근로자"],["schedule","일정"],["anon","익명게시판(수정요청포함)"],["portfolio","포트폴리오"]].concat([["me","내 정보"]]);
   else t = [["today","오늘"],["notices","공지"],["schedule","일정"],["anon","익명게시판(수정요청포함)"],["purchases","구매요청"],["portfolio","포트폴리오"],["me","내 정보"]];
-  t.splice(t.findIndex(([k])=>k==="portfolio"),0,["projects","프로젝트"],["contest","대회"],["cert","자격증"]);
+  t.splice(t.findIndex(([k])=>k==="portfolio"),0,["projects","프로젝트"],["contest","대회"],["cert","자격증"],["company","기업정보"]);
   const si = t.findIndex(x => x[0] === "schedule"); t.splice(si < 0 ? 1 : si + 1, 0, ["school", "시간표·급식"]);
   return t;
 }
@@ -762,9 +762,20 @@ function vTraining(){
     <section class="panel"><div class="pad row"><span class="label">훈련 기업</span><span class="spacer"></span><button class="btn sm pri" data-co-new>+ 기업</button></div>
       ${(D.companies || []).length ? D.companies.map(c => `<div class="att"><div class="who"><b>${esc(c.name)}</b><small>${esc(c.mentor ? "기업현장교사 " + c.mentor : "기업현장교사 미등록")}${c.phone ? " · " + esc(c.phone) : ""}${c.address ? " · " + esc(c.address) : ""}</small><small>배정 ${(D.assigns || []).filter(a => a.company === c.id).map(a => esc(a.name)).join(", ") || "없음"}</small></div><div class="row"><button class="btn sm" data-co-edit="${esc(c.id)}">수정</button><button class="btn sm ghost danger" data-co-del="${esc(c.id)}">삭제</button></div></div>`).join("") : emptyBox("등록된 훈련 기업이 없습니다")}</section>`;
 }
+/* ---------- 기업정보 ---------- */
+function vCompany(){
+  const list = (D.companyInfo || []).slice().sort((a, b) => (b.learners - a.learners) || a.name.localeCompare(b.name, "ko"));
+  const full = id => (D.companies || []).find(c => c.id === id) || {};
+  return extraHead("기업정보", T() ? "도제 참여 기업입니다. ‘학생 공개’로 둔 기업의 업종·업무·소개는 모든 학생이 봅니다." : "우리 도제반과 함께하는 기업입니다. 업종과 하는 일을 미리 살펴보세요.", T() ? '<button class="btn pri" data-co-new>+ 기업</button>' : "")
+    + (list.length ? `<div class="grid2">${list.map(c => { const f = full(c.id); return `<section class="panel pad"><div class="row">${c.industry ? `<span class="chip">${esc(c.industry)}</span>` : ""}${c.learners ? `<span class="chip ok">학습근로자 ${c.learners}명</span>` : ""}${T() && !c.open ? '<span class="chip bad">학생 비공개</span>' : ""}</div><h3 style="margin:8px 0 4px">${esc(c.name)}</h3>${c.address ? `<div class="ev-s">${esc(c.address)}</div>` : ""}${c.jobs ? `<p style="margin:8px 0 0"><b>주요 업무</b> · ${esc(c.jobs)}</p>` : ""}${c.intro ? `<div class="body" style="margin-top:8px;white-space:pre-wrap">${esc(c.intro)}</div>` : ""}<div class="row" style="margin-top:10px">${safeUrl(c.homepage) ? `<a class="btn sm" href="${esc(safeUrl(c.homepage))}" target="_blank" rel="noopener noreferrer">홈페이지 ↗</a>` : ""}${c.address ? `<a class="btn sm ghost" href="https:\/\/map.naver.com/p/search/${encodeURIComponent(c.address)}" target="_blank" rel="noopener noreferrer">지도 ↗</a>` : ""}${T() ? `<span class="spacer"></span><button class="btn sm" data-co-edit="${esc(c.id)}">수정</button><button class="btn sm ghost danger" data-co-del="${esc(c.id)}">삭제</button>` : ""}</div>${T() && (f.mentor || f.phone) ? `<div class="ev-s" style="margin-top:6px">기업현장교사 ${esc(f.mentor || "-")}${f.phone ? " · " + esc(f.phone) : ""} (선생님만 보임)</div>` : ""}</section>`; }).join("")}</div>`
+      : emptyBox("등록된 기업이 없습니다", T() ? "‘+ 기업’으로 도제 참여 기업을 등록하세요." : "선생님이 기업을 등록하면 여기에 보입니다."));
+}
 function companyDlg(c = {}){
   openDlg(c.id ? "훈련 기업 수정" : "훈련 기업 등록", field("기업명", "name", c.name || "", "text", 'required maxlength="80"') + field("주소", "address", c.address || "", "text", 'maxlength="200"') +
-    `<div class="fgrid">${field("기업현장교사", "mentor", c.mentor || "", "text", 'maxlength="40"')}${field("연락처", "phone", c.phone || "", "tel", 'maxlength="40"')}</div>` + field("이메일", "email", c.email || "", "email") + area("메모", "note", c.note || "", 500),
+    `<div class="fgrid">${field("기업현장교사", "mentor", c.mentor || "", "text", 'maxlength="40"')}${field("연락처", "phone", c.phone || "", "tel", 'maxlength="40"')}</div>` + field("이메일", "email", c.email || "", "email") + area("메모 (선생님만)", "note", c.note || "", 500)
+    + `<h3 style="margin:14px 0 4px">학생에게 보이는 기업정보</h3>` + `<div class="fgrid">${field("업종", "industry", c.industry || "", "text", 'maxlength="60" placeholder="예: 전자부품 제조"')}${field("홈페이지", "homepage", c.homepage || "", "url", 'placeholder="https:\/\/"')}</div>`
+    + field("주요 업무·직무", "jobs", c.jobs || "", "text", 'maxlength="300" placeholder="예: SMT 조립, 검사, 설비 운영"') + area("기업 소개", "intro", c.intro || "", 2000)
+    + `<label class="check"><input type="checkbox" name="open" ${c.open === false ? "" : "checked"}> 학생 ‘기업정보’ 메뉴에 공개</label><p class="ev-s">기업현장교사·연락처·이메일·메모는 학생에게 보이지 않습니다(배정된 학습근로자는 자기 기업만 확인).</p>`,
     "저장", fd => act("saveCompany", { id: c.id, ...fd }, "기업을 저장했습니다"));
 }
 function assignDlg(name){
@@ -1193,7 +1204,7 @@ function render(){
   $("#logoutTop").hidden = Boolean(D.loginDisabled);
   evStore.clear();
   const draft = $("#replyText") ? $("#replyText").value : null, anonDraft = $("#anonText") ? $("#anonText").value : null;
-  $("#main").innerHTML = ({today:vToday, notices:vNotices, schedule:vSchedule, requests:vRequests, anon:vAnon, training:vTraining, purchases:vPurchases, ojtcalendar:vOjtCalendar, roster:vRosterSub, register:vRegisterSub, attendance:vAttendance, units:vUnits, portfolio:vPortfolio, board:vProjectHub, projects:vProjectHub, materials:vMaterialsSub, contest:vContestTop, cert:vCertTop, school:vSchool, me:vMe}[tab] || vToday)();
+  $("#main").innerHTML = ({today:vToday, notices:vNotices, schedule:vSchedule, requests:vRequests, anon:vAnon, training:vTraining, purchases:vPurchases, ojtcalendar:vOjtCalendar, roster:vRosterSub, register:vRegisterSub, attendance:vAttendance, units:vUnits, portfolio:vPortfolio, board:vProjectHub, projects:vProjectHub, materials:vMaterialsSub, contest:vContestTop, cert:vCertTop, company:vCompany, school:vSchool, me:vMe}[tab] || vToday)();
   if (learnerOpen) $("#main").insertAdjacentHTML("afterbegin", `<nav class="tabs" role="tablist" aria-label="학습근로자 하위 메뉴" style="margin:4px 0 16px">${LEARNER_TABS.map(([k,l]) => `<button class="tab" role="tab" data-learner-tab="${k}" aria-selected="${k===tab}">${esc(l)}</button>`).join('')}</nav>`);
   if (D.loginDisabled) $("#main").insertAdjacentHTML("afterbegin", `<div class="banner" role="status">${D.localTest ? "PC 테스트 · 입력한 자료는 이 컴퓨터에만 저장됩니다. 실제 구글시트에는 반영되지 않습니다." : "로그인 없는 테스트 모드 · 주소를 아는 사람은 학생 기록 조회와 작성·관리를 할 수 있습니다."}</div>`);
   bindBoardComment();

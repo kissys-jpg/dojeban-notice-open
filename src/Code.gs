@@ -551,6 +551,7 @@ function load_(me) {
   out.school = { comciUrl: COMCI_URL_, mealUrl: MEAL_URL_ };
   out.meals = meals_(today_(), plusDate_(today_(), 6));
   out.icsToken = (rows_("icsTokens").filter(function (x) { return x.v[0] === who_(me); })[0] || { v: [] }).v[1] || "";
+  out.companyInfo = companyInfo_(me);
   out.lastUpdate = lastUpdate_();
   return out;
 }
@@ -695,7 +696,7 @@ Object.assign(APP_TABS, {
   board: {name:"앱_프로젝트게시판",head:["ID","작성자","구분","프로젝트자격증명","제목","내용","진행상태","관련일","링크","첨부목록","등록시각","수정시각","삭제","주최기관","장소","접수시작","접수마감","대회종료"]},
   boardComments: {name:"앱_프로젝트댓글",head:["ID","게시글ID","작성자","내용","시각","삭제"]},
   anonCmt: {name:"앱_익명댓글",head:["ID","글ID","시각","작성자","내용","숨김","이전답변ID"]},
-  companies: {name:"앱_기업",head:["ID","기업명","주소","기업현장교사","연락처","이메일","메모"]},
+  companies: {name:"앱_기업",head:["ID","기업명","주소","기업현장교사","연락처","이메일","메모","업종","주요업무","소개","홈페이지","학생공개"]},
   assign: {name:"앱_훈련배정",head:["이름","기업ID","OJT요일","훈련시작","훈련종료","메모","OJT시간"]},
   icsTokens: {name:"앱_캘린더구독",head:["이름","토큰","만든시각"]}
 });
@@ -1136,7 +1137,7 @@ function trainLoad_(me) {
   let assigns = rows_("assign").map(function (x) { const v = x.v; return { name: v[0], company: v[1], ojtDays: v[2], start: v[3], end: v[4], note: v[5], ojtTime: v[6] || "" }; })
     .filter(function (a) { return a.name && (T || a.name === me.name); });
   const mine = {}; assigns.forEach(function (a) { mine[a.company] = true; });
-  const companies = rows_("companies").map(function (x) { const v = x.v; return { id: v[0], name: v[1], address: v[2], mentor: v[3], phone: v[4], email: v[5], note: v[6] }; })
+  const companies = rows_("companies").map(function (x) { const v = x.v; return { id: v[0], name: v[1], address: v[2], mentor: v[3], phone: v[4], email: v[5], note: v[6], industry: v[7] || "", jobs: v[8] || "", intro: v[9] || "", homepage: v[10] || "", open: v[11] !== "0" }; })
     .filter(function (c) { return c.id && (T || mine[c.id]); });
   return { companies: companies, assigns: assigns };
 }
@@ -1147,7 +1148,8 @@ function daysValid_(s) {
 function saveCompany_(p) {
   return withLock_(function () {
     const id = p.id ? record_("companies", p.id).v[0] : uid_("co");
-    upsert_("companies", id, [id, required_(p.name, 80), clean_(p.address, 200), clean_(p.mentor, 40), clean_(p.phone, 40), emailValid_(p.email), clean_(p.note, 500)]);
+    sheet_("companies").getRange(1, 8, 1, 5).setValues([["업종", "주요업무", "소개", "홈페이지", "학생공개"]]);
+    upsert_("companies", id, [id, required_(p.name, 80), clean_(p.address, 200), clean_(p.mentor, 40), clean_(p.phone, 40), emailValid_(p.email), clean_(p.note, 500), clean_(p.industry, 60), clean_(p.jobs, 300), clean_(p.intro, 2000), p.homepage ? urlValid_(p.homepage) : "", p.open === false ? "0" : "1"]);
     return id;
   });
 }
@@ -1583,4 +1585,15 @@ function lastUpdate_() {
   scan("materials", 7, "자료실");
   take(APP_UPDATED_, "앱 업데이트");
   return best;
+}
+
+/* ===================== 기업정보 (메뉴) =====================
+ * 모든 학생: 공개로 둔 기업의 업종·주요업무·소개·주소·홈페이지와 배정 인원 수.
+ * 기업현장교사·연락처·이메일·메모는 선생님과 그 기업에 배정된 학습근로자만 봅니다(trainLoad_). */
+function companyInfo_(me) {
+  const T = me.role === "teacher", count = {};
+  rows_("assign").forEach(function (x) { if (x.v[0] && x.v[1]) count[x.v[1]] = (count[x.v[1]] || 0) + 1; });
+  return rows_("companies").filter(function (x) { return x.v[0] && (T || x.v[11] !== "0"); }).map(function (x) {
+    const v = x.v; return { id: v[0], name: v[1], address: v[2], industry: v[7] || "", jobs: v[8] || "", intro: v[9] || "", homepage: v[10] || "", open: v[11] !== "0", learners: count[v[0]] || 0 };
+  });
 }
