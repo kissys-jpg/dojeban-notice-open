@@ -723,10 +723,16 @@ function project_(me,id) {
 }
 var PROPS_ = null;
 function props_() { if (!PROPS_) PROPS_ = PropertiesService.getScriptProperties().getProperties(); return PROPS_; }
+function appAccount_() { try { return Session.getEffectiveUser().getEmail() || ""; } catch (e) { return ""; } }
+/* 다른 구글 계정의 드라이브 폴더도, 그 폴더를 알림판 배포 계정에 '편집자'로 공유하면 연결할 수 있습니다. */
+function openSharedFolder_(id, label) {
+  try { const f = DriveApp.getFolderById(id); f.getName(); return f; }
+  catch (e) { throw new Error(label + " 폴더를 열 수 없습니다. 그 폴더를 가진 계정의 드라이브에서 폴더 공유 → " + (appAccount_() || "알림판 배포 계정") + " 을(를) ‘편집자’로 추가한 뒤 다시 연결해 주세요"); }
+}
 function settings_() {
   const p = props_(), g = function (k) { return p[k] || ""; };
   const root = g("DRIVE_ROOT") || g("APP_FOLDER");
-  return {calendarId:g("CALENDAR_ID"),calendarImport:g("CALENDAR_IMPORT")==="1",calendarPersonal:g("CALENDAR_PERSONAL")==="1",mailEnabled:g("MAIL_ENABLED")==="1",teacherEmail:g("TEACHER_EMAIL"),webUrl:g("APP_WEB_URL"),auto:g("APP_AUTO")==="1",lastRun:g("APP_LAST_RUN"),lastError:g("APP_LAST_ERROR"),driveRoot:root,driveRootUrl:root?"https://drive.google.com/drive/folders/"+root:"",driveCustom:!!g("DRIVE_ROOT"),materialFolder:g("MATERIAL_FOLDER"),materialFolderUrl:g("MATERIAL_FOLDER")?"https://drive.google.com/drive/folders/"+g("MATERIAL_FOLDER"):"",notionSet:!!g("NOTION_TOKEN"),notionRoot:g("NOTION_ROOT"),neisSet:!!g("NEIS_KEY")};
+  return {appAccount:appAccount_(),calendarId:g("CALENDAR_ID"),calendarImport:g("CALENDAR_IMPORT")==="1",calendarPersonal:g("CALENDAR_PERSONAL")==="1",mailEnabled:g("MAIL_ENABLED")==="1",teacherEmail:g("TEACHER_EMAIL"),webUrl:g("APP_WEB_URL"),auto:g("APP_AUTO")==="1",lastRun:g("APP_LAST_RUN"),lastError:g("APP_LAST_ERROR"),driveRoot:root,driveRootUrl:root?"https://drive.google.com/drive/folders/"+root:"",driveCustom:!!g("DRIVE_ROOT"),materialFolder:g("MATERIAL_FOLDER"),materialFolderUrl:g("MATERIAL_FOLDER")?"https://drive.google.com/drive/folders/"+g("MATERIAL_FOLDER"):"",notionSet:!!g("NOTION_TOKEN"),notionRoot:g("NOTION_ROOT"),neisSet:!!g("NEIS_KEY")};
 }
 function extendedApi_(me,action,p) {
   switch(action) {
@@ -901,12 +907,12 @@ function saveSettings_(p) {
     const props=PropertiesService.getScriptProperties();if(cal!==settings_().calendarId && rows_("calendarMap").length)throw new Error("이미 내보낸 일정이 있습니다. 캘린더 변경 전 기존 전용 캘린더와 앱_캘린더연결을 별도로 정리해 주세요");
     const driveId=driveFolderId_(p.driveRoot);
     if(driveId!==(props_().DRIVE_ROOT||"")){
-      if(driveId){try{DriveApp.getFolderById(driveId).getName();}catch(e){throw new Error("Drive 폴더를 열 수 없습니다. 폴더 주소와 편집 권한을 확인해 주세요");}}
+      if(driveId)openSharedFolder_(driveId,"업로드 저장");
       Object.keys(props_()).forEach(function(k){if(/^(DF_|PF_)/.test(k))props.deleteProperty(k);});
       if(driveId)props.setProperty("DRIVE_ROOT",driveId);else props.deleteProperty("DRIVE_ROOT");
     }
     const mf=driveFolderId_(p.materialFolder);
-    if(mf!==(props_().MATERIAL_FOLDER||"")){ if(mf){try{DriveApp.getFolderById(mf).getName();}catch(e){throw new Error("자료실 Drive 폴더를 열 수 없습니다. 폴더를 kissys 계정(앱 소유 계정)에 공유했는지 확인해 주세요");}} if(mf)props.setProperty("MATERIAL_FOLDER",mf);else props.deleteProperty("MATERIAL_FOLDER"); }
+    if(mf!==(props_().MATERIAL_FOLDER||"")){ if(mf)openSharedFolder_(mf,"자료실 Drive"); if(mf)props.setProperty("MATERIAL_FOLDER",mf);else props.deleteProperty("MATERIAL_FOLDER"); }
     const nt=clean_(p.notionToken,200).trim(); if(nt==="삭제")props.deleteProperty("NOTION_TOKEN"); else if(nt){ if(!/^(secret_|ntn_)[A-Za-z0-9]{20,}$/.test(nt)) throw new Error("노션 토큰 형식이 아닙니다 (secret_ 또는 ntn_ 으로 시작)"); props.setProperty("NOTION_TOKEN",nt); }
     const nr=notionId_(p.notionRoot); if(nr)props.setProperty("NOTION_ROOT",nr); else props.deleteProperty("NOTION_ROOT");
     const nk=clean_(p.neisKey,100).trim(); if(nk==="삭제")props.deleteProperty("NEIS_KEY"); else if(nk){ if(!/^[A-Za-z0-9]{20,64}$/.test(nk)) throw new Error("NEIS 인증키 형식을 확인해 주세요"); props.setProperty("NEIS_KEY",nk); }
@@ -1342,7 +1348,7 @@ function saveNotionPortfolio_(me,p){
 }
 function saveMaterialsFolder_(p){
   const id=driveFolderId_(p.url);if(!id)throw new Error('자료실 Drive 폴더 주소를 넣어 주세요');
-  const folder=DriveApp.getFolderById(id);folder.getName();
+  openSharedFolder_(id,'자료실 Drive');
   PropertiesService.getScriptProperties().setProperty('MATERIAL_FOLDER',id);PROPS_=null;CacheService.getScriptCache().remove('dm_v1');return true;
 }
 function uploadDriveMaterial_(me,p){
