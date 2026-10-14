@@ -44,6 +44,7 @@ function doGet(e) {
   if (q.raw) return ContentService.createTextOutput(HtmlService.createHtmlOutputFromFile("Index").getContent()).setMimeType(ContentService.MimeType.TEXT);
   return HtmlService.createHtmlOutputFromFile("Index")
     .setTitle("도제반 알림판")
+    .setFaviconUrl("https://kissys-jpg.github.io/dojeban/favicon-32.png")
     .addMetaTag("viewport", "width=device-width, initial-scale=1, viewport-fit=cover")
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
