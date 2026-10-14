@@ -236,6 +236,7 @@ a.btn{text-decoration:none;color:var(--ink);display:inline-flex;align-items:cent
 
 input[type=email],input[type=password]{width:100%;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 10px;min-width:0} input[type=file]{width:100%;max-width:100%}
 body{margin:0} [hidden]{display:none!important}
+.drv-row{display:flex;align-items:center;gap:10px;width:100%;padding:9px 16px;border:0;border-top:1px solid var(--line);background:none;color:inherit;font:inherit;text-align:left}button.drv-row{cursor:pointer}button.drv-row:hover{background:var(--soft,rgba(127,127,127,.08))}.drv-ic{font-size:18px;flex:none}.drv-nm{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}.drv-drop{margin:10px 16px 14px;padding:12px;border:2px dashed var(--line);border-radius:10px;text-align:center}.drv .row .btn.ghost{padding-left:6px;padding-right:6px}
 </style>
 </head>
 <body>
@@ -359,7 +360,7 @@ function callRaw(action, payload, c, withLoad){
 const call = (action, payload, c) => callRaw(action, payload, c).then(r => r.data);
 function setData(d){ if(!D)tab="today"; D = d; TODAY = D.today || TODAY; showUpdated(); render(); }
 function showUpdated(){ const el = $("#updAt"), u = D && D.lastUpdate; if (!el) return; if (!u || !u.at){ el.hidden = true; return; } const day = u.at.slice(0,10), hm = u.at.slice(11,16); el.textContent = "최근 업데이트 " + (day === TODAY ? "오늘" : Number(day.slice(5,7)) + "." + Number(day.slice(8,10))) + (hm ? " " + hm : "") + (u.what ? " · " + u.what : ""); el.hidden = false; }
-async function reload(){ try { setData(await call("load")); } catch (e) { if (/PIN|비밀번호|이름/.test(e.message)) { logout(e.message); } else toast(e.message); } }
+async function reload(){ drvStale(); try { setData(await call("load")); } catch (e) { if (/PIN|비밀번호|이름/.test(e.message)) { logout(e.message); } else toast(e.message); } }
 async function act(action, payload, msg){
   try { const r = await callRaw(action, payload, null, true); if (msg) toast(msg); if (r.load) setData(r.load); else await reload(); return true; }
   catch (e) { toast(e.message); return false; }
@@ -1080,8 +1081,8 @@ function vProjects(){return extraHead(T()?'프로젝트 관리':'우리 팀','�
 function projectFilesBox(p){
   const files = (D.projectFiles || []).filter(f => f.project === p.id).sort((a,b) => String(b.at).localeCompare(String(a.at)));
   return `<div class="notice"><div class="row"><b>프로젝트 자료실</b><span class="ev-s">${files.length}개 · 구글 드라이브</span><span class="spacer"></span>${p.folderUrl ? `<a class="btn sm ghost" href="${esc(p.folderUrl)}" target="_blank" rel="noopener">Drive 자료실 열기 ↗</a>` : T()?`<button class="btn sm ghost" data-project-folder="${esc(p.id)}">자료실 만들기</button>`:""}${T() ? `<button class="btn sm ghost" data-share-folder="${esc(p.id)}">팀원 구글 계정에 공유</button>` : `<button class="btn sm ghost" data-freq="team:${esc(p.id)}" data-freq-label="${esc("프로젝트 자료실 · " + p.team)}">내 구글 계정으로 열기 신청</button>`}<button class="btn sm pri" data-pfile-new="${esc(p.id)}">+ 파일 올리기</button></div>
-    <p class="ev-s">프로젝트마다 별도 Drive 폴더를 사용합니다. ${T()?'팀원의 구글 이메일로 공유하거나 자료실 접근 신청을 승인할 수 있습니다.':'내 구글 계정으로 접근하려면 선생님의 공유 승인이 필요합니다.'}</p>
-    ${files.length ? files.map(f => `<div class="row" style="border-top:1px solid var(--line);padding-top:8px"><div style="flex:1;min-width:0"><div style="overflow-wrap:anywhere"><b>${esc(f.name)}</b> <span class="ev-s">${fmtSize(f.size)}</span></div><div class="ev-s">${esc(f.by)} · ${esc(f.at)}${f.memo ? " · " + esc(f.memo) : ""}</div></div><button class="btn sm" data-file="${esc(f.id)}">받기</button>${driveLink(f.id)}${T() || f.by === D.me.name ? `<button class="btn sm ghost danger" data-file-del="${esc(f.id)}">삭제</button>` : ""}</div>`).join("") : `<div class="ev-s">설계도·코드·사진·보고서를 올려 팀원과 함께 보세요.</div>`}</div>`;
+    <p class="ev-s">프로젝트마다 별도 Drive 폴더를 사용합니다. ${T()?'Drive에서 직접 넣은 파일도 아래에 보입니다. 팀원의 구글 이메일로 공유하거나 접근 신청을 승인할 수 있습니다.':'여기서 바로 폴더를 열고 파일을 받고 올릴 수 있습니다. 구글 드라이브 앱에서도 열려면 접근 신청을 하세요.'}</p>
+    ${driveBrowser("project:" + p.id)}</div>`;
 }
 function projectFileDlg(id){
   const p = D.projects.find(x => x.id === id); if (!p) return;
@@ -1114,6 +1115,59 @@ function notionBox(){
 async function downloadDrive(id){
   try{const f=await call('driveMaterialFile',{id});const bytes=Uint8Array.from(atob(f.base64),c=>c.charCodeAt(0));const url=URL.createObjectURL(new Blob([bytes],{type:f.mime}));const a=document.createElement('a');a.href=url;a.download=f.name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);}catch(e){toast(e.message);}
 }
+/* ---------- 페이지 안 Drive 탐색기: 공유한 폴더를 폴더째 보고, 끌어다 놓아 올리고, 받기 ---------- */
+const drvState = {};
+const driveBrowser = root => `<section class="panel drv" data-drv="${esc(root)}"><div class="pad ev-s">구글 드라이브를 불러오는 중…</div></section>`;
+function drvStale(){ Object.values(drvState).forEach(s => { s.stale = true; }); }
+function hydrateDrives(){ document.querySelectorAll("[data-drv]").forEach(el => { const st = drvState[el.dataset.drv]; if (st && (st.data || st.error) && !st.stale) paintDrive(el, st); else loadDrive(el.dataset.drv, st && st.folder); }); }
+async function loadDrive(root, folder){
+  const st = drvState[root] = drvState[root] || {}; st.folder = folder || ""; st.stale = false;
+  const ticket = st.ticket = (st.ticket || 0) + 1;
+  try { const d = await call("driveBrowse", { root, folder: st.folder }); if (ticket !== st.ticket) return; st.data = d; st.error = ""; }
+  catch (e) { if (ticket !== st.ticket) return; st.error = e.message; }
+  document.querySelectorAll("[data-drv]").forEach(el => { if (el.dataset.drv === root) paintDrive(el, st); });
+}
+const FILE_ICON = m => /google-apps\.folder/.test(m) ? "📁" : /image/.test(m) ? "🖼️" : /video/.test(m) ? "🎬" : /pdf/.test(m) ? "📕" : /zip/.test(m) ? "🗜️" : /spreadsheet|sheet|excel|csv/.test(m) ? "📊" : /presentation|powerpoint/.test(m) ? "📽️" : "📄";
+function paintDrive(el, st){
+  const d = st.data, root = el.dataset.drv;
+  if (st.error && !d) { el.innerHTML = `<div class="pad row"><b>📁 구글 드라이브</b><span class="spacer"></span><button class="btn sm ghost" data-drv-refresh="${esc(root)}">다시 시도</button></div><div class="pad ev-s" style="padding-top:0">${esc(st.error)}</div>`; return; }
+  const crumbs = d.path.map((f, i) => i === d.path.length - 1 ? `<b>${esc(f.name)}</b>` : `<button class="btn sm ghost" data-drv-go="${esc(root)}|${esc(f.id)}">${esc(f.name)}</button>`).join(`<span class="ev-s">›</span>`);
+  const up = d.canUpload ? `<button class="btn sm pri" data-drv-pick="${esc(root)}">+ 올리기</button><input type="file" multiple hidden data-drv-file="${esc(root)}">` : "";
+  const teacherTools = T() ? (d.url ? `<a class="btn sm ghost" href="${esc(d.url)}" target="_blank" rel="noopener">Drive에서 열기 ↗</a>` : "") + (root === "materials" ? `<button class="btn sm ghost" data-drv-toggle="${d.studentUpload ? "0" : "1"}">학생 올리기 ${d.studentUpload ? "켜짐" : "꺼짐"}</button>` : "") : "";
+  const rows = d.folders.map(f => `<button class="drv-row" data-drv-go="${esc(root)}|${esc(f.id)}"><span class="drv-ic">📁</span><span class="drv-nm">${esc(f.name)}${T() && f.target ? ` <span class="chip">${esc(TARGET[f.target] || "")}만</span>` : ""}</span><span class="ev-s">›</span></button>`).join("")
+    + d.files.map(f => `<div class="drv-row"><span class="drv-ic">${FILE_ICON(f.mime)}</span><span class="drv-nm"><span style="overflow-wrap:anywhere">${esc(f.name)}</span><span class="ev-s">${f.size ? fmtSize(f.size) + " · " : ""}${esc(f.updated)}${f.by ? " · " + esc(f.by) : ""}</span></span><button class="btn sm" data-drv-dl="${esc(root)}|${esc(f.id)}">받기</button>${driveLink(f.id)}</div>`).join("");
+  el.innerHTML = `<div class="pad row" style="padding-bottom:6px"><b>📁</b>${crumbs}<span class="spacer"></span>${teacherTools}<button class="btn sm ghost" data-drv-refresh="${esc(root)}" title="새로고침">↻</button>${up}</div>`
+    + (st.error ? `<div class="pad ev-s" style="padding-top:0">${esc(st.error)}</div>` : "")
+    + (rows || `<div class="pad ev-s">빈 폴더입니다.</div>`)
+    + (d.canUpload ? `<div class="drv-drop ev-s">파일을 여기로 끌어다 놓으면 이 폴더(${esc(d.path[d.path.length - 1].name)})에 올라갑니다 · 파일당 ${sizeLimitText()}까지</div>` : `<div class="drv-drop ev-s">받기만 할 수 있는 폴더입니다.</div>`);
+}
+async function drvUpload(root, list){
+  const st = drvState[root]; if (!st || !st.data) return; if (!st.data.canUpload) return toast("이 폴더에는 선생님만 올릴 수 있습니다");
+  const files = Array.from(list || []).filter(f => f.size > 0); if (!files.length) return;
+  let ok = 0; const fail = [];
+  for (const f of files) {
+    if (f.size > MAX_MB * 1024 * 1024) { fail.push(f.name); continue; }
+    try { toast(f.name + " 올리는 중…"); const up = await toUpload(f); await call("driveUpload", { root, folder: st.data.folder, upload: up }); ok++; } catch (e) { fail.push(f.name + "(" + e.message + ")"); }
+  }
+  toast(ok + "개 올렸습니다" + (fail.length ? " · 실패: " + fail.join(", ") : "")); loadDrive(root, st.data.folder);
+}
+async function drvDownload(root, id){
+  try {
+    const parts = []; let off = 0, r, mime = "", name = "";
+    do { r = await call("driveDownload", { root, id, offset: off }); const b = Uint8Array.from(atob(r.base64 || ""), c => c.charCodeAt(0)); parts.push(b); off += b.length; mime = r.mime; name = r.name;
+      if (!r.done && r.size > 4194304) toast(name + " 받는 중 " + Math.round(off / r.size * 100) + "%"); } while (!r.done && off < r.size);
+    const url = URL.createObjectURL(new Blob(parts, { type: mime || "application/octet-stream" })), a = document.createElement("a"); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 60000);
+  } catch (e) { toast(e.message); }
+}
+$("#main").addEventListener("click", e => {
+  const b = e.target.closest("[data-drv-go],[data-drv-dl],[data-drv-refresh],[data-drv-pick],[data-drv-toggle]"); if (!b) return; const x = b.dataset;
+  if (x.drvGo) { const i = x.drvGo.lastIndexOf("|"); return loadDrive(x.drvGo.slice(0, i), x.drvGo.slice(i + 1)); }
+  if (x.drvDl) { const i = x.drvDl.lastIndexOf("|"); return drvDownload(x.drvDl.slice(0, i), x.drvDl.slice(i + 1)); }
+  if (x.drvRefresh) return loadDrive(x.drvRefresh, (drvState[x.drvRefresh] || {}).folder);
+  if (x.drvPick) { const inp = b.parentElement.querySelector("[data-drv-file]"); if (inp) inp.click(); return; }
+  if (x.drvToggle) return call("setMaterialUpload", { on: x.drvToggle === "1" }).then(() => { toast(x.drvToggle === "1" ? "학생도 자료실에 올릴 수 있습니다" : "자료실 올리기를 선생님만 하도록 바꿨습니다"); loadDrive("materials", (drvState.materials || {}).folder); }).catch(err => toast(err.message));
+});
+$("#main").addEventListener("change", e => { const inp = e.target.closest("[data-drv-file]"); if (!inp) return; const files = Array.from(inp.files || []); inp.value = ""; drvUpload(inp.dataset.drvFile, files); });
 /* ---------- Drive 폴더 접근 신청 ---------- */
 const FREQ_CHIP = { "대기": "pre", "완료": "ok", "거절": "bad", "실패": "bad" };
 function folderReqBox(target,label){
@@ -1133,7 +1187,7 @@ function folderReqAdmin(){
 function folderReqDlg(target,label){
  openDlg(label+' · 폴더 접근 신청',field('내 구글 계정 이메일','email',(D.contact||{}).email||'','email','required placeholder="예: 이름@gmail.com 또는 학교 계정"')+field('메모 (선택)','note','','text','maxlength="200"')+'<p class="ev-s">이 이메일로 구글 드라이브에 로그인해야 폴더가 보입니다. 선생님이 승인하면 ‘공유 문서함’에 나타납니다.</p>','신청',fd=>act('requestFolderAccess',{target,...fd},'신청했습니다. 선생님이 승인하면 공유됩니다'));
 }
-function vMaterials(){return extraHead('자료실','구글 드라이브·노션·선생님이 올린 학습 자료입니다.',T()?'<div class="row"><button class="btn" data-materials-connect>Drive 연결 설정</button><button class="btn pri" data-extra-new="material">+ 자료</button></div>':'')+(T()?folderReqAdmin():folderReqBox('materials','자료실'))+materialControls()+driveDropBox()+driveBox()+notionBox()+`<section class="panel"><div class="pad" style="padding-bottom:4px"><span class="label">선생님이 올린 자료</span></div>${D.materials.length?sortedMaterials(D.materials.filter(m=>materialMatches(m.title,m.body,m.category||"일반")),"title","at").map(m=>`<article class="notice"><div class="row">${targetChip(m.target)}<span class="chip">${esc(m.category||'일반')}</span><span class="meta">${esc(m.at)}</span></div><h3>${esc(m.title)}</h3><div class="body">${esc(m.body)}</div><div class="row">${extraLink(m.link)}${extraFile(m.file)}${T()?`<button class="btn sm" data-material-edit="${esc(m.id)}">수정</button>${extraDelete('materials',m.id)}`:''}</div></article>`).join(''):emptyBox('등록된 자료가 없습니다')}</section>`;}
+function vMaterials(){return extraHead('자료실','구글 드라이브·노션·선생님이 올린 학습 자료입니다.',T()?'<div class="row"><button class="btn" data-materials-connect>Drive 연결 설정</button><button class="btn pri" data-extra-new="material">+ 자료</button></div>':'')+(T()?folderReqAdmin():folderReqBox('materials','자료실'))+materialControls()+((D.folderReady||{}).materials?driveBrowser('materials'):driveDropBox()+driveBox())+notionBox()+`<section class="panel"><div class="pad" style="padding-bottom:4px"><span class="label">선생님이 올린 자료</span></div>${D.materials.length?sortedMaterials(D.materials.filter(m=>materialMatches(m.title,m.body,m.category||"일반")),"title","at").map(m=>`<article class="notice"><div class="row">${targetChip(m.target)}<span class="chip">${esc(m.category||'일반')}</span><span class="meta">${esc(m.at)}</span></div><h3>${esc(m.title)}</h3><div class="body">${esc(m.body)}</div><div class="row">${extraLink(m.link)}${extraFile(m.file)}${T()?`<button class="btn sm" data-material-edit="${esc(m.id)}">수정</button>${extraDelete('materials',m.id)}`:''}</div></article>`).join(''):emptyBox('등록된 자료가 없습니다')}</section>`;}
 function materialDlg(m={}){openDlg(m.id?'자료 수정':'자료 등록',field('제목','title',m.title||'','text','required maxlength="150"')+`<div class="fgrid">${targetSel(m.target)}${field('분류','category',m.category||'학습자료')}</div>`+area('설명','body',m.body||'',5000)+field('자료 링크','link',m.link||'')+fileInput(),'저장',fd=>actUpload('saveMaterial',{id:m.id,...fd},'자료를 저장했습니다'));}
 /* ---------- 메뉴 아이콘·짧은 이름, 화면 꾸미기(이 기기에만 저장) ---------- */
 const TAB_LOOK = { today:["🏠","오늘"], notices:["📢","공지"], learner:["🏭","근로자"], training:["🏭","근로자"], schedule:["📅","일정"], school:["🍱","시간표"], purchases:["🛒","구매"], anon:["💬","익명·요청"], projects:["🧩","프로젝트"], contest:["🏆","대회"], cert:["📜","자격증"], company:["🏢","기업"], portfolio:["🎒","포폴"], roster:["👥","명단"], me:["⚙️","설정"] };
@@ -1269,6 +1323,7 @@ function render(){
   if (learnerOpen) $("#main").insertAdjacentHTML("afterbegin", `<nav class="tabs" role="tablist" aria-label="학습근로자 하위 메뉴" style="margin:4px 0 16px">${LEARNER_TABS.map(([k,l]) => `<button class="tab" role="tab" data-learner-tab="${k}" aria-selected="${k===tab}">${esc(l)}</button>`).join('')}</nav>`);
   if (D.loginDisabled) $("#main").insertAdjacentHTML("afterbegin", `<div class="banner" role="status">${D.localTest ? "PC 테스트 · 입력한 자료는 이 컴퓨터에만 저장됩니다. 실제 구글시트에는 반영되지 않습니다." : "로그인 없는 테스트 모드 · 주소를 아는 사람은 학생 기록 조회와 작성·관리를 할 수 있습니다."}</div>`);
   bindBoardComment();
+  hydrateDrives();
   if (draft !== null && $("#replyText")) $("#replyText").value = draft;
   if (anonDraft !== null && $("#anonText")) $("#anonText").value = anonDraft;
   if (armed){ const b = [...document.querySelectorAll("[data-del],[data-delpe],[data-extra-delete],[data-anon-del],[data-file-del],[data-co-del]")].find(x => (x.dataset.del || x.dataset.extraDelete || x.dataset.anonDel || x.dataset.fileDel || (x.dataset.coDel ? "co|" + x.dataset.coDel : "") || "pe|" + x.dataset.delpe) === armed); if (b){ b.classList.add("armed"); b.textContent = "삭제 확인"; } }
@@ -1294,6 +1349,7 @@ document.addEventListener("drop", e => {
   if (!hasFiles(e)) return; e.preventDefault();
   const z = form.querySelector("#dropZone"); if (z) z.style.borderColor = "var(--line)";
   if (dlg.open && dlgDrop) return dlgDrop(e.dataTransfer.files);
+  const dz = !dlg.open && e.target.closest && e.target.closest("[data-drv]"); if (dz) return drvUpload(dz.dataset.drv, e.dataTransfer.files);
   if (!dlg.open && document.querySelector("#materialsDrop")) return uploadMaterialsFiles(e.dataTransfer.files);
   toast("파일은 올리기 창을 연 다음 끌어다 놓아 주세요");
 });

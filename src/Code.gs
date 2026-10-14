@@ -122,6 +122,10 @@ function dispatch_(me, action, p) {
     case "anonHide":     need_(me, "teacher"); return anonHide_(p);
     case "uploadProjectFile": return uploadProjectFile_(me, p);
     case "uploadStart": return uploadStart_(me, p);
+    case "driveBrowse": return driveBrowse_(me, p);
+    case "driveUpload": return driveUpload_(me, p);
+    case "driveDownload": return driveDownload_(me, p);
+    case "setMaterialUpload": need_(me, 'teacher'); return withLock_(function () { PropertiesService.getScriptProperties().setProperty("MATERIAL_STUDENT_UPLOAD", p.on ? "1" : "0"); PROPS_ = null; return true; });
     case "uploadChunk": return uploadChunk_(me, p);
     case "deleteFile":   return deleteFile_(me, p.id);
     case "shareProjectFolder": need_(me, "teacher"); return shareProjectFolder_(p.id);
@@ -1337,7 +1341,7 @@ function icsSingle_(q) {
  *   위 폴더 / 하위폴더 / 파일              → 하위폴더 이름이 '분류'
  *   그 밖의 이름의 폴더                   → 전체 공개 + 폴더 이름이 '분류'
  * 학생은 앱을 통해 내려받습니다 (구글 계정 불필요). 구글 문서·시트·슬라이드는 PDF로 변환됩니다. */
-function folderTarget_(name) {
+function materialTarget_(name) {
   const n = String(name).replace(/\s/g, "");
   if (/^(전체|공통|모두)$/.test(n)) return "all";
   if (/^(일반|일반학생)$/.test(n)) return "general";
@@ -1361,7 +1365,7 @@ function driveListAll_() {
     if (depth >= 2) return;
     const fo = folder.getFolders();
     while (fo.hasNext()) {
-      const sub = fo.next(), t = folderTarget_(sub.getName());
+      const sub = fo.next(), t = materialTarget_(sub.getName());
       if (depth === 0 && t) walk(sub, t, "", 1);
       else walk(sub, target, category ? category + " / " + sub.getName() : sub.getName(), depth + 1);
     }
@@ -1401,6 +1405,76 @@ function saveNotionPortfolio_(me,p){
   if(me.role!=='teacher'&&p.name&&p.name!==me.name)throw new Error('내 노션 포트폴리오만 수정할 수 있습니다');
   const name=me.role==='teacher'?p.name:me.name,url=notionPortfolioUrl_(p.url);
   return withLock_(function(){const st=student_(name),sh=sheet_('roster');sh.getRange(1,7).setValue('노션포트폴리오');sh.getRange(st.row,7).setValue(url);return true;});
+}
+/* ===================== 페이지 안 Drive 탐색 =====================
+ * 학생에게 공유한 Drive 폴더(자료실, 프로젝트 자료실)를 알림판 안에서 폴더째 보고, 올리고, 받습니다.
+ * root: "materials" = 자료실 폴더(대상 폴더 규칙 적용), "project:<ID>" = 그 프로젝트 팀원·선생님만.
+ * 학생 올리기: 자료실은 설정 MATERIAL_STUDENT_UPLOAD가 "0"이 아니면 허용(기본 허용), 프로젝트는 팀원 모두 허용. */
+function driveRoot2_(me, root) {
+  root = String(root || "");
+  if (root === "materials") {
+    const id = props_().MATERIAL_FOLDER; if (!id) throw new Error("자료실 Drive 폴더가 아직 연결되지 않았습니다");
+    return { key: root, label: "자료실", folder: openSharedFolder_(id, "자료실 Drive"), upload: me.role === "teacher" || props_().MATERIAL_STUDENT_UPLOAD !== "0", targets: true };
+  }
+  const m = root.match(/^project:([A-Za-z0-9_-]{1,40})$/);
+  if (m) { const pr = project_(me, m[1]); return { key: root, label: pr.v[1] + " · " + pr.v[2], folder: withLock_(function () { return projectFolder_(pr); }), upload: true, targets: false }; }
+  throw new Error("폴더를 확인해 주세요");
+}
+/* folderId가 root 안에 있는지 부모를 따라 올라가며 확인하고, root부터의 경로를 돌려줍니다. */
+function drivePath_(me, r, folderId) {
+  const rootId = r.folder.getId(); if (!folderId || folderId === rootId) return [r.folder];
+  let f; try { f = DriveApp.getFolderById(String(folderId)); } catch (e) { throw new Error("폴더를 찾을 수 없습니다"); }
+  const chain = [f];
+  for (let i = 0; i < 12; i++) {
+    const ps = chain[0].getParents(); if (!ps.hasNext()) break;
+    const parent = ps.next(); if (parent.getId() === rootId) { chain.unshift(r.folder); break; } chain.unshift(parent);
+  }
+  if (chain[0].getId() !== rootId) throw new Error("이 폴더를 볼 권한이 없습니다");
+  if (r.targets && me.role !== "teacher" && chain.length > 1) { const t = materialTarget_(chain[1].getName()); if (t && !matches_(t, me.group)) throw new Error("이 폴더를 볼 권한이 없습니다"); }
+  return chain;
+}
+function driveWho_(desc) { const m = String(desc || "").match(/올린 사람: ([^·]+)/); return m ? m[1].trim() : ""; }
+function driveBrowse_(me, p) {
+  const r = driveRoot2_(me, p.root), chain = drivePath_(me, r, p.folder), cur = chain[chain.length - 1], T = me.role === "teacher";
+  const folders = [], files = [];
+  const fo = cur.getFolders(); while (fo.hasNext() && folders.length < 200) { const f = fo.next(); if (f.isTrashed()) continue;
+    if (r.targets && chain.length === 1) { const t = materialTarget_(f.getName()); if (t && !T && !matches_(t, me.group)) continue; folders.push({ id: f.getId(), name: f.getName(), target: t }); }
+    else folders.push({ id: f.getId(), name: f.getName() }); }
+  const fi = cur.getFiles(); while (fi.hasNext() && files.length < 300) { const f = fi.next(); if (f.isTrashed()) continue;
+    files.push({ id: f.getId(), name: f.getName(), mime: f.getMimeType(), size: f.getSize(), updated: Utilities.formatDate(f.getLastUpdated(), "Asia/Seoul", "yyyy-MM-dd HH:mm"), by: driveWho_(f.getDescription()) }); }
+  folders.sort(function (a, b) { return a.name.localeCompare(b.name, "ko"); });
+  files.sort(function (a, b) { return String(b.updated).localeCompare(String(a.updated)); });
+  return { root: r.key, label: r.label, folder: cur.getId(), path: chain.map(function (f, i) { return { id: f.getId(), name: i ? f.getName() : r.label }; }), folders: folders, files: files, canUpload: r.upload, studentUpload: r.key === "materials" ? props_().MATERIAL_STUDENT_UPLOAD !== "0" : true, url: T ? cur.getUrl() : "" };
+}
+function driveUpload_(me, p) {
+  const r = driveRoot2_(me, p.root); if (!r.upload) throw new Error("이 폴더에는 선생님만 올릴 수 있습니다");
+  const chain = drivePath_(me, r, p.folder), cur = chain[chain.length - 1];
+  if (!hasUpload_(p.upload)) throw new Error("올릴 파일을 골라 주세요");
+  const id = withLock_(function () { return storeFile_(me, p.upload, r.key === "materials" ? "drive" : "project", r.key === "materials" ? "" : r.key.slice(8), cur); });
+  CacheService.getScriptCache().remove("dm_v1"); return id;
+}
+const DL_CHUNK_ = 4 * 1024 * 1024;
+function driveDownload_(me, p) {
+  const id = String(p.id || ""), cache = CacheService.getScriptCache(), ok = "dl_" + me.name + "_" + id;
+  let info = cache.get(ok); info = info ? JSON.parse(info) : null;
+  if (!info) {
+    const r = driveRoot2_(me, p.root); let f; try { f = DriveApp.getFileById(id); } catch (e) { throw new Error("파일을 찾을 수 없습니다"); }
+    const ps = f.getParents(); if (!ps.hasNext()) throw new Error("이 파일을 받을 권한이 없습니다");
+    drivePath_(me, r, ps.next().getId());
+    info = { name: f.getName(), mime: f.getMimeType(), size: f.getSize() }; cache.put(ok, JSON.stringify(info), 3600);
+  }
+  if (/^application\/vnd\.google-apps\./.test(info.mime)) {
+    const b = DriveApp.getFileById(id).getAs("application/pdf"), bytes = b.getBytes();
+    if (bytes.length > MAX_DOWNLOAD_MB_ * 1024 * 1024) throw new Error("문서가 너무 커서 PDF로 바꿀 수 없습니다");
+    return { name: info.name + ".pdf", mime: "application/pdf", size: bytes.length, base64: Utilities.base64Encode(bytes), done: true };
+  }
+  const off = Number(p.offset) || 0; if (off < 0 || off >= Math.max(1, info.size)) throw new Error("받기 위치가 맞지 않습니다");
+  if (!info.size) return { name: info.name, mime: info.mime, size: 0, base64: "", done: true };
+  const end = Math.min(info.size, off + DL_CHUNK_) - 1;
+  const res = UrlFetchApp.fetch("https://www.googleapis.com/drive/v3/files/" + encodeURIComponent(id) + "?alt=media&supportsAllDrives=true", { muteHttpExceptions: true, headers: { Authorization: "Bearer " + ScriptApp.getOAuthToken(), Range: "bytes=" + off + "-" + end } });
+  const code = res.getResponseCode(); if (code !== 206 && code !== 200) throw new Error("파일을 받지 못했습니다 (" + code + ")");
+  const bytes = res.getContent(), part = code === 200 ? bytes.slice(off, end + 1) : bytes;
+  return { name: info.name, mime: info.mime, size: info.size, base64: Utilities.base64Encode(part), done: end + 1 >= info.size };
 }
 function saveMaterialsFolder_(p){
   const id=driveFolderId_(p.url);if(!id)throw new Error('자료실 Drive 폴더 주소를 넣어 주세요');

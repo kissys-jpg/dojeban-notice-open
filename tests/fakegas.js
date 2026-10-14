@@ -36,14 +36,14 @@
   window.Session = { getScriptTimeZone: () => "Asia/Seoul" };
   // fake Drive
   let nid = 1; const folders = {}, files = {}; window.__drive = { folders, files };
-  const folderApi = f => ({ getId: () => f.id, getName: () => f.name, getUrl: () => "https://drive/" + f.id, isTrashed: () => false,
+  const folderApi = f => ({ getId: () => f.id, getName: () => f.name, getUrl: () => "https://drive/" + f.id, isTrashed: () => false, getParents: () => { let d = false; return { hasNext: () => !d && !!folders[f.parent], next: () => { d = true; return folderApi(folders[f.parent]); } }; },
     getFoldersByName: n => { const list = Object.values(folders).filter(x => x.parent === f.id && x.name === n); let i = 0; return { hasNext: () => i < list.length, next: () => folderApi(list[i++]) }; },
     createFolder: n => { const x = { id: "fo" + (nid++) + "xxxxxxxxxx", name: n, parent: f.id, editors: [] }; folders[x.id] = x; return folderApi(x); },
     createFile: blob => { const x = { id: "fi" + (nid++) + "xxxxxxxxxx", name: blob.name, bytes: blob.bytes, mime: blob.mime, parent: f.id }; files[x.id] = x; return fileApi(x); },
     addEditor: e => { if (!/@/.test(e)) throw new Error("bad"); f.editors.push(e); },
     getFiles: () => { const l = Object.values(files).filter(x => x.parent === f.id); let i = 0; return { hasNext: () => i < l.length, next: () => fileApi(l[i++]) }; },
     getFolders: () => { const l = Object.values(folders).filter(x => x.parent === f.id); let i = 0; return { hasNext: () => i < l.length, next: () => folderApi(l[i++]) }; } });
-  const fileApi = x => ({ getId: () => x.id, getName: () => x.name, getMimeType: () => x.mime || "application/pdf", getSize: () => (x.bytes || []).length, getLastUpdated: () => new Date(), getAs: m => ({ getBytes: () => [37, 80, 68, 70], getContentType: () => m }), setDescription: d => { x.desc = d; }, setTrashed: t => { x.trashed = t; }, getBlob: () => ({ getBytes: () => x.bytes, getContentType: () => x.mime }) });
+  const fileApi = x => ({ getId: () => x.id, getName: () => x.name, getMimeType: () => x.mime || "application/pdf", getSize: () => (x.bytes || []).length, getLastUpdated: () => new Date(), getAs: m => ({ getBytes: () => [37, 80, 68, 70], getContentType: () => m }), setDescription: d => { x.desc = d; }, setTrashed: t => { x.trashed = t; }, isTrashed: () => !!x.trashed, getDescription: () => x.desc || "", getUrl: () => "https://drive/file/" + x.id, getParents: () => { let d = false; return { hasNext: () => !d && !!folders[x.parent], next: () => { d = true; return folderApi(folders[x.parent]); } }; }, moveTo: f => { x.parent = f.getId(); }, getBlob: () => ({ getBytes: () => x.bytes, getContentType: () => x.mime }) });
   const root = { id: "root", name: "My Drive" }; folders.root = root;
   window.DriveApp = { createFolder: n => folderApi(root).createFolder(n), getFolderById: id => { if (!folders[id]) throw new Error("no folder"); return folderApi(folders[id]); }, getFileById: id => { if (!files[id]) throw new Error("no file"); return fileApi(files[id]); } };
   window.Utilities = {
@@ -52,7 +52,7 @@
     getUuid: () => "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, c => (Math.random() * 16 | 0).toString(16)),
     newBlob: (data, mime, name) => ({ getBytes: () => typeof data === "string" ? new TextEncoder().encode(data) : data, bytes: data, mime, name }),
     base64Decode: s => Array.from(atob(s), c => c.charCodeAt(0)),
-    base64Encode: b => typeof b === "string" ? btoa(b) : btoa(String.fromCharCode(...b)) };
+    base64Encode: b => { if (typeof b === "string") return btoa(b); let t = ""; for (let i = 0; i < b.length; i += 32768) t += String.fromCharCode.apply(null, Array.from(b.slice(i, i + 32768), x => x & 255)); return btoa(t); } };
   window.__batch = 0;
   window.Sheets = { Spreadsheets: { Values: { batchGet: (id, o) => { window.__batch++; return { valueRanges: o.ranges.map(r => { const n = r.slice(1, -1).replace(/''/g, "'"); if (!book[n]) throw new Error("Unable to parse range"); const rows = book[n].data.map(row => { const x = row.slice(); while (x.length && x[x.length-1] === "") x.pop(); return x; }); while (rows.length && !rows[rows.length-1].length) rows.pop(); return { values: rows }; }) }; } } } };
   window.ContentService = { MimeType: { ICAL: "ical" }, createTextOutput: c => { const o = { c, setMimeType() { return o; }, downloadAsFile(n) { o.file = n; return o; }, getContent: () => c }; return o; } };
