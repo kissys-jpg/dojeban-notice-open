@@ -43,6 +43,7 @@ h1,h2,h3{text-wrap:balance;margin:0;line-height:1.3}
 .ttl h1{font-size:17px;font-weight:700;letter-spacing:-.01em}
 .ttl p{margin:0;font-size:12.5px;color:var(--muted)}
 .ttl .upd{font-size:11px;opacity:.85}
+[data-home]{cursor:pointer}
 .role{font-size:12px;padding:3px 9px;border-radius:99px;background:var(--sunk);color:var(--muted);white-space:nowrap}
 .role.t{background:var(--accent);color:var(--accent-ink)}
 .tabs{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;margin:0 -4px}
@@ -252,8 +253,8 @@ table.tt{width:100%;border-collapse:collapse;margin-top:6px}table.tt th,table.tt
   <header class="bar">
     <div class="bar-in">
       <div class="bar-top">
-        <div class="mark" aria-hidden="true">도</div>
-        <div class="ttl"><h1>도제반 알림판</h1><p>경기항공고 로봇자동화과 · 전자기기생산 L2 도제</p><p class="upd" id="updAt" hidden></p></div>
+        <div class="mark" aria-hidden="true" data-home>도</div>
+        <div class="ttl"><h1 data-home role="link" tabindex="0" title="오늘(홈)으로">도제반 알림판</h1><p>경기항공고 로봇자동화과 · 전자기기생산 L2 도제</p><p class="upd" id="updAt" hidden></p></div>
         <span class="role" id="role"></span>
         <button class="btn sm ghost" id="logoutTop">나가기</button>
       </div>
@@ -385,12 +386,11 @@ let learnerTab = LEARNER_TABS.some(([k]) => k === lsGet('dj.learnerTab')) ? lsGe
 function isLearnerTab(k){ return LEARNER_TABS.some(([key]) => key === k); }
 function tabsFor(){
   let t;
-  if (T()) t = [["today","오늘"],["notices","공지"],["learner","학습근로자"],["schedule","일정"],["purchases","구매요청"],["anon","익명게시판"],["portfolio","포트폴리오"],["materials","자료실"],["roster","명단"],["me","설정"]];
-  else if (isLearner()) t = [["today","오늘"],["notices","공지"],["learner","학습근로자"],["schedule","일정"],["anon","익명게시판"],["portfolio","포트폴리오"],["materials","자료실"]].concat([["me","내 정보"]]);
-  else t = [["today","오늘"],["notices","공지"],["schedule","일정"],["anon","익명게시판"],["purchases","구매요청"],["portfolio","포트폴리오"],["materials","자료실"],["me","내 정보"]];
-  t.splice(t.findIndex(([k])=>k==="portfolio"),0,["projects","프로젝트"]);
+  if (T()) t = [["today","오늘"],["notices","공지"],["learner","학습근로자"],["schedule","일정"],["purchases","구매요청"],["anon","익명게시판"],["portfolio","포트폴리오"],["roster","명단"],["me","설정"]];
+  else if (isLearner()) t = [["today","오늘"],["notices","공지"],["learner","학습근로자"],["schedule","일정"],["anon","익명게시판"],["portfolio","포트폴리오"]].concat([["me","내 정보"]]);
+  else t = [["today","오늘"],["notices","공지"],["schedule","일정"],["anon","익명게시판"],["purchases","구매요청"],["portfolio","포트폴리오"],["me","내 정보"]];
+  t.splice(t.findIndex(([k])=>k==="portfolio"),0,["projects","프로젝트"],["contest","대회"],["cert","자격증"]);
   const si = t.findIndex(x => x[0] === "schedule"); t.splice(si < 0 ? 1 : si + 1, 0, ["school", "시간표·급식"]);
-  if (T()) t.splice(t.findIndex(([k]) => k === 'roster'),0,['register','출석부']);
   return t;
 }
 function go(k){
@@ -403,7 +403,9 @@ function go(k){
     if (k === 'attendance') prepareAttendanceScope('train');
   }
   tab = k; lsSet("dj.tab", k); reqOpen = null; anonOpen = null; render(); scrollTo({top:0}); }
-$("#tabs").addEventListener("click", e => { const b = e.target.closest("[data-tab]"); if (b) go(b.dataset.tab); });
+$("#tabs").addEventListener("click", e => { const b = e.target.closest("[data-tab]"); if (b) { boardOpen = null; go(b.dataset.tab); } });
+document.querySelector("#shell .bar-top").addEventListener("click", e => { if (e.target.closest("[data-home]")) { boardOpen = null; go("today"); } });
+document.querySelector("#shell .bar-top").addEventListener("keydown", e => { if (e.target.closest("[data-home]") && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); boardOpen = null; go("today"); } });
 
 /* ---------- 공통 조각 ---------- */
 const emptyBox = (t, s) => `<div class="empty"><b>${esc(t)}</b>${s ? esc(s) : ""}</div>`;
@@ -421,6 +423,27 @@ function afterCalendarEvents(){
 }
 function sheetCalendarEvents(){return (D.sheetCalendar||[]).map(e=>({...e,src:'sheet',target:'all',targets:(e.grades||[]).map(g=>GRADE_GROUP[g]),srcLabel:'일정표 · 일반 일정'+(e.grades?.length?' · '+e.grades.slice().sort().join('·')+'학년':'')}));}
 
+/* ---------- 대회 정보: 다가오는 대회를 오늘 화면과 프로젝트 메뉴에 바로 보이게 ---------- */
+function dday(d){ const n = Math.round((parse(d) - parse(TODAY)) / 86400000); return n === 0 ? "D-day" : n > 0 ? "D-" + n : "D+" + (-n); }
+function contestNext(p){
+  const steps = [["접수 시작", p.applyStart], ["접수 마감", p.applyEnd], ["개최", p.date], ["대회 종료", p.eventEnd]].filter(x => x[1] && x[1] >= TODAY && !(x[0] === "접수 시작" && p.applyStart === p.applyEnd));
+  return steps.sort((a, b) => a[1].localeCompare(b[1]))[0] || null;
+}
+function upcomingContests(){ return (D.boardPosts || []).filter(p => p.category === "대회").map(p => ({ p, next: contestNext(p) })).filter(x => x.next).sort((a, b) => a.next[1].localeCompare(b.next[1])); }
+function contestCard(x){
+  const p = x.p, n = x.next;
+  return `<div class="row" style="border-top:1px solid var(--line);padding:10px 0;align-items:flex-start"><span class="chip ${n[0] === "접수 마감" ? "bad" : "pre"}" style="min-width:58px;text-align:center">${dday(n[1])}</span><div style="flex:1;min-width:0"><b style="overflow-wrap:anywhere">${esc(p.subject || p.title)}</b><div class="ev-s">${esc(n[0])} ${esc(fmtMD(n[1]))}${p.applyEnd && n[0] !== "접수 마감" && p.applyEnd >= TODAY ? " · 접수 마감 " + esc(fmtMD(p.applyEnd)) : ""}${p.date && n[0] !== "개최" ? " · 개최 " + esc(fmtMD(p.date)) : ""}${p.organizer ? " · " + esc(p.organizer) : ""}</div></div><button class="btn sm" data-contest-post="${esc(p.id)}">자세히</button></div>`;
+}
+function todayContests(){
+  const list = upcomingContests().slice(0, 3); if (!list.length) return "";
+  return `<section class="panel pad"><div class="row"><h3 style="margin:0">다가오는 대회</h3><span class="spacer"></span><button class="btn sm ghost" data-go-contests>전체 보기</button></div>${list.map(contestCard).join("")}</section>`;
+}
+function vContests(){
+  const up = upcomingContests(), ids = new Set(up.map(x => x.p.id)), past = (D.boardPosts || []).filter(p => p.category === "대회" && !ids.has(p.id));
+  return extraHead("대회 정보", "참가할 수 있는 대회와 접수·개최 일정입니다. 일정은 달력과 휴대폰 캘린더에도 자동으로 들어갑니다.", '<button class="btn pri" data-contest-new>+ 대회 등록</button>')
+    + `<section class="panel pad">${up.length ? up.map(contestCard).join("") : '<div class="ev-s">예정된 대회가 없습니다. 알고 있는 대회가 있으면 등록해 주세요.</div>'}</section>`
+    + (past.length ? `<details class="panel pad"><summary>지난 대회 ${past.length}건</summary>${past.map(p => `<div class="row" style="border-top:1px solid var(--line);padding:8px 0"><span style="flex:1;min-width:0;overflow-wrap:anywhere">${esc(p.subject || p.title)} <span class="ev-s">${esc(p.date ? fmtMD(p.date) : "")}</span></span><button class="btn sm ghost" data-contest-post="${esc(p.id)}">보기</button></div>`).join("")}</details>` : "");
+}
 function contestCalendarEvents(){const out=[];(D.boardPosts||[]).filter(p=>p.category==='대회').forEach(p=>{const title=p.subject||p.title;const add=(part,date,label,end)=>{if(date)out.push({id:'contest-'+p.id+'-'+part,post:p.id,title:'대회 · '+title+' · '+label,kind:'CT',date,endDate:end||'',target:'all',src:'board',srcLabel:'대회 정보',place:p.place||'',note:p.organizer||''});};if(p.applyStart!==p.applyEnd)add('apply-start',p.applyStart,'접수 시작');add('apply-end',p.applyEnd,'접수 마감');add('event',p.date,'개최',p.eventEnd);});return out;}
 function contestBoardFields(p){return '<div id="contestFields" '+(p.category==='대회'?'':'hidden')+'><div class="fgrid">'+field('주최기관','organizer',p.organizer||'','text','maxlength="100"')+field('장소','place',p.place||'','text','maxlength="150"')+field('접수 시작일','applyStart',p.applyStart||'','date')+field('접수 마감일','applyEnd',p.applyEnd||'','date')+field('대회 종료일 (여러 날인 경우)','eventEnd',p.eventEnd||'','date')+'</div><p class="ev-s">접수 시작·마감과 개최 기간은 일정 달력에도 표시됩니다. 날짜를 모르면 비워 두세요.</p></div>';}
 function contestBoardDetails(p){if(p.category!=='대회')return '';return '<div class="panel pad" style="margin:12px 0"><h3>대회 정보·일정</h3><div class="ev-s">'+esc(p.organizer||'주최기관 미입력')+(p.place?' · '+esc(p.place):'')+'</div><p>접수: '+esc(p.applyStart?fmtMD(p.applyStart):'시작일 미정')+' ~ '+esc(p.applyEnd?fmtMD(p.applyEnd):'마감일 미정')+'<br>개최: '+esc(p.date?fmtMD(p.date):'날짜 미정')+(p.eventEnd?' ~ '+esc(fmtMD(p.eventEnd)):'')+'</p><button class="btn sm" data-contest-calendar="'+esc(p.id)+'">일정 달력 보기</button></div>';}
@@ -543,31 +566,37 @@ let projSub=null,boardOpen=null,boardFilter='all',boardQuery='',boardDraftFiles=
 function boardList(){const q=boardQuery.trim().toLowerCase();return [...(D.boardPosts||[])].filter(p=>(boardFilter==='all'||p.category===boardFilter)&&[p.title,p.subject,p.body].join(' ').toLowerCase().includes(q)).sort((a,b)=>String(b.updated).localeCompare(String(a.updated)));}
 function boardFilesHtml(files){return (files||[]).map(f=>'<div class="row" style="margin-top:8px"><span style="flex:1;overflow-wrap:anywhere">'+esc(f.name)+' <small class="muted">'+fmtSize(f.size)+'</small></span><button class="btn sm" data-file="'+esc(f.id)+'">받기</button></div>').join('');}
 /* 프로젝트: 공유 게시판(전체 공개)과 우리 팀(구성원 전용 과제·자료함)을 한 메뉴로 */
+function projHubTabs(){ const hasTeam=T()||(D.projects&&D.projects.length>0); return [['board','공유 게시판']].concat(hasTeam?[['team',T()?'프로젝트 관리':'우리 팀']]:[]).concat([['materials','자료실']]); }
+function projHubBar(){ const cur=tab==='materials'?'materials':projSub; return '<div class="row" style="margin-bottom:12px" aria-label="프로젝트 보기">'+projHubTabs().map(([k,l])=>'<button class="chipbtn" data-projsub="'+k+'" aria-pressed="'+(cur===k)+'">'+l+'</button>').join('')+'</div>'; }
+function vMaterialsSub(){ return projHubBar()+vMaterials(); }
+function rosterBar(){ return T()?'<div class="row" style="margin-bottom:12px" aria-label="명단 보기">'+[['roster','명단 · PIN'],['register','출석부']].map(([k,l])=>'<button class="chipbtn" data-go="'+k+'" aria-pressed="'+(tab===k)+'">'+l+'</button>').join('')+'</div>':''; }
+function vRosterSub(){ return rosterBar()+vRoster(); }
+function vRegisterSub(){ return rosterBar()+vRegister(); }
+function vContestTop(){ return boardOpen ? vBoard() : vContests(); }
+function vCertTop(){ return vBoard('자격증'); }
 function vProjectHub(){
  const hasTeam=T()||(D.projects&&D.projects.length>0);
  if(projSub!=='team'&&projSub!=='board')projSub='board';
  if(projSub==='team'&&!hasTeam)projSub='board';
  const tabs=[['board','공유 게시판']].concat(hasTeam?[['team',T()?'프로젝트 관리':'우리 팀']]:[]);
- const bar='<div class="row" style="margin-bottom:12px" aria-label="프로젝트 보기">'+tabs.map(([k,l])=>'<button class="chipbtn" data-projsub="'+k+'" aria-pressed="'+(projSub===k)+'">'+l+'</button>').join('')+'</div>';
- return bar+(projSub==='team'?vProjects():vBoard());
+ return projHubBar(tabs)+(projSub==='team'?vProjects():vBoard());
 }
-function vBoard(){
+function vBoard(lock){
  const posts=D.boardPosts||[],comments=D.boardComments||[];
  if(boardOpen){const p=posts.find(p=>p.id===boardOpen);if(!p){boardOpen=null;return vBoard();}const cs=comments.filter(c=>c.post===p.id).sort((a,b)=>String(a.at).localeCompare(String(b.at)));
  return '<div class="sec-h"><button class="btn ghost" data-board-back>‹ 목록</button>'+(T()||p.mine?'<div class="row"><button class="btn" data-board-edit="'+esc(p.id)+'">수정</button><button class="btn ghost danger" data-board-delete="'+esc(p.id)+'">삭제</button></div>':'')+'</div><section class="panel pad"><div class="row"><span class="chip">'+esc(p.category)+'</span><span class="chip">'+esc(p.status)+'</span><span class="meta">전체 공유</span></div><h2>'+esc(p.title)+'</h2><p class="ev-s">'+esc(p.subject||'')+(p.date?' · 관련일 '+esc(fmtMD(p.date)):'')+' · '+esc(p.author)+' · '+esc(p.updated)+'</p>'+contestBoardDetails(p)+'<div class="body">'+esc(p.body)+'</div><div class="row" style="margin-top:12px">'+extraLink(p.link)+'</div>'+(p.files.length?'<h3>공유 자료</h3>'+boardFilesHtml(p.files):'')+'</section><section class="panel"><div class="pad"><h3>댓글 · '+cs.length+'</h3></div>'+cs.map(c=>'<div class="msg"><b>'+esc(c.author)+'</b> <span class="ev-s">'+esc(c.at)+'</span><p>'+esc(c.body)+'</p>'+(T()||c.mine?'<button class="btn sm ghost danger" data-board-comment-delete="'+esc(c.id)+'">댓글 삭제</button>':'')+'</div>').join('')+'<form id="boardCommentForm" class="pad"><label class="fld"><span>질문·의견</span><textarea id="boardCommentText" required maxlength="1500"></textarea></label><button class="btn pri" type="submit">댓글 달기</button></form></section>';
  }
- const list=boardList();return extraHead('공유 게시판','프로젝트 결과물, 자격증 준비 자료, 대회 정보와 일정을 함께 공유합니다.','<button class="btn pri" data-board-new>+ 글쓰기</button>')+'<section class="panel pad"><div class="row" aria-label="게시판 구분">'+[['all','전체'],['프로젝트','프로젝트'],['자격증','자격증'],['대회','대회']].map(([k,l])=>'<button class="chipbtn" data-board-filter="'+k+'" aria-pressed="'+(boardFilter===k)+'">'+l+'</button>').join('')+'</div><label class="fld" style="margin-top:12px"><span>검색</span><input type="search" id="boardQuery" value="'+esc(boardQuery)+'" placeholder="제목·프로젝트명·자격증명·대회명·내용 검색"></label><p class="ev-s">이 게시판의 새 글과 첨부는 전체 학생에게 공유됩니다. 개인 활동 기록은 포트폴리오에 남겨 주세요.</p></section><section class="panel">'+(list.length?list.map(p=>'<button class="listbtn" data-board-open="'+esc(p.id)+'"><div><div class="row"><span class="chip">'+esc(p.category)+'</span><span class="chip">'+esc(p.status)+'</span></div><h3>'+esc(p.title)+'</h3><div class="ev-s">'+esc(p.subject||'')+(p.date?' · '+esc(fmtMD(p.date)):'')+'</div><p>'+esc(p.body.slice(0,100))+(p.body.length>100?'…':'')+'</p><div class="ev-s">'+esc(p.author)+' · '+esc(p.updated)+' · 첨부 '+p.files.length+'개 · 댓글 '+comments.filter(c=>c.post===p.id).length+'</div></div></button>').join(''):emptyBox(posts.length?'검색 결과가 없습니다':'아직 공유한 글이 없습니다','글쓰기로 프로젝트·자격증·대회 정보를 올려 주세요.'))+'</section>';
+ const prevFilter=boardFilter;if(lock)boardFilter=lock;const list=boardList();boardFilter=prevFilter;return (lock?extraHead('자격증','자격증 시험 일정, 준비 자료, 합격 후기를 함께 나눕니다. 시험일을 넣으면 달력에도 표시됩니다.','<button class="btn pri" data-cert-new>+ 자격증 글쓰기</button>'):extraHead('공유 게시판','프로젝트 결과물, 자격증 준비 자료, 대회 정보와 일정을 함께 공유합니다.','<button class="btn pri" data-board-new>+ 글쓰기</button>'))+'<section class="panel pad">'+(lock?'':'<div class="row" aria-label="게시판 구분">'+[['all','전체'],['프로젝트','프로젝트'],['자격증','자격증'],['대회','대회']].map(([k,l])=>'<button class="chipbtn" data-board-filter="'+k+'" aria-pressed="'+(boardFilter===k)+'">'+l+'</button>').join('')+'</div>')+'<label class="fld" style="margin-top:12px"><span>검색</span><input type="search" id="boardQuery" value="'+esc(boardQuery)+'" placeholder="제목·프로젝트명·자격증명·대회명·내용 검색"></label><p class="ev-s">이 게시판의 새 글과 첨부는 전체 학생에게 공유됩니다. 개인 활동 기록은 포트폴리오에 남겨 주세요.</p></section><section class="panel">'+(list.length?list.map(p=>'<button class="listbtn" data-board-open="'+esc(p.id)+'"><div><div class="row"><span class="chip">'+esc(p.category)+'</span><span class="chip">'+esc(p.status)+'</span></div><h3>'+esc(p.title)+'</h3><div class="ev-s">'+esc(p.subject||'')+(p.date?' · '+esc(fmtMD(p.date)):'')+'</div><p>'+esc(p.body.slice(0,100))+(p.body.length>100?'…':'')+'</p><div class="ev-s">'+esc(p.author)+' · '+esc(p.updated)+' · 첨부 '+p.files.length+'개 · 댓글 '+comments.filter(c=>c.post===p.id).length+'</div></div></button>').join(''):emptyBox(posts.length?'검색 결과가 없습니다':'아직 공유한 글이 없습니다','글쓰기로 프로젝트·자격증·대회 정보를 올려 주세요.'))+'</section>';
 }
 function boardDlg(p={}){
- boardDraftFiles=[];
  const kept=(p.files||[]).map(f=>'<label class="check"><input type="checkbox" name="keepBoardFile" value="'+esc(f.id)+'" checked> '+esc(f.name)+' 유지</label>').join('');
- openDlg(p.id?'프로젝트 게시글 수정':'프로젝트·자격증·대회 글쓰기','<div class="fgrid">'+sel('글 구분','category',[['프로젝트','프로젝트'],['자격증','자격증'],['대회','대회']],p.category||'프로젝트')+sel('진행 상태','status',['준비','진행 중','완료','자료 공유'].map(s=>[s,s]),p.status||'자료 공유')+'</div>'+field('프로젝트명·자격증명·대회명','subject',p.subject||'','text','maxlength="100"')+field('제목','title',p.title||'','text','required maxlength="150"')+area('프로젝트 내용·자료 설명','body',p.body||'',6000).replace('<textarea ','<textarea required ')+field('관련일·대회 개최일 (선택)','date',p.date||'','date')+contestBoardFields(p)+field('관련 링크 (선택)','link',p.link||'','url')+'<div class="panel pad" id="boardDrop" style="border:2px dashed var(--line);margin:12px 0"><b>파일을 여기에 끌어다 놓으세요</b><label class="fld"><span>또는 파일 선택 · 최대 5개, 파일당 10MB, 합계 20MB</span><input type="file" id="boardUploadFiles" multiple accept="'+FILE_ACCEPT+'"></label><div id="boardFileStatus" class="ev-s" role="status"></div></div>'+kept+'<p class="ev-s">전체 학생에게 공유하는 글입니다. 새 파일은 Drive의 프로젝트게시판 폴더에 저장됩니다.</p>','저장',async fd=>{try{const uploads=await readBoardUploads();const keepFiles=[...form.querySelectorAll('input[name="keepBoardFile"]:checked')].map(e=>e.value);const r=await callRaw('saveBoard',{id:p.id,...fd,keepFiles,uploads},null,true);boardOpen=r.data;if(r.load)setData(r.load);else await reload();toast('게시글을 공유했습니다');return true;}catch(e){toast(e.message);return false;}});
+ openDlg(p.id?'프로젝트 게시글 수정':'프로젝트·자격증·대회 글쓰기','<div class="fgrid">'+sel('글 구분','category',[['프로젝트','프로젝트'],['자격증','자격증'],['대회','대회']],p.category||'프로젝트')+sel('진행 상태','status',['준비','진행 중','완료','자료 공유'].map(s=>[s,s]),p.status||'자료 공유')+'</div>'+field('프로젝트명·자격증명·대회명','subject',p.subject||'','text','maxlength="100"')+field('제목','title',p.title||'','text','required maxlength="150"')+area('프로젝트 내용·자료 설명','body',p.body||'',6000).replace('<textarea ','<textarea required ')+field('관련일·대회 개최일 (선택)','date',p.date||'','date')+contestBoardFields(p)+field('관련 링크 (선택)','link',p.link||'','url')+filePicker(5,'합계 20MB')+kept+'<p class="ev-s">전체 학생에게 공유하는 글입니다. 새 파일은 Drive의 프로젝트게시판 폴더에 저장됩니다.</p>','저장',async fd=>{try{const uploads=await readDraftUploads(20);const keepFiles=[...form.querySelectorAll('input[name="keepBoardFile"]:checked')].map(e=>e.value);const r=await callRaw('saveBoard',{id:p.id,...fd,keepFiles,uploads},null,true);boardOpen=r.data;if(r.load)setData(r.load);else await reload();toast('게시글을 공유했습니다');return true;}catch(e){toast(e.message);return false;}});
  form.querySelector('[name="category"]').onchange=e=>{form.querySelector('#contestFields').hidden=e.target.value!=='대회';};
- const pick=files=>{boardDraftFiles=Array.from(files||[]);form.querySelector('#boardFileStatus').textContent=boardDraftFiles.map(f=>f.name+' ('+fmtSize(f.size)+')').join(' · ');};form.querySelector('#boardUploadFiles').onchange=e=>pick(e.target.files);const drop=form.querySelector('#boardDrop');drop.ondragover=e=>{e.preventDefault();drop.style.borderColor='var(--accent)';};drop.ondragleave=()=>{drop.style.borderColor='var(--line)';};drop.ondrop=e=>{e.preventDefault();drop.style.borderColor='var(--line)';pick(e.dataTransfer.files);};
+ bindFilePicker();
 }
 async function readBoardUploads(){if(boardDraftFiles.length>5)throw new Error('한 번에 최대 5개 파일을 선택해 주세요');let total=0;for(const f of boardDraftFiles){if(!f.size||f.size>MAX_MB*1024*1024)throw new Error('파일당 0바이트 초과, 10MB 이하여야 합니다');total+=f.size;}if(total>20*1024*1024)throw new Error('첨부 합계를 20MB 이하로 줄여 주세요');const uploads=[];for(const f of boardDraftFiles)uploads.push(await new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve({name:f.name,base64:String(r.result).split(',')[1]});r.onerror=()=>reject(new Error('파일을 읽지 못했습니다'));r.readAsDataURL(f);}));return uploads;}
 function bindBoardComment(){const f=$('#boardCommentForm');if(!f)return;f.onsubmit=async e=>{e.preventDefault();const text=$('#boardCommentText').value,button=f.querySelector('button');button.disabled=true;const ok=await act('boardComment',{post:boardOpen,body:text},'댓글을 올렸습니다');if(!ok)button.disabled=false;};}
-$('#main').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const x=b.dataset;if(x.freq)return folderReqDlg(x.freq,x.freqLabel||'폴더');if(x.freqOk){b.disabled=true;return act('decideFolderAccess',{id:x.freqOk,approve:true},'공유했습니다');}if(x.freqNo){if(!arm(b,'fq'+x.freqNo))return;return act('decideFolderAccess',{id:x.freqNo,approve:false},'거절했습니다');}if(x.contestPost){boardOpen=x.contestPost;projSub='board';return go('board');}if(x.contestCalendar){const p=(D.boardPosts||[]).find(p=>p.id===x.contestCalendar),date=p&&(p.date||p.applyEnd||p.applyStart);if(date){calSel=date;calMonth=parse(date);calMonth.setDate(1);}schedMode='cal';return go('schedule');}if(x.projsub){projSub=x.projsub;boardOpen=null;return render();}if(x.projShare){const p=D.projects.find(q=>q.id===x.projShare);if(p)return boardDlg({category:'프로젝트',status:'진행 중',subject:p.team+' · '+p.product});return;}if(x.boardNew!==undefined)return boardDlg();if(x.boardOpen){boardOpen=x.boardOpen;return render();}if(x.boardBack!==undefined){boardOpen=null;return render();}if(x.boardFilter){boardFilter=x.boardFilter;return render();}if(x.boardEdit)return boardDlg((D.boardPosts||[]).find(p=>p.id===x.boardEdit));if(x.boardDelete){if(!arm(b,x.boardDelete))return;return act('deleteBoard',{id:x.boardDelete},'게시글을 목록에서 삭제했습니다');}if(x.boardCommentDelete){if(!arm(b,x.boardCommentDelete))return;return act('deleteBoardComment',{id:x.boardCommentDelete},'댓글을 삭제했습니다');}});
+$('#main').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const x=b.dataset;if(x.freq)return folderReqDlg(x.freq,x.freqLabel||'폴더');if(x.freqOk){b.disabled=true;return act('decideFolderAccess',{id:x.freqOk,approve:true},'공유했습니다');}if(x.freqNo){if(!arm(b,'fq'+x.freqNo))return;return act('decideFolderAccess',{id:x.freqNo,approve:false},'거절했습니다');}if(x.contestPost){go('contest');boardOpen=x.contestPost;return render();}if(x.contestNew!==undefined)return boardDlg({category:'대회',status:'준비'});if(x.goContests!==undefined){boardOpen=null;return go('contest');}if(x.contestCalendar){const p=(D.boardPosts||[]).find(p=>p.id===x.contestCalendar),date=p&&(p.date||p.applyEnd||p.applyStart);if(date){calSel=date;calMonth=parse(date);calMonth.setDate(1);}schedMode='cal';return go('schedule');}if(x.projsub){boardOpen=null;if(x.projsub==='materials')return go('materials');projSub=x.projsub;return go('projects');}if(x.certNew!==undefined)return boardDlg({category:'자격증',status:'준비'});if(x.projShare){const p=D.projects.find(q=>q.id===x.projShare);if(p)return boardDlg({category:'프로젝트',status:'진행 중',subject:p.team+' · '+p.product});return;}if(x.boardNew!==undefined)return boardDlg();if(x.boardOpen){boardOpen=x.boardOpen;return render();}if(x.boardBack!==undefined){boardOpen=null;return render();}if(x.boardFilter){boardFilter=x.boardFilter;return render();}if(x.boardEdit)return boardDlg((D.boardPosts||[]).find(p=>p.id===x.boardEdit));if(x.boardDelete){if(!arm(b,x.boardDelete))return;return act('deleteBoard',{id:x.boardDelete},'게시글을 목록에서 삭제했습니다');}if(x.boardCommentDelete){if(!arm(b,x.boardCommentDelete))return;return act('deleteBoardComment',{id:x.boardCommentDelete},'댓글을 삭제했습니다');}});
 $('#main').addEventListener('input',e=>{if(e.target.id==='boardQuery'){boardQuery=e.target.value;const pos=e.target.selectionStart;render();const q=$('#boardQuery');if(q){q.focus();q.setSelectionRange(pos,pos);}}});
 
 /* ---------- 오늘 ---------- */
@@ -577,6 +606,7 @@ function vToday(){
   const notices = sortedNotices().slice(0, 3);
   let h = `<div class="sec-h"><div><h2>${fmtMD(TODAY)} 오늘</h2><p>${T() ? "오늘 일정과 최근 공지입니다." : `${esc(D.me.name)} · ${esc(GROUP[myGroup()] || "")}에 해당하는 일정과 공지만 보여 줍니다.`}</p></div><button class="btn sm ghost" data-reload>새로고침</button></div>`;
   h += todayActions();
+  h += todayContests();
   h += todayMeal();
   if (D.tabsMissing && D.tabsMissing.length && T()) h += `<div class="banner">시트에서 ‘${esc(D.tabsMissing.join("’, ‘"))}’ 탭을 찾지 못했습니다. Code.gs 위쪽의 탭 이름을 확인하세요.</div>`;
   if (T()){
@@ -929,15 +959,45 @@ const unitChoices = () => [['','선택 안 함'],...D.units.filter(u=>u.active).
 const studentChoices = () => (D.roster||[]).map(r=>[r.name,r.name]);
 const FILE_ACCEPT = ".pdf,.png,.jpg,.jpeg,.gif,.webp,.heic,.txt,.csv,.md,.zip,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.hwp,.hwpx,.mp4,.mov,.mp3,.stl,.step,.stp,.dxf,.dwg,.f3d,.gbr,.kicad_pcb,.ino,.py,.c,.cpp,.h,.json";
 const MAX_MB = 10;
-const fileInput = (keepNote = true) => `<label class="fld"><span>첨부파일 (${keepNote ? "선택 · " : ""}최대 ${MAX_MB}MB)</span><input type="file" id="extraFile" accept="${FILE_ACCEPT}"></label>${keepNote ? `<span class="ev-s">파일을 고르지 않으면 기존 첨부가 유지됩니다. 파일은 선생님 구글 드라이브에 저장됩니다.</span>` : ""}`;
+const fileInput = (keepNote = true, max = 1) => `<div class="fld"><span>첨부파일 (${keepNote ? "선택" : "필수"})</span></div>${filePicker(max)}${keepNote ? `<span class="ev-s">파일을 고르지 않으면 기존 첨부가 유지됩니다. 파일은 선생님 구글 드라이브에 저장됩니다.</span>` : ""}`;
 const driveLink = id => T() && id ? `<a class="btn sm ghost" href="https:\/\/drive.google.com/file/d/${esc(id)}/view" target="_blank" rel="noopener">Drive에서 열기 ↗</a>` : "";
 const fmtSize = n => n >= 1048576 ? (n / 1048576).toFixed(1) + "MB" : Math.max(1, Math.round(n / 1024)) + "KB";
 const extraLink = link => safeUrl(link) ? `<a class="btn sm" href="${esc(safeUrl(link))}" target="_blank" rel="noopener noreferrer">링크 열기 ↗</a>` : '';
 const extraFile = id => id ? `<button class="btn sm" data-file="${esc(id)}">첨부 내려받기</button>${driveLink(id)}` : '';
 const extraDelete = (key,id) => `<button class="btn sm ghost danger" data-extra-delete="${key}|${esc(id)}">삭제</button>`;
 const extraHead = (title,desc,button='') => `<div class="sec-h"><div><h2>${title}</h2><p>${desc}</p></div>${button}</div>`;
+/* ---------- 파일 올리기 공통: 여러 개 누적, 대화상자 어디에 끌어놓아도 인식, ×로 빼기 ---------- */
+let draftFiles = [], draftMax = 5, dlgDrop = null;
+function filePicker(max, note){
+  draftFiles = []; draftMax = max || 1;
+  return `<div class="panel pad dropzone" id="dropZone" tabindex="0" role="button" aria-label="파일 선택 또는 끌어놓기" style="border:2px dashed var(--line);margin:12px 0;text-align:center;cursor:pointer"><b>파일을 끌어다 놓거나 눌러서 선택</b><div class="ev-s">${draftMax > 1 ? `최대 ${draftMax}개 · ` : ""}파일당 ${MAX_MB}MB${note ? " · " + esc(note) : ""}</div><input type="file" id="pickFiles" ${draftMax > 1 ? "multiple" : ""} accept="${FILE_ACCEPT}" hidden></div><div id="pickList"></div>`;
+}
+function addDraftFiles(list){
+  const add = Array.from(list || []);
+  for (const f of add) {
+    if (!f.size || f.size > MAX_MB * 1024 * 1024) { toast(f.name + ": 파일당 " + MAX_MB + "MB 이하만 올릴 수 있습니다"); continue; }
+    if (draftMax === 1) draftFiles = [f];
+    else if (draftFiles.some(x => x.name === f.name && x.size === f.size)) continue;
+    else if (draftFiles.length >= draftMax) { toast("한 번에 최대 " + draftMax + "개까지 올릴 수 있습니다"); break; }
+    else draftFiles.push(f);
+  }
+  renderDraftFiles();
+}
+function renderDraftFiles(){
+  const box = form.querySelector("#pickList"); if (!box) return;
+  box.innerHTML = draftFiles.map((f, i) => `<div class="row" style="border-top:1px solid var(--line);padding:6px 0"><span style="flex:1;min-width:0;overflow-wrap:anywhere">${esc(f.name)} <span class="ev-s">${fmtSize(f.size)}</span></span><button type="button" class="btn sm ghost" data-unpick="${i}" aria-label="${esc(f.name)} 빼기">×</button></div>`).join("");
+}
+function bindFilePicker(){
+  const zone = form.querySelector("#dropZone"), input = form.querySelector("#pickFiles"); if (!zone) return;
+  zone.onclick = () => input.click();
+  zone.onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); input.click(); } };
+  input.onchange = () => { addDraftFiles(input.files); input.value = ""; };
+  dlgDrop = addDraftFiles;
+}
+const fileToUpload = f => new Promise((resolve, reject) => { const r = new FileReader(); r.onload = () => resolve({ name: f.name, base64: String(r.result).split(",")[1] }); r.onerror = () => reject(new Error(f.name + " 파일을 읽지 못했습니다")); r.readAsDataURL(f); });
+async function readDraftUploads(maxTotalMB){ let total = 0; for (const f of draftFiles) total += f.size; if (maxTotalMB && total > maxTotalMB * 1024 * 1024) throw new Error("첨부 합계를 " + maxTotalMB + "MB 이하로 줄여 주세요"); const out = []; for (const f of draftFiles) out.push(await fileToUpload(f)); return out; }
 async function readUpload(){
-  const file=$('#extraFile')?.files[0]; if(!file)return null;
+  const file=draftFiles[0]||$('#extraFile')?.files[0]; if(!file)return null;
   if(file.size>MAX_MB*1024*1024)throw new Error(`첨부파일은 ${MAX_MB}MB 이하로 줄여 주세요. 큰 영상은 Drive 링크로 넣어 주세요`);
   return new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve({name:file.name,base64:String(reader.result).split(',')[1]});reader.onerror=()=>reject(new Error('파일을 읽지 못했습니다'));reader.readAsDataURL(file);});
 }
@@ -967,7 +1027,7 @@ function vUnits(){
 function unitDlg(u={}){openDlg(u.id?'능력단위 수정':'능력단위 등록',field('능력단위 코드','code',u.code||'')+field('단위명','title',u.title||'','text','required maxlength="150"')+`<div class="fgrid">${targetSel(u.target)}${field('기준 시간','hours',u.hours||0,'number','min="0" max="2000" step="0.5"')}</div>`+area('설명','note',u.note||'')+`<label class="check"><input type="checkbox" name="active" ${u.active!==false?'checked':''}> 사용</label>`,'저장',fd=>act('saveUnit',{id:u.id,...fd},'능력단위를 저장했습니다'));}
 function progressDlg(unit,name){const p=D.progress.find(x=>x.unit===unit&&x.name===name)||{};openDlg(name+' · 이수 기록',sel('상태','status',['미시작','진행중','이수','보완필요'].map(x=>[x,x]),p.status||'미시작')+`<div class="fgrid">${field('실제 이수시간','hours',p.hours||0,'number','min="0" max="2000" step="0.5"')}${field('평가일','date',p.date||TODAY,'date')}</div>`+field('평가결과 (예: 우수·보통·미흡 또는 점수)','grade',p.grade||'','text','maxlength="30"')+area('피드백','feedback',p.feedback||''),'저장',fd=>act('saveProgress',{unit,name,...fd},'이수 결과를 저장했습니다'));}
 function vPortfolio(){return extraHead(T()?'학생 포트폴리오':'내 포트폴리오','노션 포트폴리오와 실습 기록·결과물을 모읍니다.','<button class="btn pri" data-extra-new="portfolio">+ 기록 제출</button>')+notionPortfolioBox()+`<section class="panel">${D.portfolio.length?[...D.portfolio].sort((a,b)=>(b.date+b.at).localeCompare(a.date+a.at)).map(p=>`<article class="notice"><div class="row"><span class="chip">${esc(p.status||'제출')}</span><span class="meta">${esc(p.date)}${T()?' · '+esc(p.name):''}</span></div><h3>${esc(p.title)}</h3><div class="ev-s">${esc(D.units.find(u=>u.id===p.unit)?.title||'능력단위 선택 안 함')}</div><div class="body">${esc(p.body)}</div><div class="row">${extraLink(p.link)}${extraFile(p.file)}<button class="btn sm" data-pf-edit="${esc(p.id)}">수정</button>${T()?`<button class="btn sm pri" data-pf-review="${esc(p.id)}">확인·피드백</button>`:''}${extraDelete('portfolio',p.id)}</div>${p.feedback?`<div class="fb"><b>선생님 피드백</b><br>${esc(p.feedback)}</div>`:''}</article>`).join(''):emptyBox('아직 제출한 기록이 없습니다')}</section>`;}
-function portfolioDlg(p={}){openDlg(p.id?'포트폴리오 수정':'포트폴리오 제출',T()&&!p.id?sel('학생','name',studentChoices(),D.roster[0]?.name||''):'','저장',()=>{});form.querySelector('.dlg-act').insertAdjacentHTML('beforebegin',`<div class="fgrid">${field('기록 날짜','date',p.date||TODAY,'date','required')}${sel('능력단위','unit',unitChoices(),p.unit||'')}</div>`+field('제목','title',p.title||'','text','required maxlength="150"')+area('활동·배운 점·결과','body',p.body||'',6000)+field('결과물 링크','link',p.link||'')+fileInput());onSubmit=fd=>actUpload('savePortfolio',{id:p.id,...fd},'포트폴리오를 제출했습니다');}
+function portfolioDlg(p={}){openDlg(p.id?'포트폴리오 수정':'포트폴리오 제출',T()&&!p.id?sel('학생','name',studentChoices(),D.roster[0]?.name||''):'','저장',()=>{});form.querySelector('.dlg-act').insertAdjacentHTML('beforebegin',`<div class="fgrid">${field('기록 날짜','date',p.date||TODAY,'date','required')}${sel('능력단위','unit',unitChoices(),p.unit||'')}</div>`+field('제목','title',p.title||'','text','required maxlength="150"')+area('활동·배운 점·결과','body',p.body||'',6000)+field('결과물 링크','link',p.link||'')+fileInput());bindFilePicker();onSubmit=fd=>actUpload('savePortfolio',{id:p.id,...fd},'포트폴리오를 제출했습니다');}
 function reviewDlg(p){openDlg(p.name+' · 확인 및 피드백',sel('확인 상태','status',[['확인','확인'],['보완요청','보완요청']],p.status==='보완요청'?'보완요청':'확인')+area('피드백','feedback',p.feedback||''),'저장',fd=>act('reviewPortfolio',{id:p.id,...fd},'피드백을 저장했습니다'));}
 function vProjects(){return extraHead(T()?'프로젝트 관리':'우리 팀','팀 과제와 자료함은 구성원과 선생님만 확인하고 수정합니다. 결과물을 모두에게 보여 주려면 ‘게시판에 공유’를 누르세요.',T()?'<button class="btn pri" data-extra-new="project">+ 프로젝트</button>':'')+`<div class="grid2">${D.projects.length?D.projects.map(p=>{const tasks=D.tasks.filter(t=>t.project===p.id),done=tasks.filter(t=>t.done).length;return `<section class="panel"><div class="team-h"><div class="row"><span class="chip">${esc(p.status)}</span><span class="ev-s">마감 ${esc(p.due||'미정')}</span></div><h3>${esc(p.team)} · ${esc(p.product)}</h3><div class="ev-s">${esc(p.members.join(' · '))}</div><div style="white-space:pre-wrap;overflow-wrap:anywhere">${esc(p.goal)}</div><div class="row">${extraLink(p.link)}<button class="btn sm ghost" data-proj-share="${esc(p.id)}">게시판에 공유</button>${T()?`<button class="btn sm" data-project-edit="${esc(p.id)}">수정</button>${extraDelete('projects',p.id)}`:''}<button class="btn sm pri" data-task-new="${esc(p.id)}">+ 과제</button></div><span class="ev-s">완료 ${done}/${tasks.length}</span></div>${projectFilesBox(p)}${tasks.length?tasks.map(t=>`<div class="notice"><div class="row"><span class="chip ${t.done?'ok':''}">${t.done?'완료':'진행'}</span><b>${esc(t.title)}</b></div><div class="ev-s">담당 ${esc(t.assignee||'팀 전체')} · 마감 ${esc(t.due||'미정')}</div><div class="body">${esc(t.note)}</div><div class="row"><button class="btn sm" data-task-edit="${esc(t.id)}">과제 수정·완료</button>${extraDelete('tasks',t.id)}</div></div>`).join(''):emptyBox('등록한 과제가 없습니다')}</section>`;}).join(''):emptyBox('참여 중인 프로젝트가 없습니다')}</div>`;}
 function projectFilesBox(p){
@@ -978,8 +1038,8 @@ function projectFilesBox(p){
 }
 function projectFileDlg(id){
   const p = D.projects.find(x => x.id === id); if (!p) return;
-  openDlg(p.team + " · 파일 올리기", fileInput(false) + field("메모 (선택)", "memo", "", "text", 'maxlength="300" placeholder="예: 2차 회로도, 아두이노 코드 v3"') + `<p class="ev-s">파일은 선생님 구글 드라이브의 ‘팀프로젝트/${esc(p.team)} · ${esc(p.product)}’ 폴더에 저장되고, 팀원과 선생님만 볼 수 있습니다.</p>`, "올리기",
-    fd => actUpload("uploadProjectFile", { project: id, ...fd }, "파일을 올렸습니다"));
+  openDlg(p.team + " · 파일 올리기", fileInput(false, 5) + field("메모 (선택)", "memo", "", "text", 'maxlength="300" placeholder="예: 2차 회로도, 아두이노 코드 v3"') + `<p class="ev-s">파일은 선생님 구글 드라이브의 ‘팀프로젝트/${esc(p.team)} · ${esc(p.product)}’ 폴더에 저장되고, 팀원과 선생님만 볼 수 있습니다.</p>`, "올리기",
+    async fd => { if (!draftFiles.length) { toast("올릴 파일을 골라 주세요"); return false; } let ok = 0; const fail = []; for (const f of draftFiles) { try { await call("uploadProjectFile", { project: id, ...fd, upload: await fileToUpload(f) }); ok++; } catch (e) { fail.push(f.name); } } await reload(); toast(ok + "개 올렸습니다" + (fail.length ? " · 실패: " + fail.join(", ") : "")); return !fail.length; });
 }
 function projectDlg(p={}){openDlg(p.id?'팀프로젝트 수정':'팀프로젝트 등록',field('팀명','team',p.team||'','text','required maxlength="60"')+field('제품명·프로젝트명','product',p.product||'','text','required maxlength="120"')+`<div class="fld"><span>구성원</span><div class="memberpick">${D.roster.map(r=>`<label><input type="checkbox" name="who" value="${esc(r.name)}" ${(p.members||[]).includes(r.name)?'checked':''}> ${esc(r.name)}</label>`).join('')}</div></div>`+area('목표','goal',p.goal||'')+`<div class="fgrid">${field('마감일','due',p.due||'','date')}${sel('상태','status',['준비','진행중','완료','중지'].map(x=>[x,x]),p.status||'준비')}</div>`+field('팀 자료·결과물 링크','link',p.link||''),'저장',fd=>act('saveProject',{id:p.id,...fd,members:fd.who},'프로젝트를 저장했습니다'));}
 function taskDlg(project,id){const t=D.tasks.find(t=>t.id===id)||{},p=D.projects.find(p=>p.id===project);if(!p)return;openDlg(id?'팀 과제 수정':'팀 과제 등록',field('과제명','title',t.title||'','text','required maxlength="150"')+`<div class="fgrid">${sel('담당','assignee',[['','팀 전체'],...p.members.map(n=>[n,n])],t.assignee||'')}${field('마감일','due',t.due||'','date')}</div>`+area('메모·진행 내용','note',t.note||'')+`<label class="check"><input type="checkbox" name="done" ${t.done?'checked':''}> 완료</label>`,'저장',fd=>act('saveTask',{id,project,...fd},'과제를 저장했습니다'));}
@@ -1119,19 +1179,21 @@ $('#main').addEventListener('click',async e=>{
 });
 
 /* ---------- 그리기 ---------- */
+/* 메뉴에 없는 하위 화면: 자료실은 프로젝트 안, 출석부는 명단 안 */
+const SUB_ROUTES = { materials: "projects", register: "roster" };
 function render(){
   if (!D) return;
   if (tab === 'requests') tab = 'anon';
   const tabs = tabsFor(), learnerOpen = tabs.some(([k]) => k === 'learner') && isLearnerTab(tab);
-  if (!tabs.some(t => t[0] === tab) && !learnerOpen) tab = "today";
+  if (!tabs.some(t => t[0] === tab) && !learnerOpen && !(SUB_ROUTES[tab] && tabs.some(t => t[0] === SUB_ROUTES[tab]) && (tab !== "register" || T()))) tab = "today";
   if (learnerOpen) { learnerTab = tab; lsSet('dj.learnerTab', tab); }
-  const activeTab = learnerOpen ? 'learner' : tab;
+  const activeTab = learnerOpen ? 'learner' : (SUB_ROUTES[tab] || tab);
   $("#tabs").innerHTML = tabs.map(([k,l]) => `<button class="tab" role="tab" data-tab="${k}" aria-selected="${k===activeTab}">${esc(l)}</button>`).join("");
   const role = $("#role"); role.textContent = D.localTest ? "PC 테스트" : D.loginDisabled ? "로그인 없는 테스트" : T() ? "교사" : (GROUP[myGroup()] || "학생"); role.classList.toggle("t", T());
   $("#logoutTop").hidden = Boolean(D.loginDisabled);
   evStore.clear();
   const draft = $("#replyText") ? $("#replyText").value : null, anonDraft = $("#anonText") ? $("#anonText").value : null;
-  $("#main").innerHTML = ({today:vToday, notices:vNotices, schedule:vSchedule, requests:vRequests, anon:vAnon, training:vTraining, purchases:vPurchases, ojtcalendar:vOjtCalendar, roster:vRoster, register:vRegister, attendance:vAttendance, units:vUnits, portfolio:vPortfolio, board:vProjectHub, projects:vProjectHub, materials:vMaterials, school:vSchool, me:vMe}[tab] || vToday)();
+  $("#main").innerHTML = ({today:vToday, notices:vNotices, schedule:vSchedule, requests:vRequests, anon:vAnon, training:vTraining, purchases:vPurchases, ojtcalendar:vOjtCalendar, roster:vRosterSub, register:vRegisterSub, attendance:vAttendance, units:vUnits, portfolio:vPortfolio, board:vProjectHub, projects:vProjectHub, materials:vMaterialsSub, contest:vContestTop, cert:vCertTop, school:vSchool, me:vMe}[tab] || vToday)();
   if (learnerOpen) $("#main").insertAdjacentHTML("afterbegin", `<nav class="tabs" role="tablist" aria-label="학습근로자 하위 메뉴" style="margin:4px 0 16px">${LEARNER_TABS.map(([k,l]) => `<button class="tab" role="tab" data-learner-tab="${k}" aria-selected="${k===tab}">${esc(l)}</button>`).join('')}</nav>`);
   if (D.loginDisabled) $("#main").insertAdjacentHTML("afterbegin", `<div class="banner" role="status">${D.localTest ? "PC 테스트 · 입력한 자료는 이 컴퓨터에만 저장됩니다. 실제 구글시트에는 반영되지 않습니다." : "로그인 없는 테스트 모드 · 주소를 아는 사람은 학생 기록 조회와 작성·관리를 할 수 있습니다."}</div>`);
   bindBoardComment();
@@ -1142,14 +1204,26 @@ function render(){
 
 /* ---------- 대화상자 ---------- */
 const dlg = $("#dlg"), form = $("#dlgForm"); let onSubmit = null;
+form.addEventListener("click", e => { const b = e.target.closest("[data-unpick]"); if (b) { draftFiles.splice(Number(b.dataset.unpick), 1); renderDraftFiles(); } });
+dlg.addEventListener("close", () => { dlgDrop = null; });
+const hasFiles = e => e.dataTransfer && Array.from(e.dataTransfer.types || []).includes("Files");
+document.addEventListener("dragover", e => { if (!hasFiles(e)) return; e.preventDefault(); const z = dlg.open && dlgDrop && form.querySelector("#dropZone"); if (z) z.style.borderColor = "var(--accent)"; });
+document.addEventListener("dragleave", e => { if (e.target === document.documentElement || e.target === dlg) { const z = form.querySelector("#dropZone"); if (z) z.style.borderColor = "var(--line)"; } });
+document.addEventListener("drop", e => {
+  if (!hasFiles(e)) return; e.preventDefault();
+  const z = form.querySelector("#dropZone"); if (z) z.style.borderColor = "var(--line)";
+  if (dlg.open && dlgDrop) return dlgDrop(e.dataTransfer.files);
+  if (!dlg.open && document.querySelector("#materialsDrop")) return uploadMaterialsFiles(e.dataTransfer.files);
+  toast("파일은 올리기 창을 연 다음 끌어다 놓아 주세요");
+});
 function openDlg(title, body, label, fn){
   form.innerHTML = `<h3>${esc(title)}</h3>${body}<div class="dlg-act"><button class="btn" type="button" data-close>취소</button><button class="btn pri" type="submit" id="dlgOk">${esc(label)}</button></div>`;
-  onSubmit = fn; dlg.showModal(); const f = form.querySelector("input,textarea,select"); if (f) f.focus();
+  onSubmit = fn; dlgDrop = null; dlg.showModal(); bindFilePicker(); const f = form.querySelector("input:not([type=file]),textarea,select"); if (f) f.focus();
 }
 form.addEventListener("click", e => { if (e.target.closest("[data-close]")) dlg.close(); });
 form.addEventListener("submit", async e => {
   e.preventDefault();
-  const fd = Object.fromEntries(new FormData(form)); form.querySelectorAll("input[type=checkbox]").forEach(c => { if (c.name !== "who") fd[c.name] = c.checked; });
+  const fd = Object.fromEntries(new FormData(form)); for (const k in fd) if (typeof File !== "undefined" && fd[k] instanceof File) delete fd[k]; form.querySelectorAll("input[type=checkbox]").forEach(c => { if (c.name !== "who") fd[c.name] = c.checked; });
   fd.who = [...form.querySelectorAll("input[name=who]:checked")].map(x => x.value);
   const ok = $("#dlgOk"); ok.disabled = true; ok.textContent = "저장 중…";
   const r = await onSubmit(fd);
