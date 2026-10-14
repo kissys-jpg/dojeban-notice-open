@@ -50,6 +50,24 @@ h1,h2,h3{text-wrap:balance;margin:0;line-height:1.3}
 .tabs::-webkit-scrollbar{display:none}
 .tab{appearance:none;border:0;background:none;padding:9px 12px 11px;font-size:14.5px;color:var(--muted);cursor:pointer;border-bottom:2.5px solid transparent;white-space:nowrap;font-weight:500}
 .tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent);font-weight:600}
+.tab .ti{display:none}
+.tab .tl-short{display:none}
+#tabs.icons .tab .ti{display:inline;margin-right:4px}
+.look-row{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 12px}
+.swatch{width:34px;height:34px;border-radius:50%;border:2px solid var(--line);cursor:pointer}
+.swatch[aria-pressed="true"]{outline:3px solid var(--ink);outline-offset:2px}
+.emoji-pick{font-size:22px;width:42px;height:42px;border-radius:10px;border:1px solid var(--line);background:var(--surface);cursor:pointer}
+.emoji-pick[aria-pressed="true"]{border:2px solid var(--accent);background:var(--sunk)}
+.mark.emoji{background:var(--sunk);font-size:21px}
+html.big body{font-size:16.5px}
+@media (max-width:640px){
+  #tabs{display:grid;grid-template-columns:repeat(var(--cols,7),minmax(0,1fr));gap:0;overflow:visible;margin:0 -6px;padding-bottom:2px}
+  #tabs .tab{padding:6px 1px 6px;font-size:11.5px;display:flex;flex-direction:column;align-items:center;gap:1px;min-width:0;border-bottom-width:2px;letter-spacing:-.02em}
+  #tabs .tab .tl-long{display:none}
+  #tabs .tab .tl-short{display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+  #tabs.icons .tab .ti{display:block;font-size:18px;line-height:1.15;margin:0}
+}
+
 .tab:focus-visible,.btn:focus-visible,.chipbtn:focus-visible,.st:focus-visible,.cal-day:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 
 main{max-width:960px;margin:0 auto;padding-inline:16px;padding-block:20px 60px;display:flex;flex-direction:column;gap:18px}
@@ -1099,8 +1117,32 @@ function folderReqDlg(target,label){
 }
 function vMaterials(){return extraHead('자료실','구글 드라이브·노션·선생님이 올린 학습 자료입니다.',T()?'<div class="row"><button class="btn" data-materials-connect>Drive 연결 설정</button><button class="btn pri" data-extra-new="material">+ 자료</button></div>':'')+(T()?folderReqAdmin():folderReqBox('materials','자료실'))+materialControls()+driveDropBox()+driveBox()+notionBox()+`<section class="panel"><div class="pad" style="padding-bottom:4px"><span class="label">선생님이 올린 자료</span></div>${D.materials.length?sortedMaterials(D.materials.filter(m=>materialMatches(m.title,m.body,m.category||"일반")),"title","at").map(m=>`<article class="notice"><div class="row">${targetChip(m.target)}<span class="chip">${esc(m.category||'일반')}</span><span class="meta">${esc(m.at)}</span></div><h3>${esc(m.title)}</h3><div class="body">${esc(m.body)}</div><div class="row">${extraLink(m.link)}${extraFile(m.file)}${T()?`<button class="btn sm" data-material-edit="${esc(m.id)}">수정</button>${extraDelete('materials',m.id)}`:''}</div></article>`).join(''):emptyBox('등록된 자료가 없습니다')}</section>`;}
 function materialDlg(m={}){openDlg(m.id?'자료 수정':'자료 등록',field('제목','title',m.title||'','text','required maxlength="150"')+`<div class="fgrid">${targetSel(m.target)}${field('분류','category',m.category||'학습자료')}</div>`+area('설명','body',m.body||'',5000)+field('자료 링크','link',m.link||'')+fileInput(),'저장',fd=>actUpload('saveMaterial',{id:m.id,...fd},'자료를 저장했습니다'));}
+/* ---------- 메뉴 아이콘·짧은 이름, 화면 꾸미기(이 기기에만 저장) ---------- */
+const TAB_LOOK = { today:["🏠","오늘"], notices:["📢","공지"], learner:["🏭","근로자"], training:["🏭","근로자"], schedule:["📅","일정"], school:["🍱","시간표"], purchases:["🛒","구매"], anon:["💬","익명·요청"], projects:["🧩","프로젝트"], contest:["🏆","대회"], cert:["📜","자격증"], company:["🏢","기업"], portfolio:["🎒","포폴"], roster:["👥","명단"], me:["⚙️","설정"] };
+const LOOK_ACCENTS = [["#d4561c","주황"],["#2f6fd6","파랑"],["#1f8a5b","초록"],["#7a4bd0","보라"],["#d6457f","분홍"],["#149c96","민트"],["#b8860b","노랑"],["#1f3a52","남색"]];
+const LOOK_BGS = [["","기본"],["#fbf6ee","크림"],["#eef5fc","하늘"],["#f0f7ec","연두"],["#f6f0fb","라벤더"],["#fdf0f3","벚꽃"],["dark","어둡게"]];
+const LOOK_EMOJI = ["도","🐱","🐶","🐰","🦊","🐻","🐼","🐨","🐧","🐥","🐸","🦄","🐳","🤖","🚀","⭐","🌈","🍀","🔧","⚡"];
+function look(){ try { return JSON.parse(lsGet("dj.look") || "{}") || {}; } catch { return {}; } }
+function setLook(patch){ const v = Object.assign(look(), patch); lsSet("dj.look", JSON.stringify(v)); applyLook(); }
+function applyLook(){
+  const v = look(), root = document.documentElement;
+  if (v.accent) root.style.setProperty("--accent", v.accent); else root.style.removeProperty("--accent");
+  if (v.bg === "dark") { root.setAttribute("data-theme", "dark"); root.style.removeProperty("--bg"); }
+  else { if (root.getAttribute("data-theme") === "dark") root.removeAttribute("data-theme"); if (v.bg) root.style.setProperty("--bg", v.bg); else root.style.removeProperty("--bg"); }
+  root.classList.toggle("big", v.size === "big");
+  const mark = document.querySelector("#shell .bar-top .mark"); if (mark) { const e = v.emoji && v.emoji !== "도" ? v.emoji : "도"; mark.textContent = e; mark.classList.toggle("emoji", e !== "도"); }
+  const tabsEl = document.querySelector("#tabs"); if (tabsEl) tabsEl.classList.toggle("icons", v.icons !== false);
+}
+function lookSection(){
+  const v = look(), pr = (a, b) => String(a || "") === String(b || "");
+  return `<section class="panel pad"><h3>화면 꾸미기</h3><p class="ev-s">이 휴대폰(브라우저)에만 저장되고 다른 사람 화면에는 영향이 없습니다.</p>
+  <div class="label">포인트 색</div><div class="look-row">${LOOK_ACCENTS.map(([c, n]) => `<button class="swatch" style="background:${c}" data-look-accent="${c}" aria-pressed="${pr(v.accent || "#d4561c", c)}" aria-label="${n}" title="${n}"></button>`).join("")}</div>
+  <div class="label">배경</div><div class="look-row">${LOOK_BGS.map(([c, n]) => `<button class="chipbtn" data-look-bg="${c}" aria-pressed="${pr(v.bg, c)}">${c && c !== "dark" ? `<span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${c};border:1px solid var(--line);margin-right:4px;vertical-align:-1px"></span>` : ""}${n}</button>`).join("")}</div>
+  <div class="label">내 아이콘 (왼쪽 위)</div><div class="look-row">${LOOK_EMOJI.map(e => `<button class="emoji-pick" data-look-emoji="${e}" aria-pressed="${pr(v.emoji || "도", e)}">${e}</button>`).join("")}</div>
+  <div class="look-row"><button class="chipbtn" data-look-icons aria-pressed="${v.icons !== false}">메뉴 아이콘 ${v.icons !== false ? "켬" : "끔"}</button><button class="chipbtn" data-look-size aria-pressed="${v.size === "big"}">큰 글씨 ${v.size === "big" ? "켬" : "끔"}</button><button class="btn sm ghost" data-look-reset>처음 모양으로</button></div></section>`;
+}
 function vMe(){
-  let h=vMeOriginal()+calSubSection();
+  let h=lookSection()+vMeOriginal()+calSubSection();
   if(!T()){const c=D.contact;return h+`<section class="panel pad"><h3>이메일 알림</h3><p class="ev-s">메일 앱에서 알림을 켜면 휴대폰에서 확인할 수 있습니다. 수신은 선택 사항입니다.</p><div class="ev-s">현재: ${c.enabled?'수신':'수신 안 함'} ${esc(c.email)}</div><button class="btn" data-contact>이메일·수신 설정</button></section>`;}
   const s=D.settings;
   h+=`<section class="panel pad"><h3>연동 설정 (드라이브·캘린더·노션·시간표·이메일)</h3><p class="ev-s">설정을 저장한 다음 동기화·발송을 실행하세요. 자동 실행을 켜면 약 10분 간격으로 처리합니다.</p><div class="ev-s">구글 드라이브: ${s.driveRootUrl?`<a href="${esc(s.driveRootUrl)}" target="_blank" rel="noopener">자료 폴더 열기 ↗</a>${s.driveCustom?'':' (자동 생성)'}`:'첫 파일을 올리면 자동으로 만들어집니다'}<br>캘린더: ${esc(s.calendarId||'미설정')}<br>이메일 알림: ${s.mailEnabled?'사용':'꺼짐'} · 자동 실행: ${s.auto?'사용':'꺼짐'}<br>최근 자동 실행: ${esc(s.lastRun||'없음')}${s.lastError?'<br>실행 오류: '+esc(s.lastError):''}</div><div class="row" style="margin-top:12px"><button class="btn" data-extra-settings>연동 설정 열기</button><button class="btn" data-calendar-create ${s.calendarId?'disabled':''}>전용 캘린더 만들기</button><button class="btn" data-calendar-sync>캘린더 동기화</button><button class="btn" data-mail-send>알림 메일 발송</button><button class="btn" data-auto>${s.auto?'자동 실행 끄기':'자동 실행 켜기'}</button><button class="btn" data-check>첫 실행 점검</button></div></section>`;
@@ -1199,7 +1241,8 @@ function render(){
   if (!tabs.some(t => t[0] === tab) && !learnerOpen && !(SUB_ROUTES[tab] && tabs.some(t => t[0] === SUB_ROUTES[tab]) && (tab !== "register" || T()))) tab = "today";
   if (learnerOpen) { learnerTab = tab; lsSet('dj.learnerTab', tab); }
   const activeTab = learnerOpen ? 'learner' : (SUB_ROUTES[tab] || tab);
-  $("#tabs").innerHTML = tabs.map(([k,l]) => `<button class="tab" role="tab" data-tab="${k}" aria-selected="${k===activeTab}">${esc(l)}</button>`).join("");
+  $("#tabs").innerHTML = tabs.map(([k,l]) => { const m = TAB_LOOK[k] || ["•", l]; return `<button class="tab" role="tab" data-tab="${k}" aria-selected="${k===activeTab}" title="${esc(l)}"><span class="ti" aria-hidden="true">${m[0]}</span><span class="tl-long">${esc(l)}</span><span class="tl-short">${esc(k === "me" ? (T() ? "설정" : "내 정보") : m[1])}</span></button>`; }).join("");
+  $("#tabs").style.setProperty("--cols", Math.ceil(tabs.length / 2)); $("#tabs").classList.toggle("icons", look().icons !== false);
   const role = $("#role"); role.textContent = D.localTest ? "PC 테스트" : D.loginDisabled ? "로그인 없는 테스트" : T() ? "교사" : (GROUP[myGroup()] || "학생"); role.classList.toggle("t", T());
   $("#logoutTop").hidden = Boolean(D.loginDisabled);
   evStore.clear();
@@ -1215,6 +1258,15 @@ function render(){
 
 /* ---------- 대화상자 ---------- */
 const dlg = $("#dlg"), form = $("#dlgForm"); let onSubmit = null;
+$("#main").addEventListener("click", e => { const b = e.target.closest("[data-look-accent],[data-look-bg],[data-look-emoji],[data-look-icons],[data-look-size],[data-look-reset]"); if (!b) return; const d = b.dataset;
+  if (d.lookAccent) setLook({ accent: d.lookAccent === "#d4561c" ? "" : d.lookAccent });
+  else if (d.lookBg !== undefined) setLook({ bg: d.lookBg });
+  else if (d.lookEmoji) setLook({ emoji: d.lookEmoji });
+  else if (d.lookIcons !== undefined) setLook({ icons: look().icons === false });
+  else if (d.lookSize !== undefined) setLook({ size: look().size === "big" ? "" : "big" });
+  else if (d.lookReset !== undefined) { lsSet("dj.look", null); applyLook(); }
+  render(); });
+applyLook();
 form.addEventListener("click", e => { const b = e.target.closest("[data-unpick]"); if (b) { draftFiles.splice(Number(b.dataset.unpick), 1); renderDraftFiles(); } });
 dlg.addEventListener("close", () => { dlgDrop = null; });
 const hasFiles = e => e.dataTransfer && Array.from(e.dataTransfer.types || []).includes("Files");
