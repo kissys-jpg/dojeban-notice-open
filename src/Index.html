@@ -386,9 +386,9 @@ let learnerTab = LEARNER_TABS.some(([k]) => k === lsGet('dj.learnerTab')) ? lsGe
 function isLearnerTab(k){ return LEARNER_TABS.some(([key]) => key === k); }
 function tabsFor(){
   let t;
-  if (T()) t = [["today","오늘"],["notices","공지"],["learner","학습근로자"],["schedule","일정"],["purchases","구매요청"],["anon","익명게시판"],["portfolio","포트폴리오"],["roster","명단"],["me","설정"]];
-  else if (isLearner()) t = [["today","오늘"],["notices","공지"],["learner","학습근로자"],["schedule","일정"],["anon","익명게시판"],["portfolio","포트폴리오"]].concat([["me","내 정보"]]);
-  else t = [["today","오늘"],["notices","공지"],["schedule","일정"],["anon","익명게시판"],["purchases","구매요청"],["portfolio","포트폴리오"],["me","내 정보"]];
+  if (T()) t = [["today","오늘"],["notices","공지"],["learner","학습근로자"],["schedule","일정"],["purchases","구매요청"],["anon","익명게시판(수정요청포함)"],["portfolio","포트폴리오"],["roster","명단"],["me","설정"]];
+  else if (isLearner()) t = [["today","오늘"],["notices","공지"],["learner","학습근로자"],["schedule","일정"],["anon","익명게시판(수정요청포함)"],["portfolio","포트폴리오"]].concat([["me","내 정보"]]);
+  else t = [["today","오늘"],["notices","공지"],["schedule","일정"],["anon","익명게시판(수정요청포함)"],["purchases","구매요청"],["portfolio","포트폴리오"],["me","내 정보"]];
   t.splice(t.findIndex(([k])=>k==="portfolio"),0,["projects","프로젝트"],["contest","대회"],["cert","자격증"]);
   const si = t.findIndex(x => x[0] === "schedule"); t.splice(si < 0 ? 1 : si + 1, 0, ["school", "시간표·급식"]);
   return t;
@@ -848,7 +848,7 @@ function vAnon(){
         <form class="notice" id="anonForm"><label class="fld"><span>댓글 (익명)</span><textarea id="anonText" style="min-height:70px" maxlength="1000" required></textarea></label>
         <div class="row"><span class="spacer"></span><button class="btn pri" type="submit">댓글 달기</button></div></form></section>`;
   }
-  return `<div class="sec-h"><div><h2>익명게시판</h2><p>요청·질문·상담을 한곳에 올려 주세요. 글마다 예비·방과후·학습근로자를 고릅니다.</p></div><button class="btn pri" data-anon-new>+ 글쓰기</button></div>
+  return `<div class="sec-h"><div><h2>익명게시판(수정요청포함)</h2><p>요청·질문·상담과 알림판 오류·수정 요청을 한곳에 올려 주세요. 글마다 예비·방과후·학습근로자를 고릅니다.</p></div><button class="btn pri" data-anon-new>+ 글쓰기</button></div>
     <div class="banner" role="note">욕설·비방·개인정보 글은 숨겨질 수 있습니다. 문제가 생기면 대응할 수 있도록 선생님은 작성자를 확인할 수 있어요.${D.loginDisabled ? " (지금은 로그인 없는 테스트 모드라 모든 글이 ‘선생님’으로 표시됩니다. 학생 로그인을 켜면 익명으로 보입니다.)" : ""}</div>
     <div class="row" role="group" aria-label="게시글 구분" style="margin-bottom:12px">${[['all','전체'],...Object.entries(ANON_GROUPS)].map(([k,l]) => `<button class="chipbtn" data-anon-filter="${k}" aria-pressed="${anonFilter===k}">${esc(l)}</button>`).join('')}</div>
     ${anonReportPanel()}<section class="panel">${posts.length ? posts.map(p => `<button class="listbtn" data-anon-open="${esc(p.id)}"><span class="chip">${esc(anonGroupLabel(p.category))}</span><div><div class="ev-t">${esc(p.title)} <span class="chip">${esc(p.status||"접수")}</span>${hid(p)}</div><div class="ev-s">${esc(String(p.body).slice(0, 60))}${String(p.body).length > 60 ? "…" : ""}</div><div class="ev-s">${esc(p.label)} · ${esc(p.at)} · 댓글 ${p.comments}${p.mine ? " · 내 글" : ""}${T() && p.author ? " · " + esc(p.author) : ""}</div></div></button>`).join("")
