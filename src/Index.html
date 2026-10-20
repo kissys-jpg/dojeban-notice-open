@@ -432,8 +432,13 @@ function hydrateFullData(){
 }
 function fullLoadNotice(){return '<section class="panel pad" role="status"><h2>자료를 불러오고 있습니다…</h2><p>이 메뉴에 필요한 최신 자료를 확인합니다.</p>'+(fullLoadError?'<p>'+esc(fullLoadError)+'</p><button class="btn" data-full-retry>다시 불러오기</button>':'')+'</section>';}
 $("#main").addEventListener("click",e=>{if(e.target.closest("[data-home-details],[data-full-retry]")){fullLoadError="";hydrateFullData();render();}});
-function setData(d){ if(!d.homeOnly)fullLoadError=""; $("#startupScreen").hidden=true; if(!D)tab=tab==="school"?"school":"today"; D = d;resourceLinkError=""; TODAY = D.today || TODAY; showUpdated(); render(); }
-function showUpdated(){ const el = $("#updAt"), u = D && D.lastUpdate; if (!el) return; if (!u || !u.at){ el.hidden = true; return; } const day = u.at.slice(0,10), hm = u.at.slice(11,16); el.textContent = "최근 업데이트 " + (day === TODAY ? "오늘" : Number(day.slice(5,7)) + "." + Number(day.slice(8,10))) + (hm ? " " + hm : "") + (u.what ? " · " + u.what : ""); el.hidden = false; }
+/* 첫 화면 빠르게: 이 기기에 로그인을 유지한 경우에만 마지막 첫 화면 자료(공지 3건·급식·2주 일정)를 저장해 두고, 다음 방문 때 먼저 보여 준 뒤 새 자료로 바꿉니다. 로그아웃하면 지웁니다. */
+const HOME_KEY="dj.home.v1";
+const credTag=c=>{const t=JSON.stringify(c||{});let h=2166136261;for(let i=0;i<t.length;i++){h^=t.charCodeAt(i);h=Math.imul(h,16777619);}return (h>>>0).toString(36)+"."+t.length;};
+function saveHome(d){ if(!d||!d.homeOnly)return; if(JSON.stringify(cred||{})!==(lsGet("dj.cred")||"{}"))return; try{lsSet(HOME_KEY,JSON.stringify({who:credTag(cred),day:d.today,at:Date.now(),data:d}));}catch{} }
+function cachedHome(c){ try{const x=JSON.parse(lsGet(HOME_KEY)||"null");if(!x||x.who!==credTag(c)||x.day!==ymd(new Date())||Date.now()-x.at>43200000)return null;return x.data;}catch{return null;} }
+function setData(d){ if(d&&d.homeOnly&&!d.fromCache)saveHome(d); if(!d.homeOnly)fullLoadError=""; $("#startupScreen").hidden=true; if(!D)tab=tab==="school"?"school":"today"; D = d;resourceLinkError=""; TODAY = D.today || TODAY; showUpdated(); render(); }
+function showUpdated(){ const el = $("#updAt"), u = D && D.lastUpdate; if (!el) return; if (D && D.fromCache){ el.textContent = "저장된 화면 · 새 자료 확인 중…"; el.hidden = false; return; } if (!u || !u.at){ el.hidden = true; return; } const day = u.at.slice(0,10), hm = u.at.slice(11,16); el.textContent = "최근 업데이트 " + (day === TODAY ? "오늘" : Number(day.slice(5,7)) + "." + Number(day.slice(8,10))) + (hm ? " " + hm : "") + (u.what ? " · " + u.what : ""); el.hidden = false; }
 async function reload(){ drvStale(); const epoch=fullLoadEpoch,owner=JSON.stringify(cred||{});try { const data=await call("load", {deferLinks:true,homeOnly:!!(D&&D.homeOnly)});if(epoch!==fullLoadEpoch||owner!==JSON.stringify(cred||{}))return;if(data.homeOnly&&D&&!D.homeOnly)return;setData(data); } catch (e) { if (/PIN|비밀번호|이름/.test(e.message)) { logout(e.message); } else toast(e.message); } }
 async function act(action, payload, msg){
   try { const r = await callRaw(action, payload, null, true); if (msg) toast(msg); if (r.load) setData(r.load); else await reload(); return true; }
@@ -471,7 +476,7 @@ function gate(msg){
     } catch (err) { gate(err.message); }
   };
 }
-function logout(msg){ fullLoadEpoch++;fullLoadPending=null;fullLoadError=""; clearGlobalSearch(); todayDriveNews.clear();todayNewsOwner="";resourceLinkEpoch++;resourceLinkPending=null; if (D && D.loginDisabled) return reload(); cred = null; D = null; noticeImages.clear(); noticeImagesPending.clear(); lsSet("dj.cred", null); gate(msg); }
+function logout(msg){ fullLoadEpoch++;fullLoadPending=null;fullLoadError=""; clearGlobalSearch(); todayDriveNews.clear();todayNewsOwner="";resourceLinkEpoch++;resourceLinkPending=null; if (D && D.loginDisabled) return reload(); cred = null; D = null; noticeImages.clear(); noticeImagesPending.clear(); lsSet("dj.cred", null); lsSet(HOME_KEY, null); gate(msg); }
 $("#logoutTop").onclick = () => logout();
 
 /* ---------- 탭 ---------- */
@@ -2052,8 +2057,10 @@ $("#main").addEventListener("submit", async e => {
 /* ---------- 시작 ---------- */
 (async () => {
   let saved = null; try { saved = JSON.parse(lsGet("dj.cred") || "null"); } catch {}
-  try { const data = await call("load", {deferLinks:true,homeOnly:true}, saved || {}); cred = saved || {}; $("#gate").hidden = true; $("#shell").hidden = false; setData(data); }
-  catch (e) { lsSet("dj.cred", null); gate(e.message); }
+  const quick = cachedHome(saved || {});
+  if (quick) { cred = saved || {}; $("#gate").hidden = true; $("#shell").hidden = false; setData(Object.assign({}, quick, { fromCache: true })); }
+  try { const data = await call("load", {deferLinks:true,homeOnly:true}, saved || {}); cred = saved || {}; $("#gate").hidden = true; $("#shell").hidden = false; if (D && !D.homeOnly && !D.fromCache) return; setData(data); }
+  catch (e) { if (quick && !/PIN|비밀번호|이름/.test(e.message)) { toast(e.message); return; } lsSet("dj.cred", null); lsSet(HOME_KEY, null); D = null; gate(e.message); }
 })();
 setInterval(() => { if (D && document.visibilityState === "visible" && !dlg.open) reload(); }, 120000);
 })();
