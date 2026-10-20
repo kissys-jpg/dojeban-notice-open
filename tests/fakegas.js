@@ -1,12 +1,13 @@
 (() => {
   const SHEETS = window.__SHEETS || {};
   const book = {}; window.__reads = 0;
-  const mk = (name, rows) => { const s = { name, data: rows.map(r => r.map(c => c == null ? "" : String(c))), frozen: 0 }; book[name] = s; return s; };
+  const mk = (name, rows) => { const s = { name, id: Object.keys(book).length + 100, data: rows.map(r => r.map(c => c == null ? "" : String(c))), frozen: 0 }; book[name] = s; return s; };
   Object.entries(SHEETS).forEach(([n, rows]) => mk(n, rows));
   const width = s => Math.max(0, ...s.data.map(r => r.length));
   const ensure = (s, r, c) => { while (s.data.length < r) s.data.push([]); const row = s.data[r - 1]; while (row.length < c) row.push(""); };
   const sheetApi = s => ({
     getName: () => s.name,
+    getSheetId: () => s.id,
     getLastRow: () => s.data.length,
     getDataRange: () => ({ getDisplayValues: () => { window.__reads++; const w = width(s); return s.data.map(r => { const o = r.slice(); while (o.length < w) o.push(""); return o; }); } }),
     getRange: (r, c, nr = 1, nc = 1) => {

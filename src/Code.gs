@@ -16,6 +16,7 @@ const SPREADSHEET_ID = CFG_.getProperty("SPREADSHEET_ID") || "";
 const TAB_AFTER = "일정표";          // 방과후 시간표
 const TAB_PERSONAL = "학생별_일정표"; // 학생별·공통 일정
 const TAB_BOM = "BOM";               // 실습재료 구매 목록
+const APP_BUILD_ = "";              // 화면 버전 (자동 배포가 커밋 번호로 채웁니다. 입구 페이지가 화면 코드와 비교)
 const APP_UPDATED_ = "";            // 앱 배포 시각 (자동 배포가 채웁니다. 직접 고치지 마세요)
 const SCHOOL_YEAR = 0;               // 0이면 자동(3월~이듬해 2월). 바꾸려면 2026처럼 숫자로.
 
@@ -61,21 +62,22 @@ function doPost(e) {
 
 /** 웹페이지가 부르는 단 하나의 입구. 모든 요청은 로그인 정보를 함께 보냅니다.
  *  속도: 읽기는 캐시(최대 90초)를 쓰고, 쓰기 뒤에는 바뀐 탭만 캐시를 지운 다음 화면 데이터를 같은 응답에 담아 돌려줍니다. */
-const READ_ACTIONS_ = { login: 1, load: 1, downloadFile: 1, checkSetup: 1, legacyAttendance: 1 };
+const READ_ACTIONS_ = { todayTeamFiles:1, studentPrivate:1, purchaseSheetLinks:1, photoBrowse:1, photoImage:1, resourceLinks:1, companySetupInfo:1, companyTemplateFile:1, noticeImage:1, noticeDownload:1, login: 1, load: 1, downloadFile: 1, checkSetup: 1, legacyAttendance: 1 };
 const BUMP_ACTIONS_ = { syncCalendar: 1, saveSettings: 1, setAutomation: 1, createCalendar: 1, sendNotifications: 1 };
 function api(req) {
+  const started=Date.now();
   try {
     req = req || {};
     const action = String(req.action || "");
     USE_CACHE_ = true;
     ensureTabs_();
-    if (action === "load" || action === "login" || req.withLoad) prefetchLoad_();
+    if ((action === "load" && !(req.payload && req.payload.homeOnly === true)) || action === "login" || req.withLoad) prefetchLoad_();
     const me = NO_LOGIN_TEST_MODE ? { role: "teacher", name: "선생님" } : auth_(req.cred || {});
     const p = req.payload || {};
-    if (me.role === 'teacher' && (action === 'load' || req.withLoad)) migrateRequestsToAnon_();
+    if (me.role === 'teacher' && ((action === 'load' && !(req.payload && req.payload.homeOnly === true)) || req.withLoad)) migrateRequestsToAnon_();
     let data;
     if (action === "login") data = { me: me, loginDisabled: NO_LOGIN_TEST_MODE };
-    else if (action === "load") data = load_(me);
+    else if (action === "load") data = load_(me, {deferLinks:p.deferLinks===true,homeOnly:p.homeOnly===true});
     else if (READ_ACTIONS_[action]) data = dispatch_(me, action, p);
     else {
       USE_CACHE_ = false; MEMO_ = {};          // 쓰기 중에는 항상 시트를 직접 읽습니다
@@ -83,6 +85,7 @@ function api(req) {
       finally { if (BUMP_ACTIONS_[action]) bumpAll_(); else flushDirty_(); USE_CACHE_ = true; }
     }
     const out = { ok: true, data: data };
+    if(me.role==="teacher"&&p.profile===true)out.profile={serverMs:Date.now()-started,phases:HOME_TIMING_||[]};
     if (req.withLoad && action !== "load") out.load = load_(me);
     return JSON.parse(JSON.stringify(out));
   } catch (e) {
@@ -92,16 +95,23 @@ function api(req) {
 function dispatch_(me, action, p) {
   switch (action) {
     case "ack":          need_(me, "student"); return ack_(me, p.id);
+    case "noticeImage": return noticeImage_(me,p);
+    case "noticeDownload": return noticeDownload_(me,p);
     case "saveNotice":   need_(me, "teacher"); return saveNotice_(p);
     case "deleteRow":    need_(me, "teacher"); return deleteRow_(p.tab, p.id);
     case "saveEvent":    need_(me, "teacher"); return saveEvent_(p);
     case "addPersonal":  return addPersonal_(me, p);
+    case "savePersonal": return savePersonal_(me, p);
     case "delPersonal":  return delPersonal_(me, p.id);
     case "addRequest":   need_(me, "student"); return addRequest_(me, p);
     case "reply":        return reply_(me, p.id, p.text);
     case "setStatus":    need_(me, "teacher"); return setStatus_(p.id, p.status);
     case "markRead":     return markRead_(me, p.id);
+    case "todayTeamFiles": return todayTeamFiles_(me,p);
+    case "purchaseSheetLinks": need_(me,"teacher"); return purchaseSheetLinks_();
     case "addPurchase":  return addPurchase_(me, p);
+    case "studentPrivate": return studentPrivate_(me,p,false);
+    case "saveStudentPrivate": return studentPrivate_(me,p,true);
     case "saveStudent":  need_(me, "teacher"); return saveStudent_(p);
     case "deleteStudent": need_(me, "teacher"); return deleteStudent_(p);
     case "makePins":     need_(me, "teacher"); return makePins_();
@@ -122,6 +132,14 @@ function dispatch_(me, action, p) {
     case "anonHide":     need_(me, "teacher"); return anonHide_(p);
     case "uploadProjectFile": return uploadProjectFile_(me, p);
     case "uploadStart": return uploadStart_(me, p);
+    case "saveCertSchedule": need_(me,"teacher"); return saveCertSchedule_(p);
+    case "deleteCertSchedule": need_(me,"teacher"); return deleteCertSchedule_(p);
+    case "saveCertFolder": need_(me,"teacher"); return saveCertFolder_(p);
+    case "photoBrowse": return photoBrowse_(me,p);
+    case "photoImage": return photoImage_(me,p);
+    case "photoSetup": need_(me,"teacher"); return photoSetup_(p);
+    case "photoCreateAlbum": need_(me,"teacher"); return photoCreateAlbum_(me,p);
+    case "photoUpload": need_(me,"teacher"); return photoUpload_(me,p);
     case "driveBrowse": return driveBrowse_(me, p);
     case "driveUpload": return driveUpload_(me, p);
     case "driveDownload": return driveDownload_(me, p);
@@ -130,6 +148,15 @@ function dispatch_(me, action, p) {
     case "deleteFile":   return deleteFile_(me, p.id);
     case "shareProjectFolder": need_(me, "teacher"); return shareProjectFolder_(p.id);
     case "projectFolder": need_(me, "teacher"); return projectFolderInfo_(p.id);
+    case "saveProjectFolder": need_(me,"teacher"); return saveProjectFolder_(p);
+    case "companySetupInfo": need_(me,"teacher"); return companyResources_(me);
+    case "saveCompanyResources": need_(me,"teacher"); return saveCompanyResources_(p);
+    case "seedCompanySource": need_(me,"teacher"); return seedCompanySource_();
+    case "refreshCompanyInfo": need_(me,"teacher"); CacheService.getScriptCache().remove("company_source_v1");CacheService.getScriptCache().remove("company_home_v1"); COMPANY_SOURCE_=null; return true;
+    case "createCompanyFolder": need_(me,"teacher"); return createCompanyFolder_(String(p.id||""));
+    case "saveExperienceIntro": need_(me,"student"); return saveExperienceIntro_(me,p);
+    case "reviewExperienceIntro": need_(me,"teacher"); return reviewExperienceIntro_(p);
+    case "companyTemplateFile": return companyTemplateFile_(me,p);
     case "saveCompany":  need_(me, "teacher"); return saveCompany_(p);
     case "removeCompany": need_(me, "teacher"); return removeCompany_(p.id);
     case "saveAssign":   need_(me, "teacher"); return saveAssign_(p);
@@ -137,6 +164,7 @@ function dispatch_(me, action, p) {
     case "driveMaterialFile": return driveMaterialFile_(me, String(p.id || ""));
     case "timetable":    return timetable_(me, p);
     case "meals":        return meals_(dateValid_(p.from), plusDate_(dateValid_(p.from), 6));
+    case "resourceLinks": return {driveMaterials:driveMaterials_(me),notionPages:notionPages_()};
     case "refreshLinks": need_(me, "teacher"); CacheService.getScriptCache().removeAll(["dm_v1", "nt_v1"]); return true;
     default: return extendedApi_(me, action, p);
   }
@@ -324,6 +352,63 @@ function saveStudent_(p) {
     sh.getRange(sh.getLastRow() + 1, 4).setNumberFormat("@"); append_("roster", vals); return true;
   });
 }
+
+/* 개인정보는 공유 운영 시트/일반 로딩/캐시와 분리합니다. 테스트 모드에서도 비밀번호를 다시 확인합니다. */
+function studentPrivateFile_(id){return !!id&&String(id)===String(props_().STUDENT_PRIVATE_SHEET_ID||"");}
+function denyStudentPrivateFile_(id){if(studentPrivateFile_(id))throw new Error("이 문서는 명단의 개인정보에서 교사 인증 후 확인해 주세요");}
+function studentPrivateSheet_(create) {
+  const props=PropertiesService.getScriptProperties(), id=String(props.getProperty("STUDENT_PRIVATE_SHEET_ID")||"").trim();
+  let book;
+  if(id){ try{book=SpreadsheetApp.openById(id);}catch(e){throw new Error("교사용 개인정보 시트에 접근할 수 없습니다. 실행 계정의 권한을 확인해 주세요");} }
+  else if(create){
+    book=SpreadsheetApp.create("도제 알림판 학생 개인정보 — 교사 전용");
+    const sh=book.getSheets()[0];
+    sh.getRange(1,1,1,8).setValues([["학생키","이름(최종 저장 시)","이메일","학생 연락처","주소","보호자 연락처","메모","수정시각"]]);
+    sh.setFrozenRows(1);
+    props.setProperty("STUDENT_PRIVATE_SHEET_ID",book.getId()); PROPS_=null;
+  }else return null;
+  return {book:book,sheet:book.getSheets()[0]};
+}
+function studentPrivate_(me,p,write) {
+  need_(me,"teacher");
+  if(!String(p.password||""))throw new Error("개인정보를 열려면 교사 비밀번호를 입력해 주세요");
+  auth_({teacher:String(p.password)});
+  const work=function(){
+    const current=rows_("roster").find(function(x){return x._row===Number(p.row)&&String(x.v[0]).trim()===String(p.name||"");});
+    if(!current)throw new Error("학생 명단이 바뀌었습니다. 새로고침 후 다시 선택해 주세요");
+    const roster=ss_().getSheetByName(APP_TABS.roster.name),header=String(roster.getRange(1,8).getValue()||"");
+    if(header&&header!=="개인정보키")throw new Error("명단의 8번째 열이 이미 사용 중입니다. 관리자에게 문의해 주세요");
+    let key=header==="개인정보키"?String(current.v[7]||""):"";
+    const fields=["email","phone","address","guardianPhone","note"],out={};
+    fields.forEach(function(k){out[k]="";});
+    if(!write&&!key)return {name:String(p.name),fields:out};
+    if(write){
+      fields.forEach(function(k){out[k]=clean_(p[k],k==="note"?500:k==="address"?300:k==="email"?120:40).trim();});
+      if(out.email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(out.email))throw new Error("이메일 주소를 확인해 주세요");
+      ["phone","guardianPhone"].forEach(function(k){if(out[k]&&!/^\+?[\d ()-]{6,40}$/.test(out[k]))throw new Error("연락처는 숫자·공백·괄호·하이픈으로 입력해 주세요");});
+      if(!key){
+        key=Utilities.getUuid();
+        roster.getRange(1,8).setValue("개인정보키");
+        roster.getRange(current._row,8).setValue(key);
+        DIRTY_[APP_TABS.roster.name]=true;
+      }
+    }
+    const target=studentPrivateSheet_(write);
+    if(!target)return {name:String(p.name),fields:out};
+    const rows=target.sheet.getDataRange().getDisplayValues();
+    const index=key?rows.findIndex(function(r,i){return i>0&&String(r[0])===key;}):-1;
+    if(write){
+      const values=[key,clean_(p.name,30),out.email,out.phone,out.address,out.guardianPhone,out.note,now_()];
+      target.sheet.getRange(index<0?target.sheet.getLastRow()+1:index+1,1,1,8).setNumberFormat("@");
+      writeCells_(target.sheet,index<0?target.sheet.getLastRow()+1:index+1,values);
+      return {saved:true};
+    }
+    if(index>=0)fields.forEach(function(k,i){out[k]=String(rows[index][i+2]||"");});
+    return {name:String(p.name),fields:out,sheetUrl:target.book.getUrl()};
+  };
+  return write?withLock_(work):work();
+}
+
 /* 학생 이름이 들어가는 칸: 이름을 바꾸면 기록도 함께 바꿔 연결을 유지합니다 (탭 키: 0부터 센 열 번호) */
 const STUDENT_NAME_COLS_ = { personal: [1], requests: [2], replies: [2], acks: [1], buys: [1], attendance: [2], progress: [1], portfolio: [1], tasks: [3], files: [1], contacts: [0], anon: [2], anonReports: [2], board: [1], boardComments: [2], anonCmt: [3], assign: [0], icsTokens: [0] };
 function renameStudentRecords_(from, to) {
@@ -494,18 +579,33 @@ function bom_() {
   const g = function (r, k) { return h.cols[k] === undefined ? "" : cell_(r, h.cols[k]); };
   const rows = [];
   v.slice(h.index + 1).forEach(function (r) {
-    if (!g(r, "team") || !g(r, "part")) return;
-    rows.push({ team: g(r, "team"), product: g(r, "product"), part: g(r, "part"), qty: g(r, "qty"), unit: g(r, "unit"), total: g(r, "total"), done: g(r, "done"), vendor: g(r, "vendor"), wish: g(r, "wish"), appId: g(r, "appId"), state: bomState_(g(r, "done"), g(r, "wish")) });
+    if (!g(r, "part")) return;
+    rows.push({ team: g(r, "team") || "미지정", product: g(r, "product"), spec:g(r,"spec"), price:g(r,"price"), s2bNo:g(r,"s2bNo"), part: g(r, "part"), qty: g(r, "qty"), unit: g(r, "unit"), total: g(r, "total"), done: g(r, "done"), vendor: g(r, "vendor"), wish: g(r, "wish"), appId: g(r, "appId"), state: bomState_(g(r, "done"), g(r, "wish")) });
   });
   return { rows: rows };
 }
+
+/* 오늘 화면: 연결된 팀 폴더만 사용자가 요청할 때 읽습니다. 폴더/공유 권한은 만들거나 바꾸지 않습니다. */
+function todayTeamFiles_(me,p){
+  const pr=project_(me,String(p.id||"")),folderId=props_()["PF_"+pr.v[0]];
+  if(!folderId)return {project:pr.v[0],connected:false,files:[]};
+  const folder=openSharedFolder_(folderId,"팀 Drive"),it=folder.getFiles(),files=[];let count=0;
+  while(it.hasNext()&&count<300){
+    const f=it.next();count++;
+    if(f.isTrashed()||studentPrivateFile_(f.getId()))continue;
+    files.push({id:f.getId(),name:f.getName(),mime:f.getMimeType(),at:Utilities.formatDate(f.getLastUpdated(),"Asia/Seoul","yyyy-MM-dd HH:mm")});
+  }
+  files.sort(function(a,b){return String(b.at).localeCompare(String(a.at));});
+  return {project:pr.v[0],connected:true,files:files.slice(0,5),limited:it.hasNext(),checkedAt:now_()};
+}
+
+function purchaseSheetLinks_(){
+ const book=ss_(),base="https://docs.google.com/spreadsheets/d/"+book.getId()+"/edit",out={};
+ [["bom",TAB_BOM],["edufine","BOM_에듀파인"],["projects","BOM_프로젝트별"]].forEach(function(pair){const sh=book.getSheetByName(pair[1]);if(!sh){if(pair[0]==="bom")throw new Error("BOM 시트를 찾을 수 없습니다");return;}const id=sh.getSheetId();out[pair[0]]=base+"?gid="+id+"#gid="+id;});return out;
+}
 function readTab_(name) { return vals_(name); }
 
-/* ===================== 화면 데이터 한 번에 ===================== */
-function load_(me) {
-  const T = me.role === "teacher";
-  const sy = schoolYear_();
-  prefetchLoad_();
+function scheduleData_(sy){
   const cache = CacheService.getScriptCache();
   let sheetData = cache.get("sheetData_v1");
   if (sheetData) sheetData = JSON.parse(sheetData);
@@ -514,6 +614,51 @@ function load_(me) {
     sheetData = { after: ar ? parseAfterschool_(ar, sy) : [], personal: pr ? parseStudentSheet_(pr, sy) : { common: [], byName: {}, gradeLabel: "" }, tabsMissing: [!ar ? TAB_AFTER : "", !pr ? TAB_PERSONAL : ""].filter(String) };
     try { cache.put("sheetData_v1", JSON.stringify(sheetData), 120); } catch (e) {}
   }
+  return sheetData;
+}
+/* 첫 화면에는 메뉴 관리 자료를 읽지 않습니다. 기존 전체 load는 메뉴 진입 후 사용합니다. */
+var HOME_TIMING_=null;
+function homeLoad_(me){
+ HOME_TIMING_=[];let markAt=Date.now();const mark=function(name){const now=Date.now();HOME_TIMING_.push({phase:name,ms:now-markAt});markAt=now;};
+ const T=me.role==="teacher",today=today_(),until=plusDate_(today,14),sy=schoolYear_();
+ const keys=["notices","noticeMeta","files","events","personal","board","certSchedule","companies"];
+ if(!T)keys.push("acks");
+ const names=keys.map(function(k){return APP_TABS[k].name;});
+ if(!CacheService.getScriptCache().get("sheetData_v1"))names.push(TAB_AFTER,TAB_PERSONAL);
+ prefetch_(names);mark("prefetch");
+ const sheet=scheduleData_(sy),inRange=function(e){return e.date&&e.date<=until&&(e.endDate||e.date)>=today;};
+ const visible=function(target){return T||matches_(target,me.group);};
+ const allNotices=rows_("notices").map(function(x){const v=x.v;return {id:v[0],at:v[1],target:targetKey_(v[2]),title:v[3],body:v[4],pinned:/^(o|y|고정|true)$/i.test(String(v[5]).trim()),due:v[6]};}).filter(function(n){return n.id&&visible(n.target);});
+ const recent=allNotices.slice().sort(function(a,b){return String(b.at).localeCompare(String(a.at));}).slice(0,3),meta=noticeMeta_();
+ const gm=String(sheet.personal.gradeLabel||"").match(/([1-3])/),target=gm?({1:"pre1",2:"pre2",3:"learner"})[gm[1]]:"all";
+ const schedule=(sheet.after||[]).map(function(a){const aft=isAfterschoolTitle_(a.title);return Object.assign({},a,{afterschool:aft,info:!aft,allDay:!aft&&HOLIDAY_.test(a.title)});});
+ const events=rows_("events").map(function(x){const v=x.v;return {id:v[0],date:v[1],endDate:v[2],time:v[3],kind:kindKey_(v[4]),target:targetKey_(v[5]),title:v[6],place:v[7],note:v[8]};}).filter(function(e){return e.id&&visible(e.target)&&inRange(e)&&e.kind!=="OJT"&&e.kind!=="OFF";});
+ const personal=rows_("personal").map(function(x){const v=x.v;return {id:v[0],name:v[1],date:v[2],endDate:v[3],time:v[4],title:v[5],note:v[6],by:v[7]};}).filter(function(e){return e.id&&inRange(e);});
+ const personalSheet={};Object.keys(sheet.personal.byName||{}).forEach(function(name){const items=sheet.personal.byName[name].filter(inRange);if(items.length)personalSheet[name]=items;});
+ const board=rows_("board").filter(function(r){return r.v[0]&&r.v[2]==="대회"&&r.v[12]!=="1";}).map(function(r){const v=r.v;return {id:v[0],category:v[2],subject:v[3],title:v[4],date:v[7],organizer:v[13]||"",place:v[14]||"",applyStart:v[15]||"",applyEnd:v[16]||"",eventEnd:v[17]||"",files:[]};});
+ mark("core");const source=companyHomeSource_(),companyIds={};rows_("companies").forEach(function(r){if(r.v[0]&&(T||r.v[11]!=="0"))companyIds[r.v[0]]=r.v[1];});
+ source.companies.forEach(function(c){if(T||c.open)companyIds[c.id]=c.name;else delete companyIds[c.id];});
+ const companyEvents=source.error&&!T?[]:source.events.filter(function(e){return companyIds[e.company]&&(T||e.open)&&inRange(e);}).map(function(e){return Object.assign({},e,{title:"기업 · "+companyIds[e.company]+" · "+e.title,target:"all"});});
+ mark("company");const certCalendar=certificationLoad_().certCalendar.filter(inRange);mark("certificates");const meals=meals_(today,plusDate_(today,6));mark("meals");
+ let latest={at:APP_UPDATED_||"",what:"앱 업데이트"};recent.forEach(function(n){const at=(meta[n.id]||{}).updated||n.at;if(at>latest.at)latest={at:at,what:"새 공지"};});
+ const out={me:me,loginDisabled:NO_LOGIN_TEST_MODE,homeOnly:true,today:today,schoolYear:sy,tabsMissing:sheet.tabsMissing,
+ notices:enrichNotices_(recent),events:events,afterschool:schedule.filter(function(a){return a.afterschool&&inRange(a);}),sheetEvents:[],sheetCalendar:sheetScheduleEvents_(schedule,T?0:({learner:3,pre2:2,pre1:1})[me.group]).filter(inRange),
+ common:{target:target,items:sheet.personal.common.filter(inRange)},personalSheet:personalSheet,personalApp:personal,
+ noticeCalendar:noticeCalendarEvents_(allNotices.map(function(n){return Object.assign({},n,meta[n.id]||{});})).filter(inRange),
+ boardPosts:board,companyEvents:companyEvents,certCalendar:certCalendar,
+ requests:[],replies:[],purchases:[],roster:[],acks:[],myAcks:T?[]:rows_("acks").filter(function(r){return r.v[1]===me.name;}).map(function(r){return r.v[0];}),
+ projects:[],tasks:[],materials:[],portfolio:[],units:[],progress:[],attendance:[],assigns:[],companies:[],boardComments:[],anonPosts:[],anonComments:[],anonReports:[],projectFiles:[],folderRequests:[],experienceIntros:[],companyInfo:[],certifications:[],notionPortfolios:[],driveMaterials:[],notionPages:[],linksDeferred:true,
+ school:{comciUrl:COMCI_URL_,mealUrl:MEAL_URL_},meals:meals,appUrl:appUrl_(),icsToken:"",lastUpdate:latest,build:APP_BUILD_};
+ mark("response");return out;
+}
+
+/* ===================== 화면 데이터 한 번에 ===================== */
+function load_(me, options) {
+  if(options&&options.homeOnly===true)return homeLoad_(me);
+  const T = me.role === "teacher";
+  const sy = schoolYear_();
+  prefetchLoad_();
+  const sheetData=scheduleData_(sy);
   /* 배포 전 캐시에 남은 기존 분류도 제목 기준으로 다시 판단합니다. 원본 시트는 수정하지 않습니다. */
   const scheduleRows = (sheetData.after || []).map(function(a) { const afterschool = isAfterschoolTitle_(a.title); return Object.assign({}, a, { afterschool: afterschool, info: !afterschool, allDay: !afterschool && HOLIDAY_.test(a.title) }); });
   const gm = String(sheetData.personal.gradeLabel || "").match(/([1-3])/);
@@ -525,7 +670,7 @@ function load_(me) {
     .filter(function (e) { return e.id && e.date && (T || matches_(e.target, me.group)); });
   const acksAll = rows_("acks").map(function (x) { return { id: x.v[0], name: x.v[1], at: x.v[2] }; });
   const personalApp = rows_("personal").map(function (x) { return { id: x.v[0], name: x.v[1], date: x.v[2], endDate: x.v[3], time: x.v[4], title: x.v[5], note: x.v[6], by: x.v[7] }; })
-    .filter(function (e) { return e.id && e.date && (T || e.name === me.name); });
+    .filter(function (e) { return e.id && e.date; });
   const reqs = rows_("requests").map(function (x) { return { id: x.v[0], at: x.v[1], name: x.v[2], group: normGroup_(x.v[3]), cat: x.v[4], title: x.v[5], body: x.v[6], status: x.v[7] || "접수", updated: x.v[8], unreadStudent: x.v[9] === "1", unreadTeacher: x.v[10] === "1" }; })
     .filter(function (r) { return r.id && (T || r.name === me.name); });
   const reqIds = {}; reqs.forEach(function (r) { reqIds[r.id] = true; });
@@ -537,9 +682,9 @@ function load_(me) {
 
   const out = {
     me: me, loginDisabled: NO_LOGIN_TEST_MODE, today: today_(), schoolYear: sy, tabsMissing: sheetData.tabsMissing.concat(bom.missing ? [TAB_BOM] : []),
-    notices: notices, events: events, afterschool: scheduleRows.filter(function(a) { return a.afterschool; }), sheetEvents: scheduleRows.filter(function(a) { return !a.afterschool; }), sheetCalendar: sheetScheduleEvents_(scheduleRows, T ? 0 : ({learner:3,pre2:2,pre1:1})[me.group]),
+    notices: enrichNotices_(notices), events: events, afterschool: scheduleRows.filter(function(a) { return a.afterschool; }), sheetEvents: scheduleRows.filter(function(a) { return !a.afterschool; }), sheetCalendar: sheetScheduleEvents_(scheduleRows, T ? 0 : ({learner:3,pre2:2,pre1:1})[me.group]),
     common: { target: commonTarget, items: sheetData.personal.common },
-    personalSheet: T ? sheetData.personal.byName : { [me.name]: sheetData.personal.byName[me.name] || [] },
+    personalSheet: sheetData.personal.byName,
     personalApp: personalApp, requests: reqs, replies: replies, purchases: purchases
   };
   if (T) {
@@ -550,16 +695,20 @@ function load_(me) {
   } else {
     out.myAcks = acksAll.filter(function (a) { return a.name === me.name; }).map(function (a) { return a.id; });
   }
-  Object.assign(out, extendedLoad_(me), anonLoad_(me), trainLoad_(me), boardLoad_(me));
+  Object.assign(out, extendedLoad_(me), anonLoad_(me), trainLoad_(me), boardLoad_(me), certificationLoad_());
+  out.noticeCalendar=noticeCalendarEvents_(out.notices);
   out.appUrl = appUrl_();
-  out.driveMaterials = driveMaterials_(me);
-  out.notionPages = notionPages_();
+  out.linksDeferred=!!(options&&options.deferLinks);
+  out.driveMaterials = out.linksDeferred?[]:driveMaterials_(me);
+  out.notionPages = out.linksDeferred?[]:notionPages_();
   out.notionPortfolios = roster_().filter(function(r){return T || r.name===me.name;}).map(function(r){return {name:r.name,url:r.notion};});
   out.school = { comciUrl: COMCI_URL_, mealUrl: MEAL_URL_ };
   out.meals = meals_(today_(), plusDate_(today_(), 6));
   out.icsToken = (rows_("icsTokens").filter(function (x) { return x.v[0] === who_(me); })[0] || { v: [] }).v[1] || "";
   out.companyInfo = companyInfo_(me);
+  Object.assign(out,companyLoad_(me));
   out.lastUpdate = lastUpdate_();
+  out.build = APP_BUILD_;
   return out;
 }
 function kindKey_(s) { s = String(s || "").trim(); for (var k in KIND_LABEL) if (KIND_LABEL[k] === s || k === s) return k; return "EVT"; }
@@ -568,19 +717,63 @@ function kindKey_(s) { s = String(s || "").trim(); for (var k in KIND_LABEL) if 
 function findRow_(key, id) { const r = rows_(key).filter(function (x) { return x.v[0] === String(id); })[0]; return r ? r._row : 0; }
 function ack_(me, id) {
   return withLock_(function () {
+    const n=record_("notices",id);if(!matches_(targetKey_(n.v[2]),me.group))throw new Error("이 공지의 확인 대상이 아닙니다");
     if (rows_("acks").some(function (x) { return x.v[0] === String(id) && x.v[1] === me.name; })) return true;
     append_("acks", [String(id), me.name, now_()]); return true;
   });
 }
-function saveNotice_(p) {
-  return withLock_(function () {
-    const vals = [p.id || uid_("n"), p.at || now_(), TARGET_LABEL[p.target] || "전체", clean_(p.title, 120), clean_(p.body, 5000), p.pinned ? "고정" : "", clean_(p.due, 10)];
-    if (!vals[3]) throw new Error("제목을 넣어 주세요");
-    const row = p.id ? findRow_("notices", p.id) : 0;
-    if (row) writeCells_(sheet_("notices"), row, vals); else append_("notices", vals);
-    return vals[0];
-  });
+/* 공지의 원래 7개 열은 유지하고 전달 자료·연결·첨부는 별도 탭에 둡니다. */
+APP_TABS.noticeMeta={name:"앱_공지자료",head:["공지ID","분류","주제","연결","연결이름","링크목록","첨부목록","일정일","일정종료","장소","수정시각"]};
+const NOTICE_CATEGORIES_=["일반 안내","프로젝트·설계","행사·견학","자격증·시험","준비물·구매","학습 자료"];
+function noticeMeta_(){const out={};rows_("noticeMeta").forEach(function(r){const v=r.v;out[v[0]]={category:v[1]||"일반 안내",subject:v[2]||"",relation:v[3]||"",relationLabel:v[4]||"",links:boardFileIds_(v[5]),fileIds:boardFileIds_(v[6]),eventDate:v[7]||"",eventEnd:v[8]||"",place:v[9]||"",updated:v[10]||""};});return out;}
+function enrichNotices_(notices){
+ const meta=noticeMeta_(),files={};rows_("files").filter(function(r){return r.v[5]==="notice";}).forEach(function(r){files[r.v[0]]={id:r.v[0],name:r.v[2],mime:r.v[3],size:Number(r.v[4])||0,notice:r.v[6]};});
+ return notices.map(function(n){const m=meta[n.id]||{category:"일반 안내",subject:"",relation:"",relationLabel:"",links:[],fileIds:[],eventDate:"",eventEnd:"",place:""};const o=Object.assign({},n,m);o.files=m.fileIds.filter(function(id){return files[id]&&files[id].notice===n.id;}).map(function(id){return files[id];});delete o.fileIds;return o;});
 }
+function noticeRelationLabel_(value,old){
+ if(!value)return "";
+ if(old&&value===old.relation)return old.relationLabel;
+ if(value.indexOf("cert:")===0)return certification_(value.slice(5)).name;
+ if(value.indexOf("project:")===0){const r=record_("projects",value.slice(8));return r.v[1]+" · "+r.v[2];}
+ if(value.indexOf("contest:")===0){const r=record_("board",value.slice(8));if(r.v[2]!=="대회"||r.v[12]==="1")throw new Error("연결할 대회를 확인해 주세요");return r.v[3]||r.v[4];}
+ throw new Error("연결 대상을 확인해 주세요");
+}
+function saveNotice_(p){return withLock_(function(){
+ const old=p.id?record_("notices",p.id):null,id=old?old.v[0]:uid_("n"),prior=noticeMeta_()[id]||{};
+ const val=function(k,fallback){return p[k]===undefined?(prior[k]===undefined?fallback:prior[k]):p[k];};
+ const title=required_(p.title,120),body=clean_(p.body,5000),target=targetValid_(p.target||"all"),due=dateValid_(p.due,true);
+ const category=String(val("category","일반 안내"));if(NOTICE_CATEGORIES_.indexOf(category)<0)throw new Error("공지 분류를 선택해 주세요");
+ const subject=clean_(val("subject",""),100),relation=clean_(val("relation",""),100),label=noticeRelationLabel_(relation,prior);
+ const eventDate=dateValid_(val("eventDate",""),true),eventEnd=dateValid_(val("eventEnd",""),true),place=clean_(val("place",""),150);
+ if(eventEnd&&(!eventDate||eventEnd<eventDate))throw new Error("일정 종료일은 시작일 이후로 입력해 주세요");
+ const rawLinks=val("links",[]);if(!Array.isArray(rawLinks)||rawLinks.length>8)throw new Error("관련 링크는 최대 8개까지 넣어 주세요");const links=Array.from(new Set(rawLinks.map(function(s){return urlValid_(s);}).filter(Boolean)));
+ const previous=prior.fileIds||[],keep=p.keepFiles===undefined?previous:p.keepFiles;
+ if(!Array.isArray(keep)||keep.some(function(id){return previous.indexOf(id)<0;}))throw new Error("다른 공지의 첨부는 연결할 수 없습니다");
+ const uploads=Array.isArray(p.uploads)?p.uploads:[],kept=Array.from(new Set(keep));if(uploads.length>10||kept.length+uploads.length>20)throw new Error("새 첨부는 한 번에 10개, 공지당 총 20개까지 올릴 수 있습니다");
+ const me={role:"teacher",name:"선생님"};uploads.forEach(function(u){if(u&&u.staged){stagedFile_(me,u);return;}if(!u||!u.base64)throw new Error("첨부파일을 다시 선택해 주세요");const name=required_(u.name,180),ext=name.split('.').pop().toLowerCase();if(!MIME_BY_EXT_[ext]||String(u.base64).length>DIRECT_UPLOAD_MB_*1024*1024*1.37+100||!Utilities.base64Decode(String(u.base64)).length)throw new Error("첨부파일 형식과 크기를 확인해 주세요");});
+ const created=[];try{
+  const folder=uploads.length?folderFor_(["공지자료",id]):null;uploads.forEach(function(u){created.push(storeFile_(me,u,"notice",id,folder));});
+  const at=old?old.v[1]:now_();upsert_("noticeMeta",id,[id,category,subject,relation,label,JSON.stringify(links),JSON.stringify(kept.concat(created)),eventDate,eventEnd,place,now_()]);
+  upsert_("notices",id,[id,at,TARGET_LABEL[target],title,body,p.pinned?"고정":"",due]);return id;
+ }catch(e){created.forEach(function(fid){try{DriveApp.getFileById(fid).setTrashed(true);}catch(ignore){}});throw e;}
+});}
+function noticeFile_(me,id){
+ const r=record_("files",id);if(r.v[5]!=="notice")throw new Error("공지 첨부가 아닙니다");
+ const notice=record_("notices",r.v[6]),meta=noticeMeta_()[notice.v[0]];
+ if(!meta||meta.fileIds.indexOf(id)<0||(me.role!=="teacher"&&!matches_(targetKey_(notice.v[2]),me.group)))throw new Error("이 공지 첨부를 볼 권한이 없습니다");
+ return r;
+}
+function noticeImage_(me,p){
+ const r=noticeFile_(me,p.id),file=DriveApp.getFileById(r.v[0]);
+ if(!/^image\/(png|jpeg|gif|webp|heic)$/.test(r.v[3]))throw new Error("사진 첨부만 미리 볼 수 있습니다");
+ let blob=p.original===true?null:(typeof file.getThumbnail==="function"?file.getThumbnail():null);
+ if(!blob){if(file.getSize()>3*1024*1024)throw new Error("사진이 큽니다. 원본 받기를 이용해 주세요");blob=file.getBlob();}
+ const mime=blob.getContentType(),bytes=blob.getBytes();if(!/^image\/(png|jpeg|gif|webp)$/.test(mime)||bytes.length>3*1024*1024)throw new Error("미리 보기 대신 원본 받기를 이용해 주세요");
+ return {name:r.v[2],mime:mime,base64:Utilities.base64Encode(bytes)};
+}
+function noticeDownload_(me,p){const r=noticeFile_(me,p.id),f=DriveApp.getFileById(r.v[0]);return driveFilePart_(r.v[0],{name:r.v[2],mime:r.v[3],size:f.getSize()},p.offset);}
+function noticeCalendarEvents_(notices){return (notices||[]).filter(function(n){return n.eventDate;}).map(function(n){return {id:"notice-"+n.id,key:"notice:"+n.id,uid:"notice-"+n.id,notice:n.id,title:n.title,date:n.eventDate,endDate:n.eventEnd||"",place:n.place||"",note:[n.body].concat(n.links||[]).filter(Boolean).join("\n"),target:n.target};});}
+
 function saveEvent_(p) {
   return withLock_(function () {
     const vals = [p.id || uid_("e"), clean_(p.date, 10), clean_(p.endDate, 10), clean_(p.time, 30), KIND_LABEL[p.kind] || "행사", TARGET_LABEL[p.target] || "전체", clean_(p.title, 80), clean_(p.place, 80), clean_(p.note, 1000)];
@@ -592,13 +785,13 @@ function saveEvent_(p) {
 }
 function deleteRow_(tab, id) {
   if (["notices", "events"].indexOf(tab) < 0) throw new Error("지울 수 없는 항목입니다");
-  return withLock_(function () { const row = findRow_(tab, id); if (row) sheet_(tab).deleteRow(row); return true; });
+  return withLock_(function () { const row = findRow_(tab, id); if (row) sheet_(tab).deleteRow(row); if(tab==="notices"){const m=findRow_("noticeMeta",id);if(m)sheet_("noticeMeta").deleteRow(m);} return true; });
 }
 function addPersonal_(me, p) {
   return withLock_(function () {
     const names = me.role === "teacher" ? (p.names || []) : [me.name];
     if (!names.length) throw new Error("학생을 한 명 이상 고르세요");
-    if (!p.date || !String(p.title || "").trim()) throw new Error("날짜와 일정을 넣어 주세요");
+    validatePersonal_(p);
     const valid = {}; roster_().forEach(function (r) { valid[r.name] = true; });
     names.forEach(function (n) {
       if (!valid[n]) return;
@@ -606,6 +799,19 @@ function addPersonal_(me, p) {
     });
     return true;
   });
+}
+function savePersonal_(me,p){
+ return withLock_(function(){
+  const r=rows_("personal").filter(function(x){return x.v[0]===String(p.id);})[0];
+  if(!r)throw new Error("개인일정을 찾을 수 없습니다");
+  if(me.role!=="teacher"&&(r.v[1]!==me.name||r.v[7]!=="학생"))throw new Error("내가 넣은 일정만 수정할 수 있습니다");
+  validatePersonal_(p);
+  writeCells_(sheet_("personal"),r._row,[r.v[0],r.v[1],clean_(p.date,10),clean_(p.endDate,10),clean_(p.time,30),clean_(p.title,80),clean_(p.note,300),r.v[7]]);return true;
+ });
+}
+function validatePersonal_(p){
+ if(!dateValid_(p.date)||!String(p.title||"").trim())throw new Error("올바른 날짜와 일정명을 넣어 주세요");
+ if(p.endDate&&(!dateValid_(p.endDate)||p.endDate<p.date))throw new Error("끝나는 날은 시작일 이후로 입력하세요");
 }
 function delPersonal_(me, id) {
   return withLock_(function () {
@@ -730,7 +936,8 @@ function project_(me,id) {
 }
 var PROPS_ = null;
 function props_() { if (!PROPS_) PROPS_ = PropertiesService.getScriptProperties().getProperties(); return PROPS_; }
-function appAccount_() { try { return Session.getEffectiveUser().getEmail() || ""; } catch (e) { return ""; } }
+var APP_ACCOUNT_MEMO_=null;
+function appAccount_() { if(APP_ACCOUNT_MEMO_!==null)return APP_ACCOUNT_MEMO_;const cache=CacheService.getScriptCache(),key="execution_account_v1",saved=cache.get(key);if(saved)return APP_ACCOUNT_MEMO_=saved;let email="";try { email=Session.getEffectiveUser().getEmail()||""; } catch(e) {} if(!email)try { email=DriveApp.getRootFolder().getOwner().getEmail()||""; }catch(e){}if(email)try{cache.put(key,email,3600);}catch(e){}return APP_ACCOUNT_MEMO_=email; }
 /* 다른 구글 계정의 드라이브 폴더도, 그 폴더를 알림판 배포 계정에 '편집자'로 공유하면 연결할 수 있습니다. */
 function openSharedFolder_(id, label) {
   try { const f = DriveApp.getFolderById(id); f.getName(); return f; }
@@ -881,15 +1088,28 @@ function folderFor_(path, propKey) {
   props.setProperty(key, f.getId()); return f;
 }
 function projectFolder_(projectRow) {
+  const known=props_()["PF_"+projectRow.v[0]];if(known){const f=openSharedFolder_(known,"프로젝트 Drive");if(f.isTrashed())throw new Error("연결된 프로젝트 폴더가 휴지통에 있습니다");return f;}
   const name = (projectRow.v[1] + " · " + projectRow.v[2]).slice(0,60) + " [" + projectRow.v[0] + "]";
   const folder = folderFor_(["팀프로젝트", name], "PF_" + projectRow.v[0]); PROPS_ = null; return folder;
 }
 function projectFolderInfo_(id) { return withLock_(function(){return {url:projectFolder_(record_("projects",id)).getUrl()};}); }
+function saveProjectFolder_(p){return withLock_(function(){
+  const pr=record_("projects",p.id),id=driveFolderId_(p.url);if(!id)throw new Error("팀 Drive 폴더 주소를 입력해 주세요");
+  const folder=openSharedFolder_(id,"프로젝트 Drive");if(folder.isTrashed())throw new Error("휴지통의 폴더는 연결할 수 없습니다");
+  const pp=props_();rows_("projects").forEach(function(x){if(x.v[0]!==pr.v[0]&&pp["PF_"+x.v[0]]===id)throw new Error("다른 팀에 연결된 폴더입니다. 팀별로 별도 폴더를 사용해 주세요");});
+  PropertiesService.getScriptProperties().setProperty("PF_"+pr.v[0],id);PROPS_=null;return {url:folder.getUrl()};
+});}
+function materialStorageFolder_(target){
+ const id=props_().MATERIAL_FOLDER;let folder=id?openSharedFolder_(id,"자료실 Drive"):folderFor_(["자료실"],"MATERIAL_FOLDER");
+ if(folder.isTrashed())throw new Error("연결된 자료실 폴더가 휴지통에 있습니다");
+ if(target&&target!=="all")folder=childFolder_(folder,TARGET_LABEL[target]);PROPS_=null;return folder;
+}
+function attachmentFolder_(kind){return kind==="materials"?materialStorageFolder_("all"):folderFor_([kind==="portfolio"?"포트폴리오":"기타"]);}
 function storeFile_(me,upload,kind,ref,folder,memo) {
   if(!hasUpload_(upload)) return "";
   if(upload.staged){
     const st=stagedFile_(me,upload),ext=st.name.split(".").pop().toLowerCase();if(!MIME_BY_EXT_[ext]) throw new Error("올릴 수 없는 파일 형식입니다 (."+ext+")");
-    const sdir=folder||folderFor_([kind==="materials"?"자료실":kind==="portfolio"?"포트폴리오":"기타"]);
+    const sdir=folder||attachmentFolder_(kind);
     st.file.moveTo(sdir);st.file.setDescription("도제반 알림판 · 올린 사람: "+me.name+(memo?" · "+memo:""));CacheService.getScriptCache().remove("stg_"+upload.staged);
     append_("files",[st.file.getId(),me.name,st.name,MIME_BY_EXT_[ext],st.size,kind,ref,now_(),clean_(memo,300)]);return st.file.getId();
   }
@@ -897,7 +1117,7 @@ function storeFile_(me,upload,kind,ref,folder,memo) {
   const ext=name.split(".").pop().toLowerCase(),mime=MIME_BY_EXT_[ext];if(!mime) throw new Error("올릴 수 없는 파일 형식입니다 (."+ext+")");
   if(String(upload.base64).length>DIRECT_UPLOAD_MB_*1024*1024*1.37+100) throw new Error("큰 파일은 나눠 올리기로 보내야 합니다. 화면을 새로고침한 뒤 다시 올려 주세요");
   const bytes=Utilities.base64Decode(String(upload.base64));if(!bytes.length) throw new Error("빈 파일은 올릴 수 없습니다");
-  const dir=folder||folderFor_([kind==="materials"?"자료실":kind==="portfolio"?"포트폴리오":"기타"]);
+  const dir=folder||attachmentFolder_(kind);
   const f=dir.createFile(Utilities.newBlob(bytes,mime,name));
   try{f.setDescription("도제반 알림판 · 올린 사람: "+me.name+(memo?" · "+memo:""));append_("files",[f.getId(),me.name,name,mime,bytes.length,kind,ref,now_(),clean_(memo,300)]);return f.getId();}catch(e){f.setTrashed(true);throw e;}
 }
@@ -942,7 +1162,7 @@ function reviewPortfolio_(p) { return withLock_(function(){const r=record_("port
 function saveProject_(p) { return withLock_(function(){const id=p.id?record_("projects",p.id).v[0]:uid_("prj");const members=Array.from(new Set(Array.isArray(p.members)?p.members:[]));if(!members.length) throw new Error("구성원을 한 명 이상 선택하세요");members.forEach(student_);if(["준비","진행중","완료","중지"].indexOf(p.status)<0) throw new Error("프로젝트 상태를 확인해 주세요");upsert_("projects",id,[id,required_(p.team,60),required_(p.product,120),JSON.stringify(members),clean_(p.goal,3000),dateValid_(p.due,true),p.status,urlValid_(p.link),now_()]);return id;}); }
 function saveTask_(me,p) { return withLock_(function(){const old=p.id?record_("tasks",p.id):null,project=project_(me,old?old.v[1]:p.project),members=JSON.parse(project.v[3]);
   const assignee=clean_(p.assignee,30);if(assignee&&members.indexOf(assignee)<0) throw new Error("담당자는 팀 구성원이어야 합니다");const id=old?old.v[0]:uid_("task");upsert_("tasks",id,[id,project.v[0],required_(p.title,150),assignee,dateValid_(p.due,true),p.done===true?"1":"0",clean_(p.note,2000),now_()]);return id;}); }
-function saveMaterial_(me,p) { return withLock_(function(){const old=p.id?record_("materials",p.id):null,id=old?old.v[0]:uid_("m");const title=required_(p.title,150),target=targetValid_(p.target),link=urlValid_(p.link);const file=storeFile_(me,p.upload,"materials",id)||(old?old.v[6]:"");if(!link&&!file&&!String(p.body||"").trim()) throw new Error("설명, 링크, 파일 중 하나 이상 넣어 주세요");upsert_("materials",id,[id,title,TARGET_LABEL[target],clean_(p.category,50),clean_(p.body,5000),link,file,old?old.v[7]:now_()]);return id;}); }
+function saveMaterial_(me,p) { return withLock_(function(){const old=p.id?record_("materials",p.id):null,id=old?old.v[0]:uid_("m");const title=required_(p.title,150),target=targetValid_(p.target),link=urlValid_(p.link);if(old&&old.v[6]&&targetKey_(old.v[2])!==target)DriveApp.getFileById(old.v[6]).moveTo(materialStorageFolder_(target));const file=storeFile_(me,p.upload,"materials",id,hasUpload_(p.upload)?materialStorageFolder_(target):null)||(old?old.v[6]:"");CacheService.getScriptCache().remove("dm_v1");if(!link&&!file&&!String(p.body||"").trim()) throw new Error("설명, 링크, 파일 중 하나 이상 넣어 주세요");upsert_("materials",id,[id,title,TARGET_LABEL[target],clean_(p.category,50),clean_(p.body,5000),link,file,old?old.v[7]:now_()]);return id;}); }
 function removeExtended_(me,p) {
   return withLock_(function(){const allowed=["portfolio","materials","tasks","projects"];if(allowed.indexOf(p.key)<0) throw new Error("삭제할 수 없는 종류입니다");const r=record_(p.key,p.id);
     if(p.key==="portfolio"){if(me.role!=="teacher"&&r.v[1]!==me.name) throw new Error("내 포트폴리오만 삭제할 수 있습니다");}
@@ -952,11 +1172,13 @@ function removeExtended_(me,p) {
   });
 }
 function downloadFile_(me,id) {
+  denyStudentPrivateFile_(id);
   const r=record_("files",id); let visible=false;
   if(r.v[5]==="portfolio"){const entry=record_("portfolio",r.v[6]);visible=entry.v[7]===id&&(me.role==="teacher"||entry.v[1]===me.name);}
   if(r.v[5]==="materials"){const entry=record_("materials",r.v[6]);visible=entry.v[6]===id&&(me.role==="teacher"||matches_(targetKey_(entry.v[2]),me.group));}
   if(r.v[5]==="project"){project_(me,r.v[6]);visible=true;}
   if(r.v[5]==="board"){const entry=record_("board",r.v[6]);visible=entry.v[12]!=="1"&&boardFileIds_(entry.v[9]).indexOf(id)>=0;}
+  if(r.v[5]==="notice"){noticeFile_(me,id);visible=true;}
   if(!visible) throw new Error("이 첨부파일을 볼 권한이 없습니다");
   const df=DriveApp.getFileById(id);if(df.getSize()>MAX_DOWNLOAD_MB_*1024*1024) throw new Error("파일이 커서("+MAX_DOWNLOAD_MB_+"MB 초과) 앱에서 바로 내려받을 수 없습니다. 선생님께 Drive 공유를 요청하세요");const blob=df.getBlob(),bytes=blob.getBytes();if(bytes.length>MAX_DOWNLOAD_MB_*1024*1024) throw new Error("파일이 커서("+MAX_DOWNLOAD_MB_+"MB 초과) 앱에서 바로 내려받을 수 없습니다. 선생님께 Drive 공유를 요청하세요");return {name:r.v[2],mime:r.v[3],base64:Utilities.base64Encode(bytes)};
 }
@@ -1004,6 +1226,9 @@ function syncCalendar_() {
     const calendarEvents=cal.getEvents(new Date(start+"T00:00:00+09:00"),new Date(end+"T00:00:00+09:00")),existingEvents={};
     calendarEvents.forEach(function(ev){existingEvents[ev.getId()]=ev;});
     boardContestEvents_(data.boardPosts).forEach(function(e){list.push(e);});
+    certificationCalendarEvents_(data.certSchedule).forEach(function(e){list.push(e);});
+    noticeCalendarEvents_(data.notices).forEach(function(e){list.push(e);});
+    (data.companyEvents||[]).forEach(function(e){list.push(e);});
     data.events.forEach(function(e){list.push(Object.assign({},e,{key:"event:"+e.id,title:"[도제] "+e.title}));});
     data.afterschool.filter(function(a){return !a.info;}).forEach(function(a){list.push({key:"after:"+a.date+":"+a.grade+":"+a.title,date:a.date,time:a.start+"–"+a.end,title:"[도제 방과후 "+a.grade+"학년] "+a.title});});
     sheetScheduleEvents_(data.sheetEvents).forEach(function(e){list.push(Object.assign({},e,{title:"[도제 일정] "+e.title}));});
@@ -1159,6 +1384,41 @@ function anonDelete_(me, p) {
 function anonStatus_(p){if(["접수","확인 중","처리 완료"].indexOf(p.status)<0)throw new Error("처리 상태를 확인해 주세요");return withLock_(function(){const r=record_("anon",p.id);sheet_("anon").getRange(1,9).setValue("처리상태");sheet_("anon").getRange(r._row,9).setValue(p.status);return true;});}
 function anonReport_(me,p){const reason=required_(p.reason,500);return withLock_(function(){const post=record_("anon",p.id);if(post.v[5]==="1")throw new Error("숨겨진 글입니다");if(rows_("anonReports").some(function(r){return r.v[1]===p.id&&r.v[2]===who_(me)&&r.v[5]!=="완료";}))throw new Error("이미 신고한 글입니다. 선생님이 확인 중입니다");append_("anonReports",[uid_("rp"),p.id,who_(me),reason,now_(),""]);return true;});}
 
+/* 자격증별 시험 일정과 Drive 자료실. 일정은 공통 공개, 관리와 업로드는 교사만 합니다. */
+const CERTIFICATIONS_ = [
+  {id:"printing3d",name:"3D프린터운용기능사"}, {id:"electronics",name:"전자기능사"},
+  {id:"automation",name:"자동화설비기능사"}, {id:"electricity",name:"전기기능사"},
+  {id:"elevator",name:"승강기기능사"}, {id:"itq",name:"ITQ"}
+];
+APP_TABS.certSchedule = {name:"앱_자격증일정",head:["ID","자격증ID","구분","회차과목","시작일","종료일","장소","안내","링크","수정시각"]};
+const CERT_PHASES_ = ["필기 접수","필기 시험","실기 접수","실기 시험","시험 접수","시험","합격 발표","준비 수업","기타"];
+function certification_(id) {
+  const c = CERTIFICATIONS_.find(function(c){return c.id === String(id);});
+  if (!c) throw new Error("자격증을 선택해 주세요"); return c;
+}
+function certificationLoad_() {
+  const pp=props_();
+  const certifications=CERTIFICATIONS_.map(function(c){const id=pp["CERT_FOLDER_"+c.id]||"";return {id:c.id,name:c.name,folderUrl:id?"https://drive.google.com/drive/folders/"+id:""};});
+  const certSchedule=rows_("certSchedule").filter(function(r){return r.v[0];}).map(function(r){const v=r.v;return {id:v[0],cert:v[1],phase:v[2],title:v[3],date:v[4],endDate:v[5],place:v[6],note:v[7],link:v[8],updated:v[9]};});
+  return {certifications:certifications,certSchedule:certSchedule,certCalendar:certificationCalendarEvents_(certSchedule)};
+}
+function saveCertSchedule_(p) {return withLock_(function(){
+  const cert=certification_(p.cert),phase=String(p.phase||"");if(CERT_PHASES_.indexOf(phase)<0)throw new Error("일정 구분을 선택해 주세요");
+  const date=dateValid_(p.date),end=dateValid_(p.endDate,true);if(end&&end<date)throw new Error("종료일은 시작일 이후로 입력해 주세요");
+  const title=required_(p.title,120),place=clean_(p.place,150),note=clean_(p.note,2000),link=urlValid_(p.link);
+  const id=p.id?record_("certSchedule",p.id).v[0]:uid_("ce");
+  upsert_("certSchedule",id,[id,cert.id,phase,title,date,end,place,note,link,now_()]);return id;
+});}
+function deleteCertSchedule_(p){return withLock_(function(){const r=record_("certSchedule",p.id);sheet_("certSchedule").deleteRow(r._row);return true;});}
+function certificationCalendarEvents_(items){return (items||[]).map(function(e){const c=certification_(e.cert);return {id:"cert-"+e.id,key:"cert:"+e.id,uid:"cert-"+e.id,cert:c.id,title:"자격증 · "+c.name+" · "+e.phase+" · "+e.title,date:e.date,endDate:e.endDate||"",place:e.place||"",note:[e.note,e.link].filter(Boolean).join("\n")};});}
+function saveCertFolder_(p){return withLock_(function(){
+  const cert=certification_(p.cert),props=PropertiesService.getScriptProperties(),key="CERT_FOLDER_"+cert.id;
+  let f;
+  if(p.create===true){const old=props.getProperty(key);f=old?openSharedFolder_(old,cert.name+" 자료실"):folderFor_(["자격증",cert.name]);}
+  else {const id=driveFolderId_(p.url);if(!id)throw new Error("연결할 Drive 폴더 주소를 입력해 주세요");f=openSharedFolder_(id,cert.name+" 자료실");}
+  props.setProperty(key,f.getId());PROPS_=null;return {url:f.getUrl()};
+});}
+
 /* 프로젝트·자격증 전체 공유 게시판 */
 function boardFileIds_(s){try{const a=JSON.parse(s||"[]");return Array.isArray(a)?a.filter(function(x){return typeof x==="string";}):[];}catch(e){return [];}}
 function boardLoad_(me){
@@ -1295,6 +1555,9 @@ function icsCalendar_(name, events) {
   return L.map(icsFold_).join("\r\n") + "\r\n";
 }
 const KIND_PREFIX_ = { OJT: "OJT", OFF: "OFF-JT", EVAL: "평가", PRJ: "팀프로젝트", SCH: "학교", EVT: "" };
+function isPublicHoliday_(title){
+ return /^(?:(?:대체)?공휴일|대체휴일|임시공휴일|휴일|휴업일|재량휴업일|개교기념일|설날(?:연휴)?|설연휴|추석(?:연휴)?|부처님오신날|석가탄신일|신정|새해첫날|삼일절|어린이날|현충일|광복절|개천절|한글날|성탄절|크리스마스)(?:\s*[（(][^）)]*[）)])?$/.test(String(title||"").trim());
+}
 function icsFeed_(token) {
   USE_CACHE_ = true;
   const r = /^[a-f0-9]{20,}$/.test(token) ? rows_("icsTokens").filter(function (x) { return x.v[1] === token; })[0] : null;
@@ -1306,26 +1569,31 @@ function icsFeed_(token) {
   prefetchLoad_();
   const d = load_(me), T = me.role === "teacher", from = plusDate_(today_(), -31), to = plusDate_(today_(), 366), out = [];
   const inRange = function (x) { return x.date && (x.endDate || x.date) >= from && x.date <= to; };
-  d.events.filter(inRange).forEach(function (e) { const pre = KIND_PREFIX_[e.kind]; out.push({ uid: "ev-" + e.id, title: (pre ? pre + " · " : "") + e.title, date: e.date, endDate: e.endDate, time: e.time, place: e.place, note: e.note }); });
+  d.events.filter(function(e){return inRange(e)&&!isPublicHoliday_(e.title);}).forEach(function (e) { const pre = KIND_PREFIX_[e.kind]; out.push({ uid: "ev-" + e.id, title: (pre ? pre + " · " : "") + e.title, date: e.date, endDate: e.endDate, time: e.time, place: e.place, note: e.note }); });
   boardContestEvents_(d.boardPosts).filter(inRange).forEach(function(e){out.push(e);});
+  certificationCalendarEvents_(d.certSchedule).filter(inRange).forEach(function(e){out.push(e);});
+  noticeCalendarEvents_(d.notices).filter(inRange).forEach(function(e){out.push(e);});
+  (d.companyEvents||[]).filter(inRange).forEach(function(e){out.push(e);});
   const sheetGrade = T ? 0 : ({ learner: 3, pre2: 2, pre1: 1 })[me.group];
   sheetScheduleEvents_(d.sheetEvents, sheetGrade).filter(inRange).forEach(function(e){out.push(e);});
-  if (!T) {
-    const g = ({ learner: 3, pre2: 2, pre1: 1 })[me.group];
-    d.afterschool.filter(function (a) { return me.afterschool && a.grade === g && !a.info && inRange(a); }).forEach(function (a) { out.push({ uid: "aft-" + a.date + "-" + icsHash_(a.title + a.start), title: "방과후 " + a.title, date: a.date, time: a.start + "–" + a.end }); });
-    if (matches_(d.common.target, me.group)) d.common.items.filter(function (e) { return inRange(e) && !e.monthOnly; }).forEach(function (e) { out.push({ uid: "sc-" + e.date + "-" + icsHash_(e.title), title: e.title, date: e.date, endDate: e.endDate, time: e.time }); });
-    d.personalApp.filter(inRange).forEach(function (e) { out.push({ uid: "pe-" + e.id, title: e.title, date: e.date, endDate: e.endDate, time: e.time, note: e.note }); });
-    ((d.personalSheet || {})[me.name] || []).filter(function (e) { return inRange(e) && !e.monthOnly; }).forEach(function (e) { out.push({ uid: "ps-" + e.date + "-" + icsHash_(e.title), title: e.title, date: e.date, endDate: e.endDate, time: e.time }); });
+  {
+    const g = T ? 0 : ({ learner: 3, pre2: 2, pre1: 1 })[me.group];
+    d.afterschool.filter(function (a) { return (T || (me.afterschool && a.grade === g)) && !a.info && inRange(a); }).forEach(function (a) { out.push({ uid: "aft-" + a.date + "-" + icsHash_(a.title + a.start), title: "방과후 " + a.title, date: a.date, time: a.start + "–" + a.end }); });
+    if (T || matches_(d.common.target, me.group)) d.common.items.filter(function (e) { return inRange(e) && !e.monthOnly; }).forEach(function (e) { out.push({ uid: "sc-" + e.date + "-" + icsHash_(e.title), title: e.title, date: e.date, endDate: e.endDate, time: e.time }); });
+    d.personalApp.filter(inRange).forEach(function (e) { out.push({ uid: "pe-" + e.id, title: "["+e.name+"] "+e.title, date: e.date, endDate: e.endDate, time: e.time, note: e.note }); });
+    Object.keys(d.personalSheet||{}).forEach(function(n){(d.personalSheet[n]||[]).filter(function(e){return inRange(e)&&!e.monthOnly;}).forEach(function(e){out.push({uid:"ps-"+icsHash_(n+e.date+e.title),title:"["+n+"] "+e.title,date:e.date,endDate:e.endDate,time:e.time});});});
     (d.assigns || []).forEach(function (a) {
       if (!a.ojtDays) return; const set = a.ojtDays.split(","), co = (d.companies || []).filter(function (c) { return c.id === a.company; })[0];
-      for (let s = today_(), i = 0; i < 200; i++, s = plusDate_(s, 1)) {
+      for (let s = today_(), i = 0; i < 366; i++, s = plusDate_(s, 1)) {
         if ((a.start && s < a.start) || (a.end && s > a.end)) continue;
         const dow = DOW_KO_[new Date(s + "T12:00:00+09:00").getUTCDay()];
-        if (set.indexOf(dow) >= 0) out.push({ uid: "ojt-" + s, title: "OJT" + (co ? " · " + co.name : ""), date: s, place: co ? co.address : "" });
+        if (set.indexOf(dow) >= 0) out.push({ uid: "ojt-" + icsHash_(a.name+s), title: "OJT" + (co ? " · " + co.name : ""), date: s, time:a.ojtTime||"", place: co ? co.address : "" });
       }
     });
   }
-  return ContentService.createTextOutput(icsCalendar_("도제반 · " + name, out)).setMimeType(ContentService.MimeType.ICAL);
+  const seen={};
+  const filtered=out.filter(function(e){if(isPublicHoliday_(e.title)||seen[e.uid])return false;seen[e.uid]=true;return true;});
+  return ContentService.createTextOutput(icsCalendar_("도제반 · " + name, filtered)).setMimeType(ContentService.MimeType.ICAL);
 }
 function icsSingle_(q) {
   const ev = { title: clean_(q.t, 120) || "도제반 일정", date: clean_(q.d, 10), endDate: clean_(q.e, 10), time: clean_(q.tm, 30), place: clean_(q.p, 120), note: clean_(q.n, 500) };
@@ -1357,7 +1625,7 @@ function driveListAll_() {
   const id = props_().MATERIAL_FOLDER; if (!id) return [];
   const out = []; let n = 0;
   const push = function (f, target, category) {
-    if (n++ >= 300) return;
+    if (studentPrivateFile_(f.getId())||n++ >= 300) return;
     out.push({ id: f.getId(), name: f.getName(), mime: f.getMimeType(), size: f.getSize(), updated: Utilities.formatDate(f.getLastUpdated(), "Asia/Seoul", "yyyy-MM-dd HH:mm"), target: target, category: category });
   };
   const walk = function (folder, target, category, depth) {
@@ -1377,9 +1645,10 @@ function driveListAll_() {
 }
 function driveMaterials_(me) {
   const all = driveListAll_();
-  return me.role === "teacher" ? all : all.filter(function (f) { return f.error || matches_(f.target, me.group); });
+  return all.filter(function(f){return !studentPrivateFile_(f.id)&&(me.role==="teacher"||f.error||matches_(f.target,me.group));});
 }
 function driveMaterialFile_(me, id) {
+  denyStudentPrivateFile_(id);
   const f0 = driveMaterials_(me).filter(function (f) { return f.id === id; })[0];
   if (!f0) throw new Error("이 자료를 볼 권한이 없습니다");
   const file = DriveApp.getFileById(id);
@@ -1406,16 +1675,58 @@ function saveNotionPortfolio_(me,p){
   const name=me.role==='teacher'?p.name:me.name,url=notionPortfolioUrl_(p.url);
   return withLock_(function(){const st=student_(name),sh=sheet_('roster');sh.getRange(1,7).setValue('노션포트폴리오');sh.getRange(st.row,7).setValue(url);return true;});
 }
+/* ===================== Drive 폴더형 사진첩 ===================== */
+function photoMime_(mime){return /^image\/(jpeg|png|gif|webp|heic|heif)$/.test(String(mime||""));}
+function photoSetup_(p){return withLock_(function(){
+ let id=driveFolderId_(p.url),folder;
+ if(p.create===true){id=props_().PHOTO_ALBUM_FOLDER;folder=id?openSharedFolder_(id,"사진첩 Drive"):folderFor_(["사진첩"]);}
+ else{if(!id)throw new Error("사진첩 Drive 폴더 주소를 넣어 주세요");folder=openSharedFolder_(id,"사진첩 Drive");}
+ PropertiesService.getScriptProperties().setProperty("PHOTO_ALBUM_FOLDER",folder.getId());PROPS_=null;return {folder:folder.getId(),url:folder.getUrl()};
+});}
+function photoCreateAlbum_(me,p){return withLock_(function(){const r=driveRoot2_(me,"photos"),chain=drivePath_(me,r,p.folder),folder=childFolder_(chain[chain.length-1],required_(p.name,80));return {folder:folder.getId()};});}
+function photoBrowse_(me,p){
+ if(!props_().PHOTO_ALBUM_FOLDER)return {connected:false};
+ const d=driveBrowse_(me,{root:"photos",folder:p.folder});
+ const photos=d.files.filter(function(f){return photoMime_(f.mime);});
+ return {connected:true,folder:d.folder,path:d.path,folders:d.folders,photos:photos,canUpload:d.canUpload,url:d.url,limited:d.files.length>=300||d.folders.length>=200};
+}
+function photoFile_(me,p){
+ const r=driveRoot2_(me,"photos");let file;
+ if(p.album){const chain=drivePath_(me,r,p.album),it=chain[chain.length-1].getFiles();let checked=0;while(it.hasNext()&&checked++<80){const f=it.next();if(!f.isTrashed()&&photoMime_(f.getMimeType())){file=f;break;}}if(!file)return null;}
+ else{try{file=DriveApp.getFileById(String(p.id||""));}catch(e){throw new Error("사진을 찾을 수 없습니다");}}
+ if(file.isTrashed()||!photoMime_(file.getMimeType()))throw new Error("사진 파일만 볼 수 있습니다");
+ const parents=file.getParents();if(!parents.hasNext())throw new Error("사진첩 안의 사진만 볼 수 있습니다");drivePath_(me,r,parents.next().getId());return file;
+}
+function photoImage_(me,p){
+ const file=photoFile_(me,p);if(!file)return {empty:true};
+ let blob=null,original=false;
+ if(p.original===true&&file.getSize()<=6*1024*1024){blob=file.getBlob();original=true;}
+ else if(typeof file.getThumbnail==="function")blob=file.getThumbnail();
+ if(!blob&&file.getSize()<=3*1024*1024){blob=file.getBlob();original=true;}
+ if(!blob)throw new Error("Drive가 미리보기를 준비 중입니다. 잠시 후 새로고침하거나 원본을 받으세요");
+ const mime=blob.getContentType(),bytes=blob.getBytes();if(!/^image\/(png|jpeg|gif|webp)$/.test(mime)||bytes.length>6*1024*1024)throw new Error("이 사진은 원본 받기로 확인해 주세요");
+ return {id:file.getId(),name:file.getName(),mime:mime,base64:Utilities.base64Encode(bytes),original:original};
+}
+function photoUpload_(me,p){return withLock_(function(){
+ const r=driveRoot2_(me,"photos"),chain=drivePath_(me,r,p.folder);if(!hasUpload_(p.upload))throw new Error("사진을 골라 주세요");
+ const name=p.upload.staged?stagedFile_(me,p.upload).name:String(p.upload.name||""),mime=MIME_BY_EXT_[name.split(".").pop().toLowerCase()];
+ if(!photoMime_(mime))throw new Error("사진 파일만 올릴 수 있습니다 (JPG·PNG·GIF·WEBP·HEIC)");
+ return storeFile_(me,p.upload,"photos",chain[chain.length-1].getId(),chain[chain.length-1]);
+});}
+
 /* ===================== 페이지 안 Drive 탐색 =====================
  * 학생에게 공유한 Drive 폴더(자료실, 프로젝트 자료실)를 알림판 안에서 폴더째 보고, 올리고, 받습니다.
  * root: "materials" = 자료실 폴더(대상 폴더 규칙 적용), "project:<ID>" = 그 프로젝트 팀원·선생님만.
  * 학생 올리기: 자료실은 설정 MATERIAL_STUDENT_UPLOAD가 "0"이 아니면 허용(기본 허용), 프로젝트는 팀원 모두 허용. */
 function driveRoot2_(me, root) {
   root = String(root || "");
+  if(root==="photos"){const id=props_().PHOTO_ALBUM_FOLDER;if(!id)throw new Error("사진첩 Drive 폴더를 먼저 연결해 주세요");return {key:root,label:"사진첩",folder:openSharedFolder_(id,"사진첩 Drive"),upload:me.role==="teacher",targets:false};}
   if (root === "materials") {
     const id = props_().MATERIAL_FOLDER; if (!id) throw new Error("자료실 Drive 폴더가 아직 연결되지 않았습니다");
     return { key: root, label: "자료실", folder: openSharedFolder_(id, "자료실 Drive"), upload: me.role === "teacher" || props_().MATERIAL_STUDENT_UPLOAD !== "0", targets: true };
   }
+  if(root.indexOf("cert:")===0){const cert=certification_(root.slice(5)),id=props_()["CERT_FOLDER_"+cert.id];if(!id)throw new Error("자격증 자료실이 아직 연결되지 않았습니다");return {key:root,label:cert.name+" 자료실",folder:openSharedFolder_(id,cert.name+" 자료실"),upload:me.role==="teacher",targets:false};}
+  if(root.indexOf("company:")===0){const info=companyFolder_(me,root.slice(8));return {key:root,label:info.company.name+" 자료실",folder:info.folder,upload:me.role==="teacher",targets:false};}
   const m = root.match(/^project:([A-Za-z0-9_-]{1,40})$/);
   if (m) { const pr = project_(me, m[1]); return { key: root, label: pr.v[1] + " · " + pr.v[2], folder: withLock_(function () { return projectFolder_(pr); }), upload: true, targets: false }; }
   throw new Error("폴더를 확인해 주세요");
@@ -1440,7 +1751,7 @@ function driveBrowse_(me, p) {
   const fo = cur.getFolders(); while (fo.hasNext() && folders.length < 200) { const f = fo.next(); if (f.isTrashed()) continue;
     if (r.targets && chain.length === 1) { const t = materialTarget_(f.getName()); if (t && !T && !matches_(t, me.group)) continue; folders.push({ id: f.getId(), name: f.getName(), target: t }); }
     else folders.push({ id: f.getId(), name: f.getName() }); }
-  const fi = cur.getFiles(); while (fi.hasNext() && files.length < 300) { const f = fi.next(); if (f.isTrashed()) continue;
+  const fi = cur.getFiles(); while (fi.hasNext() && files.length < 300) { const f = fi.next(); if (f.isTrashed()||studentPrivateFile_(f.getId())) continue;
     files.push({ id: f.getId(), name: f.getName(), mime: f.getMimeType(), size: f.getSize(), updated: Utilities.formatDate(f.getLastUpdated(), "Asia/Seoul", "yyyy-MM-dd HH:mm"), by: driveWho_(f.getDescription()) }); }
   folders.sort(function (a, b) { return a.name.localeCompare(b.name, "ko"); });
   files.sort(function (a, b) { return String(b.updated).localeCompare(String(a.updated)); });
@@ -1450,12 +1761,14 @@ function driveUpload_(me, p) {
   const r = driveRoot2_(me, p.root); if (!r.upload) throw new Error("이 폴더에는 선생님만 올릴 수 있습니다");
   const chain = drivePath_(me, r, p.folder), cur = chain[chain.length - 1];
   if (!hasUpload_(p.upload)) throw new Error("올릴 파일을 골라 주세요");
-  const id = withLock_(function () { return storeFile_(me, p.upload, r.key === "materials" ? "drive" : "project", r.key === "materials" ? "" : r.key.slice(8), cur); });
+  const id = withLock_(function () { return storeFile_(me, p.upload, r.key === "materials" ? "drive" : r.key.indexOf("cert:")===0 ? "cert" : r.key.indexOf("company:")===0 ? "company" : "project", r.key === "materials" ? "" : r.key.indexOf("cert:")===0 ? r.key.slice(5) : r.key.slice(8), cur); });
   CacheService.getScriptCache().remove("dm_v1"); return id;
 }
 const DL_CHUNK_ = 4 * 1024 * 1024;
 function driveDownload_(me, p) {
-  const id = String(p.id || ""), cache = CacheService.getScriptCache(), ok = "dl_" + me.name + "_" + id;
+  denyStudentPrivateFile_(p.id);
+  const id = String(p.id || ""), cache = CacheService.getScriptCache(), ok = "dl_" + me.name + "_" + String(p.root||"") + "_" + id;
+  if(p.root){const r=driveRoot2_(me,p.root),f=DriveApp.getFileById(id),parents=f.getParents();if(!parents.hasNext())throw new Error("이 파일을 받을 권한이 없습니다");drivePath_(me,r,parents.next().getId());}
   let info = cache.get(ok); info = info ? JSON.parse(info) : null;
   if (!info) {
     const r = driveRoot2_(me, p.root); let f; try { f = DriveApp.getFileById(id); } catch (e) { throw new Error("파일을 찾을 수 없습니다"); }
@@ -1463,12 +1776,16 @@ function driveDownload_(me, p) {
     drivePath_(me, r, ps.next().getId());
     info = { name: f.getName(), mime: f.getMimeType(), size: f.getSize() }; cache.put(ok, JSON.stringify(info), 3600);
   }
+  return driveFilePart_(id,info,p.offset);
+}
+function driveFilePart_(id,info,offset){
+  denyStudentPrivateFile_(id);
   if (/^application\/vnd\.google-apps\./.test(info.mime)) {
     const b = DriveApp.getFileById(id).getAs("application/pdf"), bytes = b.getBytes();
     if (bytes.length > MAX_DOWNLOAD_MB_ * 1024 * 1024) throw new Error("문서가 너무 커서 PDF로 바꿀 수 없습니다");
     return { name: info.name + ".pdf", mime: "application/pdf", size: bytes.length, base64: Utilities.base64Encode(bytes), done: true };
   }
-  const off = Number(p.offset) || 0; if (off < 0 || off >= Math.max(1, info.size)) throw new Error("받기 위치가 맞지 않습니다");
+  const off = Number(offset) || 0; if (off < 0 || off >= Math.max(1, info.size)) throw new Error("받기 위치가 맞지 않습니다");
   if (!info.size) return { name: info.name, mime: info.mime, size: 0, base64: "", done: true };
   const end = Math.min(info.size, off + DL_CHUNK_) - 1;
   const res = UrlFetchApp.fetch("https://www.googleapis.com/drive/v3/files/" + encodeURIComponent(id) + "?alt=media&supportsAllDrives=true", { muteHttpExceptions: true, headers: { Authorization: "Bearer " + ScriptApp.getOAuthToken(), Range: "bytes=" + off + "-" + end } });
@@ -1485,9 +1802,7 @@ function uploadDriveMaterial_(me,p){
   const target=targetValid_(p.target||'all');
   if(!hasUpload_(p.upload))throw new Error('올릴 파일을 선택해 주세요');
   return withLock_(function(){
-    const props=PropertiesService.getScriptProperties();let id=props.getProperty('MATERIAL_FOLDER');
-    let folder=id?DriveApp.getFolderById(id):folderFor_(['자료실'],'MATERIAL_FOLDER');
-    if(target!=='all')folder=childFolder_(folder,TARGET_LABEL[target]);
+    const folder=materialStorageFolder_(target);
     const file=storeFile_(me,p.upload,'drive','',folder);PROPS_=null;CacheService.getScriptCache().remove('dm_v1');return file;
   });
 }
@@ -1667,6 +1982,8 @@ function folderTarget_(target) {
     const id = props_().MATERIAL_FOLDER; if (!id) throw new Error("자료실 Drive 폴더가 아직 연결되지 않았습니다");
     return { label: "자료실", folder: function () { return DriveApp.getFolderById(id); }, role: "viewer" };
   }
+  if(target.indexOf("cert:")===0){const cert=certification_(target.slice(5)),id=props_()["CERT_FOLDER_"+cert.id];if(!id)throw new Error("자격증 자료실이 아직 연결되지 않았습니다");return {label:cert.name+" 자료실",folder:function(){return DriveApp.getFolderById(id);},role:"viewer"};}
+  if(target.indexOf("company:")===0){const info=companyFolder_({role:"student"},target.slice(8));return {label:info.company.name+" 자료실",folder:function(){return info.folder;},role:"viewer"};}
   const m = target.match(/^team:(.+)$/); if (!m) throw new Error("신청할 폴더를 골라 주세요");
   const pr = record_("projects", m[1]); let members = []; try { members = JSON.parse(pr.v[3] || "[]"); } catch (e) {}
   return { label: "프로젝트 자료실 · " + pr.v[1], members: members, folder: function () { return projectFolder_(pr); }, role: "editor" };
@@ -1702,7 +2019,7 @@ function folderRequests_(me, T) {
   const teams = {}; rows_("projects").forEach(function (x) { teams[x.v[0]] = x.v[1] + " · " + x.v[2]; });
   return rows_("folderReq").filter(function (x) { return T || x.v[2] === me.name; }).map(function (x) {
     const v = x.v, m = String(v[4]).match(/^team:(.+)$/);
-    return { id: v[0], at: v[1], name: v[2], email: v[3], target: v[4], label: v[4] === "materials" ? "자료실" : "프로젝트 자료실 · " + (m && teams[m[1]] || "삭제된 팀"), status: v[5], doneAt: v[6], note: v[7] };
+    return { id: v[0], at: v[1], name: v[2], email: v[3], target: v[4], label: String(v[4]).indexOf("company:")===0 ? "기업 자료실" : v[4] === "materials" ? "자료실" : String(v[4]).indexOf("cert:")===0 ? ((CERTIFICATIONS_.find(function(c){return "cert:"+c.id===v[4];})||{}).name||"자격증")+" 자료실" : "프로젝트 자료실 · " + (m && teams[m[1]] || "삭제된 팀"), status: v[5], doneAt: v[6], note: v[7] };
   }).reverse().slice(0, 100);
 }
 
@@ -1713,6 +2030,8 @@ function lastUpdate_() {
   const take = function (at, what) { at = String(at || "").trim().slice(0, 16); if (/^\d{4}-\d{2}-\d{2}/.test(at) && at > best.at) best = { at: at, what: what }; };
   const scan = function (key, col, what, skip) { if (!APP_TABS[key]) return; rows_(key).forEach(function (x) { if (skip && skip(x.v)) return; take(x.v[col], what); }); };
   scan("notices", 1, "새 공지");
+  scan("noticeMeta",10,"공지·전달 자료");
+  scan("certSchedule",9,"자격증 일정");
   scan("board", 10, "프로젝트 게시판", function (v) { return v[12] === "1"; });
   scan("board", 11, "프로젝트 게시판", function (v) { return v[12] === "1"; });
   scan("boardComments", 4, "게시판 댓글", function (v) { return v[5] === "1"; });
@@ -1726,10 +2045,53 @@ function lastUpdate_() {
 /* ===================== 기업정보 (메뉴) =====================
  * 모든 학생: 공개로 둔 기업의 업종·주요업무·소개·주소·홈페이지와 배정 인원 수.
  * 기업현장교사·연락처·이메일·메모는 선생님과 그 기업에 배정된 학습근로자만 봅니다(trainLoad_). */
-function companyInfo_(me) {
-  const T = me.role === "teacher", count = {};
-  rows_("assign").forEach(function (x) { if (x.v[0] && x.v[1]) count[x.v[1]] = (count[x.v[1]] || 0) + 1; });
-  return rows_("companies").filter(function (x) { return x.v[0] && (T || x.v[11] !== "0"); }).map(function (x) {
-    const v = x.v; return { id: v[0], name: v[1], address: v[2], industry: v[7] || "", jobs: v[8] || "", intro: v[9] || "", homepage: v[10] || "", open: v[11] !== "0", learners: count[v[0]] || 0 };
-  });
+/* 기업 안내는 별도 Google Sheets에서 읽고, 자기소개는 기존 운영 시트에 비공개로 저장합니다. */
+APP_TABS.experienceIntro={name:"앱_직무체험소개",head:["ID","이름","기업ID","상태","자기소개JSON","수정시각","교사의견"]};
+STUDENT_NAME_COLS_.experienceIntro=[1];
+const COMPANY_PUBLIC_FIELDS_={industry:"업종",products:"주요제품",intro:"기업소개",homepage:"홈페이지",address:"실제근무지",department:"담당부서",contactDesk:"공개연락창구",workHours:"출퇴근시간",breaks:"휴게시간",clothes:"복장",meals:"식사",transportSupport:"기숙사통근버스",commute:"교통안내",firstDay:"첫출근집결",preparation:"준비물",documents:"제출서류",safety:"안전교육",equipment:"보호구",payGuide:"급여수당안내",folderUrl:"자료폴더",checkedAt:"최종확인일"};
+const INTRO_FIELDS_={jobInterest:"관심 직무",headline:"나를 소개하는 한 문장",motivation:"관심을 갖게 된 이유",strength:"나의 강점과 근거",experience:"프로젝트 및 실습 경험",skills:"배운 기술과 자격증",teamSafety:"협업 및 안전 태도",goals:"직무체험에서 배우고 싶은 것",portfolio:"포트폴리오 링크"};
+var COMPANY_SOURCE_=null;
+function companySheetId_(value){const s=clean_(value,1000).trim();if(!s)return "";const m=s.match(/^https:\/\/docs\.google\.com\/spreadsheets\/d\/([A-Za-z0-9_-]{15,})/)||s.match(/^([A-Za-z0-9_-]{15,})$/);if(!m)throw new Error("구글 시트 주소를 확인해 주세요");return m[1];}
+function companyResources_(me){const p=props_(),out={companyTemplate:p.COMPANY_REQUEST_TEMPLATE||"",introTemplate:p.EXPERIENCE_INTRO_TEMPLATE||""};if(me.role==="teacher"){out.sheetUrl=p.COMPANY_INFO_SHEET?"https://docs.google.com/spreadsheets/d/"+p.COMPANY_INFO_SHEET+"/edit":"";out.appAccount=appAccount_();}return out;}
+function companyRows_(book,title,required){const sh=book.getSheetByName(title);if(!sh)throw new Error(title+" 탭이 없습니다");const v=sh.getDataRange().getDisplayValues(),head=v[0]||[];required.forEach(function(k){if(head.indexOf(k)<0)throw new Error(title+" 탭의 "+k+" 열을 확인해 주세요");});return v.slice(1).filter(function(r){return r.some(function(x){return String(x).trim();});}).map(function(r){const o={};head.forEach(function(k,i){o[k]=clean_(r[i],3000).trim();});return o;});}
+/* 첫 화면은 기업의 공개 판정·이름과 일정만 읽습니다. 직무/자기소개/연락처는 읽지 않습니다. */
+function companyHomeSource_(){
+ const id=props_().COMPANY_INFO_SHEET;if(!id)return {companies:[],events:[]};
+ const cache=CacheService.getScriptCache(),saved=cache.get("company_home_v1");if(saved)try{const x=JSON.parse(saved);if(x.id===id)return x.data;}catch(ignore){}
+ try{
+  let companies,events;
+  const parse=function(values,required){const head=values[0]||[];required.forEach(function(k){if(head.indexOf(k)<0)throw Error(k+" 열이 없습니다");});return values.slice(1).map(function(r){const o={};head.forEach(function(k,i){o[k]=clean_(r[i],3000).trim();});return o;});};
+  try{const batch=Sheets.Spreadsheets.Values.batchGet(id,{ranges:["'기업정보'","'기업일정'"],valueRenderOption:"FORMATTED_VALUE",majorDimension:"ROWS"});const tables=batch.valueRanges||[];companies=parse((tables[0]||{}).values||[],["기업ID","기업명","학생공개"]);events=parse((tables[1]||{}).values||[],["일정ID","기업ID","학생공개","제목","시작일"]);}
+  catch(ignore){const book=SpreadsheetApp.openById(id);companies=companyRows_(book,"기업정보",["기업ID","기업명","학생공개"]);events=companyRows_(book,"기업일정",["일정ID","기업ID","학생공개","제목","시작일"]);}
+  companies=companies.filter(function(r){return r["기업ID"]&&r["기업명"];}).map(function(r){return {id:r["기업ID"],name:r["기업명"],open:r["학생공개"]==="1"};});
+  const seen={};companies.forEach(function(c){if(seen[c.id])throw Error("기업ID가 중복되어 있습니다");seen[c.id]=true;});
+  events=events.filter(function(r){return r["일정ID"]&&r["기업ID"]&&r["제목"];}).map(function(r){try{const date=dateValid_(r["시작일"]),end=dateValid_(r["종료일"],true);if(end&&end<date)return null;return {id:"company-"+r["일정ID"],key:"company:"+r["일정ID"],uid:"company-"+r["일정ID"],company:r["기업ID"],open:r["학생공개"]==="1",title:r["제목"],date:date,endDate:end,place:r["장소"],note:r["안내"],link:r["링크"]};}catch(ignore){return null;}}).filter(Boolean);
+  const data={companies:companies,events:events};try{const text=JSON.stringify({id:id,data:data});if(Utilities.newBlob(text).getBytes().length<95000)cache.put("company_home_v1",text,60);}catch(ignore){}return data;
+ }catch(e){return {companies:[],events:[],error:String(e.message||e)};}
 }
+function companySource_(){
+ if(COMPANY_SOURCE_)return COMPANY_SOURCE_;
+ const id=props_().COMPANY_INFO_SHEET;if(!id)return COMPANY_SOURCE_={companies:[],jobs:[],events:[]};
+ const cache=CacheService.getScriptCache(),saved=cache.get("company_source_v1");if(saved){try{const x=JSON.parse(saved);if(x.id===id)return COMPANY_SOURCE_=x.data;}catch(ignore){}}
+ try{const book=SpreadsheetApp.openById(id),seen={};const companies=companyRows_(book,"기업정보",["기업ID","기업명","학생공개"]).filter(function(r){return r["기업ID"]&&r["기업명"];}).map(function(r){const key=r["기업ID"];if(seen[key])throw new Error("기업ID가 중복되어 있습니다");seen[key]=true;const c={id:key,name:r["기업명"],open:r["학생공개"]==="1"};Object.keys(COMPANY_PUBLIC_FIELDS_).forEach(function(k){c[k]=r[COMPANY_PUBLIC_FIELDS_[k]]||"";});["homepage","folderUrl"].forEach(function(k){try{c[k]=urlValid_(c[k]);}catch(ignore){c[k]="";}});return c;});
+ const jobs=companyRows_(book,"기업직무",["직무ID","기업ID","직무명","학생공개"]).filter(function(r){return r["직무ID"]&&r["기업ID"];}).map(function(r){return {id:r["직무ID"],company:r["기업ID"],name:r["직무명"],open:r["학생공개"]==="1",work:r["주요업무"],skills:r["배우는기술"],tools:r["장비프로그램"],certs:r["관련자격증"],basics:r["필요기초역량"],experience:r["직무체험내용"],period:r["체험가능시기"],capacity:r["수용인원"],preparation:r["준비사항"],folderUrl:r["자료폴더"]};});
+ const events=companyRows_(book,"기업일정",["일정ID","기업ID","학생공개","제목","시작일"]).filter(function(r){return r["일정ID"]&&r["기업ID"]&&r["제목"];}).map(function(r){try{const date=dateValid_(r["시작일"]),end=dateValid_(r["종료일"],true);if(end&&end<date)return null;return {id:"company-"+r["일정ID"],key:"company:"+r["일정ID"],uid:"company-"+r["일정ID"],company:r["기업ID"],open:r["학생공개"]==="1",title:r["제목"],date:date,endDate:end,place:r["장소"],note:r["안내"],link:r["링크"]};}catch(ignore){return null;}}).filter(Boolean);
+ const data={companies:companies,jobs:jobs,events:events};try{cache.put("company_source_v1",JSON.stringify({id:id,data:data}),60);}catch(ignore){}return COMPANY_SOURCE_=data;
+ }catch(e){return COMPANY_SOURCE_={companies:[],jobs:[],events:[],error:String(e.message||e)};}
+}
+function companyInfo_(me){
+ const T=me.role==="teacher",count={},out={};rows_("assign").forEach(function(x){if(x.v[0]&&x.v[1])count[x.v[1]]=(count[x.v[1]]||0)+1;});
+ rows_("companies").forEach(function(x){const v=x.v;if(v[0])out[v[0]]={id:v[0],name:v[1],address:v[2],industry:v[7]||"",jobs:v[8]||"",intro:v[9]||"",homepage:v[10]||"",open:v[11]!=="0",learners:count[v[0]]||0};});
+ const source=companySource_();if(source.error&&!T)return [];
+ source.companies.forEach(function(c){out[c.id]=Object.assign({},out[c.id]||{},c,{learners:count[c.id]||0,fromSource:true});});
+ return Object.keys(out).map(function(k){const c=out[k];if(!c.folderUrl&&!c.fromSource&&props_()["COMPANY_FOLDER_"+c.id])c.folderUrl="https://drive.google.com/drive/folders/"+props_()["COMPANY_FOLDER_"+c.id];return c;}).filter(function(c){return T||c.open;});
+}
+function companyLoad_(me){const info=companyInfo_(me),ids={};info.forEach(function(c){ids[c.id]=c;});const source=companySource_(),T=me.role==="teacher";return {companyResources:companyResources_(me),companySourceError:T?source.error||"":"",companyJobs:source.jobs.filter(function(j){return ids[j.company]&&(T||j.open);}),companyEvents:source.events.filter(function(e){return ids[e.company]&&(T||e.open);}).map(function(e){return Object.assign({},e,{title:"기업 · "+ids[e.company].name+" · "+e.title,target:"all"});}),experienceIntros:rows_("experienceIntro").filter(function(r){return T?r.v[3]!=="초안":r.v[1]===me.name;}).map(function(r){let a={};try{a=JSON.parse(r.v[4]||"{}");}catch(ignore){}return {id:r.v[0],name:r.v[1],company:r.v[2],companyName:(ids[r.v[2]]||{}).name||"이전 선택 기업",status:r.v[3],answers:a,updated:r.v[5],feedback:r.v[6]||""};})};}
+function validateCompanyTemplate_(id){const book=SpreadsheetApp.openById(id),sh=book.getSheetByName("작성양식");if(!sh||book.getSheets().length!==1)throw new Error("배포용 빈 작성양식 시트를 연결해 주세요");const rows=sh.getDataRange().getDisplayValues();if(!rows[4]||rows[4][0]!=="항목"||rows[4][1]!=="작성 내용")throw new Error("빈 양식의 항목·작성 내용 열을 확인해 주세요");if(rows.slice(5).some(function(r){return String(r[1]||"").trim();}))throw new Error("원본 양식에 답변이 입력되어 있습니다. 빈 양식을 연결하고 작성본은 별도 사본으로 관리해 주세요");return true;}
+function saveCompanyResources_(p){return withLock_(function(){const id=companySheetId_(p.sheetUrl);if(id){const book=SpreadsheetApp.openById(id);companyRows_(book,"기업정보",["기업ID","기업명","학생공개"]);companyRows_(book,"기업직무",["직무ID","기업ID","직무명","학생공개"]);companyRows_(book,"기업일정",["일정ID","기업ID","학생공개","제목","시작일"]);}const links={};["companyTemplate","introTemplate"].forEach(function(k){const v=p[k]||"";if(v){const tid=companySheetId_(v);validateCompanyTemplate_(tid);links[k]="https://docs.google.com/spreadsheets/d/"+tid+"/edit";}else links[k]="";});PropertiesService.getScriptProperties().setProperties({COMPANY_INFO_SHEET:id,COMPANY_REQUEST_TEMPLATE:links.companyTemplate,EXPERIENCE_INTRO_TEMPLATE:links.introTemplate});PROPS_=null;COMPANY_SOURCE_=null;CacheService.getScriptCache().remove("company_source_v1");CacheService.getScriptCache().remove("company_home_v1");return {connected:!!id};});}
+function seedCompanySource_(){return withLock_(function(){const id=props_().COMPANY_INFO_SHEET;if(!id)throw new Error("기업정보 관리 시트를 먼저 연결해 주세요");const book=SpreadsheetApp.openById(id),sh=book.getSheetByName("기업정보"),heads=sh.getDataRange().getDisplayValues()[0],have={};companyRows_(book,"기업정보",["기업ID","기업명","학생공개"]).forEach(function(r){have[r["기업ID"]]=true;});let n=0;rows_("companies").forEach(function(r){const v=r.v;if(!v[0]||have[v[0]])return;const vals={"기업ID":v[0],"기업명":v[1],"학생공개":v[11]==="0"?"0":"1","업종":v[7],"기업소개":v[9],"홈페이지":v[10],"실제근무지":v[2],"담당부서":v[8]};writeCells_(sh,sh.getLastRow()+1,heads.map(function(h){return vals[h]||"";}));have[v[0]]=true;n++;});COMPANY_SOURCE_=null;CacheService.getScriptCache().remove("company_source_v1");CacheService.getScriptCache().remove("company_home_v1");return {added:n};});}
+function companyFolder_(me,id){const c=companyInfo_(me).find(function(c){return c.id===id;});if(!c)throw new Error("이 기업의 자료를 볼 권한이 없습니다");const fid=driveFolderId_(c.folderUrl);if(!fid)throw new Error("기업 자료실 폴더가 아직 연결되지 않았습니다");return {company:c,folder:openSharedFolder_(fid,c.name+" 자료실")};}
+function createCompanyFolder_(id){return withLock_(function(){const me={role:"teacher"},c=companyInfo_(me).find(function(c){return c.id===id;});if(!c)throw new Error("기업을 선택해 주세요");if(c.folderUrl)return {url:companyFolder_(me,id).folder.getUrl()};const f=folderFor_(["기업자료실",id+" · "+c.name]);PropertiesService.getScriptProperties().setProperty("COMPANY_FOLDER_"+id,f.getId());if(props_().COMPANY_INFO_SHEET){const sh=SpreadsheetApp.openById(props_().COMPANY_INFO_SHEET).getSheetByName("기업정보"),grid=sh.getDataRange().getDisplayValues(),head=grid[0],ic=head.indexOf("기업ID"),fc=head.indexOf("자료폴더");if(fc<0)throw new Error("기업정보 시트의 자료폴더 열을 확인해 주세요");grid.slice(1).some(function(row,i){if(row[ic]!==id)return false;sh.getRange(i+2,fc+1).setValue("https://drive.google.com/drive/folders/"+f.getId());return true;});}PROPS_=null;COMPANY_SOURCE_=null;CacheService.getScriptCache().remove("company_source_v1");CacheService.getScriptCache().remove("company_home_v1");return {url:f.getUrl()};});}
+function saveExperienceIntro_(me,p){return withLock_(function(){const company=String(p.company||"");if(company&&!companyInfo_(me).some(function(c){return c.id===company;}))throw new Error("공개된 기업을 선택해 주세요");const old=p.id?record_("experienceIntro",p.id):rows_("experienceIntro").find(function(r){return r.v[1]===me.name&&r.v[2]===company;});if(old&&old.v[1]!==me.name)throw new Error("내 자기소개만 수정할 수 있습니다");if(rows_("experienceIntro").some(function(r){return r.v[1]===me.name&&r.v[2]===company&&(!old||r.v[0]!==old.v[0]);}))throw new Error("이 기업의 기존 자기소개를 수정해 주세요");if(["초안","제출"].indexOf(p.status)<0)throw new Error("저장 상태를 선택해 주세요");const state=p.status,answers={};Object.keys(INTRO_FIELDS_).forEach(function(k){answers[k]=k==="portfolio"?urlValid_((p.answers||{})[k]):clean_((p.answers||{})[k],k==="headline"?150:2500).trim();});if(state==="제출"){if(p.confirm!==true)throw new Error("작성 내용을 확인해 주세요");["headline","motivation","strength","experience","goals"].forEach(function(k){if(!answers[k])throw new Error(INTRO_FIELDS_[k]+" 항목을 작성해 주세요");});}const id=old?old.v[0]:uid_("intro");upsert_("experienceIntro",id,[id,me.name,company,state,JSON.stringify(answers),now_(),old?old.v[6]:""]);return id;});}
+function reviewExperienceIntro_(p){return withLock_(function(){const r=record_("experienceIntro",p.id);if(r.v[3]==="초안")throw new Error("제출된 자기소개만 검토할 수 있습니다");if(["확인","보완요청"].indexOf(p.status)<0)throw new Error("검토 상태를 선택해 주세요");const v=r.v.slice(0,7);v[3]=p.status;v[5]=now_();v[6]=clean_(p.feedback,2000);writeCells_(sheet_("experienceIntro"),r._row,v);return true;});}
+function companyTemplateFile_(me,p){const key=p.kind==="intro"?"EXPERIENCE_INTRO_TEMPLATE":p.kind==="company"&&me.role==="teacher"?"COMPANY_REQUEST_TEMPLATE":"";if(!key)throw new Error("이 양식을 받을 권한이 없습니다");const id=companySheetId_(props_()[key]);if(!id)throw new Error("양식이 아직 연결되지 않았습니다");validateCompanyTemplate_(id);const response=UrlFetchApp.fetch("https://www.googleapis.com/drive/v3/files/"+id+"/export?mimeType=application%2Fvnd.openxmlformats-officedocument.spreadsheetml.sheet",{headers:{Authorization:"Bearer "+ScriptApp.getOAuthToken()},muteHttpExceptions:true});if(response.getResponseCode()!==200)throw new Error("양식을 내려받지 못했습니다. 실행 계정의 읽기 권한을 확인해 주세요");const bytes=response.getContent();if(bytes.length>MAX_DOWNLOAD_MB_*1024*1024)throw new Error("양식이 너무 큽니다");return {name:p.kind==="intro"?"직무체험_자기소개_빈양식.xlsx":"기업정보_회신_빈양식.xlsx",mime:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",base64:Utilities.base64Encode(bytes)};}
