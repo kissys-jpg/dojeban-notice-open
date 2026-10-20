@@ -11,6 +11,9 @@ const CFG_ = PropertiesService.getScriptProperties();
 const TEACHER_PASSWORD = CFG_.getProperty("TEACHER_PASSWORD") || "여기에_비밀번호";
 const NO_LOGIN_TEST_MODE = String(CFG_.getProperty("NO_LOGIN_TEST_MODE") || "").trim().toLowerCase() === "true";
 const SPREADSHEET_ID = CFG_.getProperty("SPREADSHEET_ID") || "";
+/* 로그인 없이 둘러보기: 이름·PIN 없이 들어오면 '손님'으로 전체 공개 공지·급식·시간표·학교 일정만 봅니다. 끄려면 스크립트 속성 GUEST_VIEW=false */
+const GUEST_VIEW = String(CFG_.getProperty("GUEST_VIEW") || "").trim().toLowerCase() !== "false";
+const GUEST_ACTIONS_ = { load: 1, login: 1, timetable: 1, meals: 1 };
 
 /* 기존 탭 이름 (시트와 다르면 고치세요) */
 const TAB_AFTER = "일정표";          // 방과후 시간표
@@ -72,11 +75,13 @@ function api(req) {
     USE_CACHE_ = true;
     ensureTabs_();
     if ((action === "load" && !(req.payload && req.payload.homeOnly === true)) || action === "login" || req.withLoad) prefetchLoad_();
-    const me = NO_LOGIN_TEST_MODE ? { role: "teacher", name: "선생님" } : auth_(req.cred || {});
+    const cred0 = req.cred || {};
+    const me = NO_LOGIN_TEST_MODE ? { role: "teacher", name: "선생님" } : (GUEST_VIEW && !cred0.teacher && !String(cred0.name || "").trim() && !String(cred0.pin || "").trim()) ? { role: "guest", name: "손님", group: "" } : auth_(cred0);
     const p = req.payload || {};
+    if (me.role === "guest") { if (!GUEST_ACTIONS_[action]) throw new Error("로그인하면 이용할 수 있습니다"); if (action === "load") p.homeOnly = true; req.withLoad = false; }
     if (me.role === 'teacher' && ((action === 'load' && !(req.payload && req.payload.homeOnly === true)) || req.withLoad)) migrateRequestsToAnon_();
     let data;
-    if (action === "login") data = { me: me, loginDisabled: NO_LOGIN_TEST_MODE };
+    if (action === "login") data = { me: me, loginDisabled: NO_LOGIN_TEST_MODE, guestView: GUEST_VIEW };
     else if (action === "load") data = load_(me, {deferLinks:p.deferLinks===true,homeOnly:p.homeOnly===true});
     else if (READ_ACTIONS_[action]) data = dispatch_(me, action, p);
     else {
@@ -163,6 +168,7 @@ function dispatch_(me, action, p) {
     case "icsToken":     return icsToken_(me, p.reset === true);
     case "driveMaterialFile": return driveMaterialFile_(me, String(p.id || ""));
     case "timetable":    return timetable_(me, p);
+    case "saveMyHome":   return saveMyHome_(me, p);
     case "meals":        return meals_(dateValid_(p.from), plusDate_(dateValid_(p.from), 6));
     case "resourceLinks": return {driveMaterials:driveMaterials_(me),notionPages:notionPages_()};
     case "refreshLinks": need_(me, "teacher"); CacheService.getScriptCache().removeAll(["dm_v1", "nt_v1"]); return true;
@@ -621,8 +627,8 @@ var HOME_TIMING_=null;
 function homeLoad_(me){
  HOME_TIMING_=[];let markAt=Date.now();const mark=function(name){const now=Date.now();HOME_TIMING_.push({phase:name,ms:now-markAt});markAt=now;};
  const T=me.role==="teacher",today=today_(),until=plusDate_(today,14),sy=schoolYear_();
- const keys=["notices","noticeMeta","files","events","personal","board","certSchedule","companies"];
- if(!T)keys.push("acks");
+ const G=me.role==="guest",keys=["notices","noticeMeta","files","events","personal","board","certSchedule","companies"];
+ if(!T&&!G)keys.push("acks");if(!G)keys.push("myHome");
  const names=keys.map(function(k){return APP_TABS[k].name;});
  if(!CacheService.getScriptCache().get("sheetData_v1"))names.push(TAB_AFTER,TAB_PERSONAL);
  prefetch_(names);mark("prefetch");
@@ -633,8 +639,8 @@ function homeLoad_(me){
  const gm=String(sheet.personal.gradeLabel||"").match(/([1-3])/),target=gm?({1:"pre1",2:"pre2",3:"learner"})[gm[1]]:"all";
  const schedule=(sheet.after||[]).map(function(a){const aft=isAfterschoolTitle_(a.title);return Object.assign({},a,{afterschool:aft,info:!aft,allDay:!aft&&HOLIDAY_.test(a.title)});});
  const events=rows_("events").map(function(x){const v=x.v;return {id:v[0],date:v[1],endDate:v[2],time:v[3],kind:kindKey_(v[4]),target:targetKey_(v[5]),title:v[6],place:v[7],note:v[8]};}).filter(function(e){return e.id&&visible(e.target)&&inRange(e)&&e.kind!=="OJT"&&e.kind!=="OFF";});
- const personal=rows_("personal").map(function(x){const v=x.v;return {id:v[0],name:v[1],date:v[2],endDate:v[3],time:v[4],title:v[5],note:v[6],by:v[7]};}).filter(function(e){return e.id&&inRange(e);});
- const personalSheet={};Object.keys(sheet.personal.byName||{}).forEach(function(name){const items=sheet.personal.byName[name].filter(inRange);if(items.length)personalSheet[name]=items;});
+ const personal=G?[]:rows_("personal").map(function(x){const v=x.v;return {id:v[0],name:v[1],date:v[2],endDate:v[3],time:v[4],title:v[5],note:v[6],by:v[7]};}).filter(function(e){return e.id&&inRange(e);});
+ const personalSheet={};Object.keys(G?{}:(sheet.personal.byName||{})).forEach(function(name){const items=sheet.personal.byName[name].filter(inRange);if(items.length)personalSheet[name]=items;});
  const board=rows_("board").filter(function(r){return r.v[0]&&r.v[2]==="대회"&&r.v[12]!=="1";}).map(function(r){const v=r.v;return {id:v[0],category:v[2],subject:v[3],title:v[4],date:v[7],organizer:v[13]||"",place:v[14]||"",applyStart:v[15]||"",applyEnd:v[16]||"",eventEnd:v[17]||"",files:[]};});
  mark("core");const source=companyHomeSource_(),companyIds={};rows_("companies").forEach(function(r){if(r.v[0]&&(T||r.v[11]!=="0"))companyIds[r.v[0]]=r.v[1];});
  source.companies.forEach(function(c){if(T||c.open)companyIds[c.id]=c.name;else delete companyIds[c.id];});
@@ -646,9 +652,9 @@ function homeLoad_(me){
  common:{target:target,items:sheet.personal.common.filter(inRange)},personalSheet:personalSheet,personalApp:personal,
  noticeCalendar:noticeCalendarEvents_(allNotices.map(function(n){return Object.assign({},n,meta[n.id]||{});})).filter(inRange),
  boardPosts:board,companyEvents:companyEvents,certCalendar:certCalendar,
- requests:[],replies:[],purchases:[],roster:[],acks:[],myAcks:T?[]:rows_("acks").filter(function(r){return r.v[1]===me.name;}).map(function(r){return r.v[0];}),
+ requests:[],replies:[],purchases:[],roster:[],acks:[],myAcks:(T||G)?[]:rows_("acks").filter(function(r){return r.v[1]===me.name;}).map(function(r){return r.v[0];}),
  projects:[],tasks:[],materials:[],portfolio:[],units:[],progress:[],attendance:[],assigns:[],companies:[],boardComments:[],anonPosts:[],anonComments:[],anonReports:[],projectFiles:[],folderRequests:[],experienceIntros:[],companyInfo:[],certifications:[],notionPortfolios:[],driveMaterials:[],notionPages:[],linksDeferred:true,
- school:{comciUrl:COMCI_URL_,mealUrl:MEAL_URL_},meals:meals,appUrl:appUrl_(),icsToken:"",lastUpdate:latest,build:APP_BUILD_};
+ school:{comciUrl:COMCI_URL_,mealUrl:MEAL_URL_},meals:meals,appUrl:appUrl_(),icsToken:"",lastUpdate:latest,build:APP_BUILD_,guestView:GUEST_VIEW,myHome:G?null:myHome_(me)};
  mark("response");return out;
 }
 
@@ -709,6 +715,8 @@ function load_(me, options) {
   Object.assign(out,companyLoad_(me));
   out.lastUpdate = lastUpdate_();
   out.build = APP_BUILD_;
+  out.guestView = GUEST_VIEW;
+  out.myHome = myHome_(me);
   return out;
 }
 function kindKey_(s) { s = String(s || "").trim(); for (var k in KIND_LABEL) if (KIND_LABEL[k] === s || k === s) return k; return "EVT"; }
@@ -1887,7 +1895,7 @@ function meals_(from, to) {
 }
 function timetable_(me, p) {
   let grade = p.grade, cls = p.cls;
-  if (me.role !== "teacher") { const m = String(me.klass || "").match(/(\d)\D+(\d+)/); if (!m) return { error: "명단의 학년반이 비어 있어 시간표를 찾을 수 없습니다. 선생님께 ‘2-3’처럼 등록해 달라고 하세요." }; grade = m[1]; cls = m[2]; }
+  if (me.role !== "teacher" && me.role !== "guest") { const m = String(me.klass || "").match(/(\d)\D+(\d+)/); if (!m) return { error: "명단의 학년반이 비어 있어 시간표를 찾을 수 없습니다. 선생님께 ‘2-3’처럼 등록해 달라고 하세요." }; grade = m[1]; cls = m[2]; }
   grade = String(grade || "").replace(/\D/g, ""); cls = String(cls || "").replace(/\D/g, "");
   if (!grade || !cls) return { error: "학년과 반을 고르세요" };
   const from = dateValid_(p.from);
@@ -1899,7 +1907,7 @@ function timetable_(me, p) {
 }
 function neisTimetable_(me, p) {
   let grade = p.grade, cls = p.cls;
-  if (me.role !== "teacher") { const m = String(me.klass || "").match(/(\d)\D+(\d+)/); if (!m) return { error: "명단의 학년반이 비어 있어 시간표를 찾을 수 없습니다. 선생님께 ‘2-3’처럼 등록해 달라고 하세요." }; grade = m[1]; cls = m[2]; }
+  if (me.role !== "teacher" && me.role !== "guest") { const m = String(me.klass || "").match(/(\d)\D+(\d+)/); if (!m) return { error: "명단의 학년반이 비어 있어 시간표를 찾을 수 없습니다. 선생님께 ‘2-3’처럼 등록해 달라고 하세요." }; grade = m[1]; cls = m[2]; }
   grade = String(grade || "").replace(/\D/g, ""); cls = String(cls || "").replace(/\D/g, "");
   if (!grade || !cls) return { error: "학년과 반을 고르세요" };
   if (!props_().NEIS_KEY) return { error: "시간표를 보려면 설정에서 NEIS 인증키를 넣어야 합니다 (open.neis.go.kr 무료 발급).", grade: grade, cls: cls };
@@ -2095,3 +2103,28 @@ function createCompanyFolder_(id){return withLock_(function(){const me={role:"te
 function saveExperienceIntro_(me,p){return withLock_(function(){const company=String(p.company||"");if(company&&!companyInfo_(me).some(function(c){return c.id===company;}))throw new Error("공개된 기업을 선택해 주세요");const old=p.id?record_("experienceIntro",p.id):rows_("experienceIntro").find(function(r){return r.v[1]===me.name&&r.v[2]===company;});if(old&&old.v[1]!==me.name)throw new Error("내 자기소개만 수정할 수 있습니다");if(rows_("experienceIntro").some(function(r){return r.v[1]===me.name&&r.v[2]===company&&(!old||r.v[0]!==old.v[0]);}))throw new Error("이 기업의 기존 자기소개를 수정해 주세요");if(["초안","제출"].indexOf(p.status)<0)throw new Error("저장 상태를 선택해 주세요");const state=p.status,answers={};Object.keys(INTRO_FIELDS_).forEach(function(k){answers[k]=k==="portfolio"?urlValid_((p.answers||{})[k]):clean_((p.answers||{})[k],k==="headline"?150:2500).trim();});if(state==="제출"){if(p.confirm!==true)throw new Error("작성 내용을 확인해 주세요");["headline","motivation","strength","experience","goals"].forEach(function(k){if(!answers[k])throw new Error(INTRO_FIELDS_[k]+" 항목을 작성해 주세요");});}const id=old?old.v[0]:uid_("intro");upsert_("experienceIntro",id,[id,me.name,company,state,JSON.stringify(answers),now_(),old?old.v[6]:""]);return id;});}
 function reviewExperienceIntro_(p){return withLock_(function(){const r=record_("experienceIntro",p.id);if(r.v[3]==="초안")throw new Error("제출된 자기소개만 검토할 수 있습니다");if(["확인","보완요청"].indexOf(p.status)<0)throw new Error("검토 상태를 선택해 주세요");const v=r.v.slice(0,7);v[3]=p.status;v[5]=now_();v[6]=clean_(p.feedback,2000);writeCells_(sheet_("experienceIntro"),r._row,v);return true;});}
 function companyTemplateFile_(me,p){const key=p.kind==="intro"?"EXPERIENCE_INTRO_TEMPLATE":p.kind==="company"&&me.role==="teacher"?"COMPANY_REQUEST_TEMPLATE":"";if(!key)throw new Error("이 양식을 받을 권한이 없습니다");const id=companySheetId_(props_()[key]);if(!id)throw new Error("양식이 아직 연결되지 않았습니다");validateCompanyTemplate_(id);const response=UrlFetchApp.fetch("https://www.googleapis.com/drive/v3/files/"+id+"/export?mimeType=application%2Fvnd.openxmlformats-officedocument.spreadsheetml.sheet",{headers:{Authorization:"Bearer "+ScriptApp.getOAuthToken()},muteHttpExceptions:true});if(response.getResponseCode()!==200)throw new Error("양식을 내려받지 못했습니다. 실행 계정의 읽기 권한을 확인해 주세요");const bytes=response.getContent();if(bytes.length>MAX_DOWNLOAD_MB_*1024*1024)throw new Error("양식이 너무 큽니다");return {name:p.kind==="intro"?"직무체험_자기소개_빈양식.xlsx":"기업정보_회신_빈양식.xlsx",mime:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",base64:Utilities.base64Encode(bytes)};}
+
+/* ===================== 내 오늘 화면(본인별 할 일·메모·카드·메뉴 설정) ===================== */
+APP_TABS.myHome = { name: "앱_내화면", head: ["계정", "설정JSON", "수정시각"] };
+const MYHOME_CARDS_ = ["todo", "notices", "meal", "focus", "events", "contests", "details"];
+function myHomeKey_(me) { return me.role === "teacher" ? "teacher" : "student:" + me.name; }
+function emptyMyHome_() { return { todos: [], memo: "", cards: [], hidden: [], tabs: [], hiddenTabs: [] }; }
+function myHome_(me) {
+  if (!me || (me.role !== "student" && me.role !== "teacher")) return null;
+  const r = rows_("myHome").filter(function (x) { return x.v[0] === myHomeKey_(me); })[0];
+  if (!r) return emptyMyHome_();
+  try { return cleanMyHome_(JSON.parse(String(r.v[1] || "{}"))); } catch (e) { return emptyMyHome_(); }
+}
+function cleanMyHome_(x) {
+  x = x || {};
+  const ids = function (a, ok) { return (Array.isArray(a) ? a : []).map(String).filter(function (k, i, all) { return /^[a-z]{2,20}$/.test(k) && all.indexOf(k) === i && (!ok || ok.indexOf(k) >= 0); }).slice(0, 30); };
+  const todos = (Array.isArray(x.todos) ? x.todos : []).slice(0, 60).map(function (t) { return { id: String(t && t.id || "").replace(/[^a-z0-9]/gi, "").slice(0, 16) || uid_("t"), t: clean_(t && t.t, 200).trim(), d: !!(t && t.d), due: t && /^\d{4}-\d{2}-\d{2}$/.test(String(t.due || "")) ? String(t.due) : "" }; }).filter(function (t) { return t.t; });
+  return { todos: todos, memo: clean_(x.memo, 2000), cards: ids(x.cards, MYHOME_CARDS_), hidden: ids(x.hidden, MYHOME_CARDS_), tabs: ids(x.tabs), hiddenTabs: ids(x.hiddenTabs).filter(function (k) { return k !== "today" && k !== "me"; }) };
+}
+function saveMyHome_(me, p) {
+  if (me.role !== "student" && me.role !== "teacher") throw new Error("로그인하면 내 오늘 화면을 꾸밀 수 있습니다");
+  const v = cleanMyHome_(p && p.home), json = JSON.stringify(v);
+  if (json.length > 40000) throw new Error("할 일·메모가 너무 깁니다");
+  withLock_(function () { const key = myHomeKey_(me), r = rows_("myHome").filter(function (x) { return x.v[0] === key; })[0]; const row = [key, json, now_()]; if (r) writeCells_(sheet_("myHome"), r._row, row); else append_("myHome", row); });
+  return v;
+}

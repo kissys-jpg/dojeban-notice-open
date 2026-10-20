@@ -286,7 +286,7 @@ body{margin:0} [hidden]{display:none!important}
 #globalSearch{width:min(680px,calc(100vw - 24px));max-height:85dvh;padding:18px;box-sizing:border-box}#globalSearch::backdrop{background:#142c4666}.search-top{display:flex;align-items:center;justify-content:space-between;gap:8px}.search-input{width:100%;box-sizing:border-box;margin:12px 0;padding:12px;font:inherit;border:1px solid var(--line);border-radius:8px}.search-results{display:grid;gap:6px;max-height:55dvh;overflow:auto}.search-result{display:block;width:100%;text-align:left;padding:12px;border:1px solid var(--line);border-radius:8px;background:var(--panel,#fff);color:inherit;font:inherit;cursor:pointer;overflow-wrap:anywhere}.search-result:focus-visible{outline:3px solid #2576b8;outline-offset:-3px}.search-result small{display:block;margin-top:4px;color:var(--muted,#52677c)}
 .schedule-head{display:grid;grid-template-columns:minmax(0,1fr) minmax(300px,420px);gap:16px;align-items:start;margin-bottom:18px}.schedule-head h2{margin:0}.schedule-head p{margin:6px 0 12px}.schedule-sub{min-width:0;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}.schedule-sub>b{display:block;font-size:13px;margin-bottom:8px}.schedule-sub .row{gap:6px;flex-wrap:wrap}.schedule-sub details{margin-top:8px;font-size:12px}.schedule-sub summary{cursor:pointer;color:var(--muted)}
 @media(max-width:760px){.schedule-head{grid-template-columns:minmax(0,1fr);gap:12px}.schedule-sub .btn{white-space:normal}}
-.startup-header{padding:18px max(16px,calc((100vw - 928px)/2));background:var(--surface);border-bottom:1px solid var(--line)}.startup-header b{display:block}.startup-header span,.startup-main p{font-size:13px;color:var(--muted)}.startup-main{max-width:960px;margin:auto;padding:20px 16px;box-sizing:border-box}.startup-main h2{margin:0}.sp{margin:12px 0 4px;max-width:520px}.sp-bar{height:6px;border-radius:6px;background:var(--line);overflow:hidden}.sp-bar i{display:block;height:100%;width:3%;background:var(--accent);transition:width .25s linear}.sp-steps{list-style:none;margin:10px 0 4px;padding:0;font-size:13.5px}.sp-steps li{padding:2px 0 2px 22px;position:relative;color:var(--muted)}.sp-steps li::before{content:"";position:absolute;left:3px;top:8px;width:9px;height:9px;border-radius:50%;border:2px solid var(--line);box-sizing:border-box}.sp-steps li.done::before{background:var(--accent);border-color:var(--accent)}.sp-steps li.now{color:var(--ink);font-weight:600}.sp-steps li.now::before{border-color:var(--accent);animation:spp 1s ease-in-out infinite}.sp-steps b{font-variant-numeric:tabular-nums;font-weight:600;color:var(--accent)}#spNote{font-size:13px;color:var(--muted);margin:2px 0}@keyframes spp{50%{opacity:.3}}@media (prefers-reduced-motion:reduce){.sp-steps li.now::before{animation:none}}.upd b{font-variant-numeric:tabular-nums}.startup-placeholder{height:100px;margin-top:14px;border-radius:12px;border:1px solid var(--line);background:var(--surface)}
+.startup-header{padding:18px max(16px,calc((100vw - 928px)/2));background:var(--surface);border-bottom:1px solid var(--line)}.startup-header b{display:block}.startup-header span,.startup-main p{font-size:13px;color:var(--muted)}.startup-main{max-width:960px;margin:auto;padding:20px 16px;box-sizing:border-box}.startup-main h2{margin:0}.my-todo .todo-add{margin-top:8px;gap:6px;flex-wrap:wrap}.my-todo .todo-add input[type=text]{flex:1 1 160px;min-width:0}.my-todo .todo-add input[type=date]{width:140px}.todo-list{list-style:none;margin:8px 0 0;padding:0}.todo-item{display:flex;align-items:center;gap:8px;padding:6px 0;border-top:1px solid var(--line)}.todo-item label{flex:1;display:flex;gap:8px;align-items:flex-start;min-width:0;overflow-wrap:anywhere;cursor:pointer}.todo-item.done label span{text-decoration:line-through;color:var(--muted)}.todo-item .late{color:#c0392b;font-weight:600}.todo-memo{margin-top:8px}.todo-memo summary{cursor:pointer;font-size:13px;color:var(--muted)}.todo-memo textarea{width:100%;box-sizing:border-box;margin-top:6px}.mh-item{display:flex;align-items:center;gap:6px;padding:6px 0;border-bottom:1px solid var(--line)}.mh-item label{flex:1;min-width:0}.sp{margin:12px 0 4px;max-width:520px}.sp-bar{height:6px;border-radius:6px;background:var(--line);overflow:hidden}.sp-bar i{display:block;height:100%;width:3%;background:var(--accent);transition:width .25s linear}.sp-steps{list-style:none;margin:10px 0 4px;padding:0;font-size:13.5px}.sp-steps li{padding:2px 0 2px 22px;position:relative;color:var(--muted)}.sp-steps li::before{content:"";position:absolute;left:3px;top:8px;width:9px;height:9px;border-radius:50%;border:2px solid var(--line);box-sizing:border-box}.sp-steps li.done::before{background:var(--accent);border-color:var(--accent)}.sp-steps li.now{color:var(--ink);font-weight:600}.sp-steps li.now::before{border-color:var(--accent);animation:spp 1s ease-in-out infinite}.sp-steps b{font-variant-numeric:tabular-nums;font-weight:600;color:var(--accent)}#spNote{font-size:13px;color:var(--muted);margin:2px 0}@keyframes spp{50%{opacity:.3}}@media (prefers-reduced-motion:reduce){.sp-steps li.now::before{animation:none}}.upd b{font-variant-numeric:tabular-nums}.startup-placeholder{height:100px;margin-top:14px;border-radius:12px;border:1px solid var(--line);background:var(--surface)}
 </style>
 </head>
 <body>
@@ -423,6 +423,8 @@ const isLearner = () => !T() && myGroup() === "learner";
 let calSel = TODAY, schedMode = "cal", aftWeek = null, showPersonal = true, reqOpen = null, reqFilter = "active", openReaders = new Set(), armed = null, armT;
 const T = () => D && D.me.role === "teacher";
 const myGroup = () => D && D.me.group || "";
+const isGuest = () => Boolean(D && D.me && D.me.role === "guest");
+const GUEST_TABS = ["today", "school"];
 const matches = (t, g) => !t || t === "all" || t === g || (t === "pre" && (g === "pre1" || g === "pre2"));
 
 /* ---------- 서버 호출 ---------- */
@@ -448,7 +450,7 @@ function hydrateResourceLinks(){
 function resourceLinkStatus(){return D.linksDeferred?'<section class="panel pad" role="status">'+(resourceLinkError?esc(resourceLinkError)+' <button class="btn sm" data-resource-retry>다시 불러오기</button>':'Drive·노션 자료 목록을 불러오는 중…')+'</section>':"";}
 /* 메뉴를 누르기 전에는 전체 자료를 추가로 읽지 않습니다. */
 function hydrateFullData(){
- if(!D||!D.homeOnly)return Promise.resolve(D);if(fullLoadPending)return fullLoadPending;
+ if(!D||!D.homeOnly||isGuest())return Promise.resolve(D);if(fullLoadPending)return fullLoadPending;
  const epoch=fullLoadEpoch,owner=JSON.stringify(cred||{});fullLoadError="";
  fullLoadPending=call("load",{deferLinks:true}).then(data=>{if(epoch!==fullLoadEpoch||owner!==JSON.stringify(cred||{}))return;setData(data);if(searchDialog.open)paintGlobalSearch();return data;}).catch(e=>{if(epoch!==fullLoadEpoch)return;fullLoadError=e.message;if(!dlg.open)render();toast(e.message);}).finally(()=>{if(epoch===fullLoadEpoch){fullLoadPending=null;if(D&&D.homeOnly&&fullLoadError&&tab==="today"&&!dlg.open)render();}});return fullLoadPending;
 }
@@ -483,7 +485,9 @@ function gate(msg){
       <label class="check"><input type="checkbox" id="lg-keep"> 이 기기에서 로그인 유지</label>
       <button class="btn pri" type="submit">들어가기</button>
     </form>
-    <p style="font-size:13px">PIN을 모르면 선생님께 물어보세요. 홈 화면에 추가하면 앱처럼 열 수 있습니다.</p></div>`;
+    <button class="btn ghost" type="button" id="guestBrowse">로그인 없이 둘러보기</button>
+    <p style="font-size:13px">로그인 없이 보면 전체 공지·급식·시간표·학교 일정만 보입니다. PIN을 모르면 선생님께 물어보세요. 홈 화면에 추가하면 앱처럼 열 수 있습니다.</p></div>`;
+  $("#guestBrowse").onclick = () => enterGuest();
   $("#gate").querySelectorAll("[data-mode]").forEach(b => b.onclick = () => { lsSet("dj.mode", b.dataset.mode); gate(); });
   $("#loginForm").onsubmit = async e => {
     e.preventDefault();
@@ -498,14 +502,24 @@ function gate(msg){
     } catch (err) { gate(err.message); }
   };
 }
-function logout(msg){ fullLoadEpoch++;fullLoadPending=null;fullLoadError=""; clearGlobalSearch(); todayDriveNews.clear();todayNewsOwner="";resourceLinkEpoch++;resourceLinkPending=null; if (D && D.loginDisabled) return reload(); cred = null; D = null; noticeImages.clear(); noticeImagesPending.clear(); lsSet("dj.cred", null); lsSet(HOME_KEY, null); gate(msg); }
-$("#logoutTop").onclick = () => logout();
+function logout(msg){ fullLoadEpoch++;fullLoadPending=null;fullLoadError=""; clearGlobalSearch(); todayDriveNews.clear();todayNewsOwner="";resourceLinkEpoch++;resourceLinkPending=null; if (D && D.loginDisabled) return reload(); const guestOk = Boolean(D && D.guestView); cred = null; D = null; noticeImages.clear(); noticeImagesPending.clear(); lsSet("dj.cred", null); lsSet(HOME_KEY, null); if (guestOk && !msg) return enterGuest(); gate(msg); }
+$("#logoutTop").onclick = () => isGuest() ? gate() : logout();
+/* 로그인 없이 둘러보기: 비어 있는 로그인 정보로 들어오면 서버가 '손님'으로 공개 자료만 보냅니다. */
+async function enterGuest(){ try { const data = await call("load", {deferLinks:true,homeOnly:true}, {}); if (!data.me || data.me.role !== "guest" && !data.loginDisabled) throw new Error("로그인해 주세요"); cred = {}; $("#gate").hidden = true; $("#shell").hidden = false; tab = "today"; setData(data); } catch (e) { gate(e.message); } }
 
 /* ---------- 탭 ---------- */
 const LEARNER_TABS = [['training','도제훈련'],['ojtcalendar','OJT 시간표'],['attendance','훈련 출결'],['units','능력단위']];
 let learnerTab = LEARNER_TABS.some(([k]) => k === lsGet('dj.learnerTab')) ? lsGet('dj.learnerTab') : 'training';
 function isLearnerTab(k){ return LEARNER_TABS.some(([key]) => key === k); }
 function tabsFor(){
+  if (isGuest()) return [["today","오늘"],["school","시간표·급식"]];
+  const t = baseTabs(), h = D && D.myHome;
+  if (!h) return t;
+  const hidden = new Set((h.hiddenTabs || []).filter(k => k !== "today" && k !== "me")), order = h.tabs || [];
+  const pos = k => { const i = order.indexOf(k); return i < 0 ? 1000 + t.findIndex(x => x[0] === k) : i; };
+  return t.filter(([k]) => !hidden.has(k)).sort((a, b) => pos(a[0]) - pos(b[0]));
+}
+function baseTabs(){
   let t;
   if (T()) t = [["today","오늘"],["notices","공지"],["learner","학습근로자"],["schedule","일정"],["purchases","구매요청"],["anon","익명게시판"],["portfolio","포트폴리오"],["roster","명단"],["me","설정"]];
   else if (isLearner()) t = [["today","오늘"],["notices","공지"],["learner","학습근로자"],["schedule","일정"],["purchases","구매요청"],["anon","익명게시판"],["portfolio","포트폴리오"]].concat([["me","내 정보"]]);
@@ -515,6 +529,7 @@ function tabsFor(){
   return t;
 }
 function go(k){
+  if (isGuest() && !GUEST_TABS.includes(k)) { gate("로그인하면 이 메뉴를 볼 수 있습니다."); return; }
   if (k === 'requests') k = 'anon';
   if (k === 'board') { projSub = 'board'; k = 'projects'; }
   if (k === 'attendance' && !T() && !isLearner()) { schedMode = 'attendance'; k = 'schedule'; }
@@ -950,19 +965,41 @@ function todayNoticeRow(n){
  return `<details class="today-notice" name="today-notices" data-today-notice="${esc(n.id)}"><summary title="${esc(n.title)}"><span class="today-notice-title">${esc(n.title)}</span><time class="meta">${esc(String(n.at||"").slice(5,10).replace('-','/'))}</time><span class="today-notice-arrow" aria-hidden="true">▸</span></summary><div data-today-notice-content></div></details>`;
 }
 document.addEventListener("toggle",e=>{const el=e.target;if(!el.matches?.('[data-today-notice]')||!el.open)return;const body=el.querySelector('[data-today-notice-content]'),n=D.notices.find(n=>n.id===el.dataset.todayNotice);if(body&&!body.children.length&&n){body.innerHTML=noticeCard(n);hydrateNoticeImages();}},true);
+/* 내 오늘 화면: 로그인한 학생·선생님은 카드 순서·숨기기, 할 일·메모, 메뉴 순서·표시를 본인 것으로 저장합니다(서버 앱_내화면). */
+const TODAY_CARDS=[["todo","내 할 일·메모"],["notices","최근 공지"],["meal","오늘 급식"],["focus","확인할 일·요청 결과·팀 소식"],["events","오늘 일정·앞으로 2주"],["contests","다가오는 대회"],["details","활동 자료 불러오기"]];
+const canMyHome=()=>Boolean(D&&D.myHome&&!isGuest()&&!D.loginDisabled);
+function todayOrder(){
+  const h=canMyHome()?D.myHome:null,order=h?h.cards||[]:[],hidden=new Set(h?h.hidden||[]:[]);
+  const pos=k=>{const i=order.indexOf(k);return i<0?100+TODAY_CARDS.findIndex(c=>c[0]===k):i;};
+  return TODAY_CARDS.map(c=>c[0]).filter(k=>!hidden.has(k)).sort((a,b)=>pos(a)-pos(b));
+}
+function todayTodo(){
+  if(!canMyHome())return "";
+  const h=D.myHome,todos=h.todos||[],open=todos.filter(t=>!t.d),done=todos.filter(t=>t.d);
+  const row=t=>`<li class="todo-item${t.d?" done":""}"><label><input type="checkbox" data-todo-done="${esc(t.id)}" ${t.d?"checked":""}><span>${esc(t.t)}</span></label>${t.due?`<span class="ev-s${!t.d&&t.due<TODAY?" late":""}">${esc(fmtMD(t.due))}</span>`:""}<button class="btn sm ghost" data-todo-del="${esc(t.id)}" aria-label="${esc(t.t)} 지우기">×</button></li>`;
+  return `<section class="panel pad my-todo"><div class="row"><span class="label">내 할 일·메모</span><span class="spacer"></span>${T()?"":'<button class="btn sm" data-today-pevent>+ 내 일정</button>'}</div>
+    <form class="todo-add row" id="todoAdd"><input type="text" id="todoText" maxlength="200" placeholder="할 일을 적고 추가" aria-label="새 할 일"><input type="date" id="todoDue" aria-label="기한(선택)"><button class="btn sm pri" type="submit">추가</button></form>
+    ${todos.length?`<ul class="todo-list">${open.map(row).join("")}${done.map(row).join("")}</ul>`:'<p class="ev-s">나만 보는 할 일 목록입니다. 다른 기기에서 로그인해도 그대로 보입니다.</p>'}
+    <details class="todo-memo"${h.memo?" open":""}><summary>메모</summary><textarea id="todoMemo" maxlength="2000" rows="3" placeholder="나만 보는 메모">${esc(h.memo||"")}</textarea><div class="row"><span class="spacer"></span><button class="btn sm" type="button" data-memo-save>메모 저장</button></div></details></section>`;
+}
 function vToday(){
   const visibleEvents=allEvents().filter(e=>!isScheduleTrainingTime(e));
   const todays = sortEv(visibleEvents.filter(e => e.date <= TODAY && (e.endDate || e.date) >= TODAY));
   const soon = sortEv(visibleEvents.filter(e => e.date > TODAY && e.date <= addDays(TODAY, 14)));
   const notices = [...D.notices].sort((a,b)=>String(b.at).localeCompare(String(a.at))).slice(0, 3);
-  let h = `<div class="sec-h"><div><h2>${fmtMD(TODAY)} 오늘</h2><p>${T() ? "오늘 일정과 최근 공지입니다." : `${esc(D.me.name)} · ${esc(GROUP[myGroup()] || "")}에 해당하는 일정과 공지만 보여 줍니다.`}</p></div><div class="row"><button class="btn sm" data-projsub="tools">무료 도구</button><button class="btn sm ghost" data-reload>새로고침</button></div></div>`;
-  h += `<section class="panel"><div class="pad row" style="padding-bottom:0"><span class="label">최근 공지</span><span class="spacer"></span><button class="btn sm ghost" data-go="notices">전체 보기</button></div>${notices.length ? notices.map(todayNoticeRow).join("") : emptyBox("아직 공지가 없습니다")}</section>`;
-  h += todayMeal();
-  if(!D.homeOnly)h += '<div class="today-focus" aria-label="오늘 확인할 일">'+todayActions()+todayResults()+todayTeamNews()+'</div>';
-  h += `<div class="grid2"><section class="panel"><div class="pad" style="padding-bottom:4px"><span class="label">오늘 일정</span></div>${todays.length ? todays.map(evRow).join("") : emptyBox("오늘 잡힌 일정이 없습니다")}</section>
-    <section class="panel"><div class="pad" style="padding-bottom:4px"><span class="label">앞으로 2주</span></div>${soon.length ? soon.slice(0, 8).map(evRow).join("") : emptyBox("2주 안에 예정된 일정이 없습니다")}</section></div>`;
-  h += todayContests();
-  if(D.homeOnly)h+='<section class="panel pad"><button class="btn" data-home-details>'+ (fullLoadPending?'활동 자료 확인 중…':'내 할 일·요청 결과·팀 소식 보기')+'</button><p class="ev-s">명단·출결·BOM 등은 메뉴를 열 때 불러옵니다.</p></section>';
+  const sub = isGuest() ? "로그인 없이 보는 중 · 전체 공개 공지·급식·학교 일정만 보입니다." : T() ? "오늘 일정과 최근 공지입니다." : `${esc(D.me.name)} · ${esc(GROUP[myGroup()] || "")}에 해당하는 일정과 공지만 보여 줍니다.`;
+  let h = `<div class="sec-h"><div><h2>${fmtMD(TODAY)} 오늘</h2><p>${sub}</p></div><div class="row">${isGuest()?'<button class="btn sm pri" data-login>로그인</button>':""}${canMyHome()?'<button class="btn sm" data-myhome-edit>화면 꾸미기</button>':""}<button class="btn sm" data-projsub="tools">무료 도구</button><button class="btn sm ghost" data-reload>새로고침</button></div></div>`;
+  const cards={
+    todo:()=>todayTodo(),
+    notices:()=>`<section class="panel"><div class="pad row" style="padding-bottom:0"><span class="label">최근 공지</span><span class="spacer"></span>${isGuest()?"":'<button class="btn sm ghost" data-go="notices">전체 보기</button>'}</div>${notices.length ? notices.map(todayNoticeRow).join("") : emptyBox("아직 공지가 없습니다")}</section>`,
+    meal:()=>todayMeal(),
+    focus:()=>D.homeOnly?"":'<div class="today-focus" aria-label="오늘 확인할 일">'+todayActions()+todayResults()+todayTeamNews()+'</div>',
+    events:()=>`<div class="grid2"><section class="panel"><div class="pad" style="padding-bottom:4px"><span class="label">오늘 일정</span></div>${todays.length ? todays.map(evRow).join("") : emptyBox("오늘 잡힌 일정이 없습니다")}</section>
+    <section class="panel"><div class="pad" style="padding-bottom:4px"><span class="label">앞으로 2주</span></div>${soon.length ? soon.slice(0, 8).map(evRow).join("") : emptyBox("2주 안에 예정된 일정이 없습니다")}</section></div>`,
+    contests:()=>todayContests(),
+    details:()=>(D.homeOnly&&!isGuest())?'<section class="panel pad"><button class="btn" data-home-details>'+ (fullLoadPending?'활동 자료 확인 중…':'내 할 일·요청 결과·팀 소식 보기')+'</button><p class="ev-s">명단·출결·BOM 등은 메뉴를 열 때 불러옵니다.</p></section>':""
+  };
+  todayOrder().forEach(k=>{h+=cards[k]();});
   if (D.tabsMissing && D.tabsMissing.length && T()) h += `<div class="banner">시트에서 ‘${esc(D.tabsMissing.join("’, ‘"))}’ 탭을 찾지 못했습니다. Code.gs 위쪽의 탭 이름을 확인하세요.</div>`;
   if (T()&&!D.homeOnly){
     const rq = D.requests.filter(r => r.unreadTeacher).length, nopin = D.roster.filter(r => !r.pin).length;
@@ -972,7 +1009,7 @@ function vToday(){
       <div class="stat"><div class="v">${c("pre2")}<span class="muted" style="font-size:14px"> / ${c("pre1")}</span></div><div class="k">예비 2학년 / 1학년</div></div>
       <div class="stat"><div class="v">${(D.anonPosts || []).length}</div><div class="k">익명게시글</div></div>
       <div class="stat"><div class="v">${D.purchases.filter(p => p.state === "요청").length}</div><div class="k">새 구매요청</div></div></div>`;
-  } else if(!T()) {
+  } else if(!T()&&!isGuest()) {
     const un = D.notices.filter(n => !D.myAcks.includes(n.id)).length;
     if (un) h += `<div class="banner row"><span>확인하지 않은 공지 ${un}건</span><span class="spacer"></span><button class="btn sm" data-go="notices">공지 보기</button></div>`;
 
@@ -1054,7 +1091,7 @@ function noticeCard(n){
     if(D.homeOnly)foot='<button class="btn sm" data-home-details>확인 현황·공지 관리 불러오기</button>';
     if (!D.homeOnly&&openReaders.has(n.id)) { const un = targets.filter(r => !seen.some(a => a.name === r.name)).map(r => r.name);
       foot += `<div class="readers"><b>확인</b> ${seen.length ? seen.map(a => `${esc(a.name)} <span class="num">${esc(a.at.slice(5))}</span>`).join(" · ") : "없음"}<br><b>미확인</b> ${un.length ? esc(un.join(", ")) : "없음"}</div>`; }
-  } else foot = D.myAcks.includes(n.id) ? `<span class="ack-ok">✓ 확인함</span>` : `<div><button class="btn sm pri" data-ack="${esc(n.id)}">확인했어요</button></div>`;
+  } else foot = isGuest() ? "" : D.myAcks.includes(n.id) ? `<span class="ack-ok">✓ 확인함</span>` : `<div><button class="btn sm pri" data-ack="${esc(n.id)}">확인했어요</button></div>`;
   return `<article class="notice"><div class="row">${n.pinned ? '<span class="chip pin">고정</span>' : ""}${targetChip(n.target)}<span class="meta">${esc(n.at)}${n.due ? ` · 기한 ${esc(fmtMD(n.due))}` : ""}</span></div>
     <h3><button class="notice-title" data-notice-open="${esc(n.id)}">${esc(n.title)}</button></h3>${n.body ? `<div class="body">${esc(n.body)}</div>` : ""}${noticeExtras(n)}${foot}</article>`;
 }
@@ -1845,8 +1882,8 @@ function render(){
   const activeTab = learnerOpen ? 'learner' : (SUB_ROUTES[tab] || tab);
   $("#tabs").innerHTML = tabs.map(([k,l]) => { const m = TAB_LOOK[k] || ["•", l]; return `<button class="tab" role="tab" data-tab="${k}" aria-selected="${k===activeTab}" title="${esc(l)}"><span class="ti" aria-hidden="true">${m[0]}</span><span class="tl-long">${esc(l)}</span><span class="tl-short">${esc(k === "me" ? (T() ? "설정" : "내 정보") : m[1])}</span></button>`; }).join("");
   $("#tabs").style.setProperty("--cols", Math.ceil(tabs.length / 2)); $("#tabs").classList.toggle("icons", look().icons === true);
-  const role = $("#role"); role.textContent = D.localTest ? "PC 테스트" : D.loginDisabled ? "로그인 없는 테스트" : T() ? "교사" : (GROUP[myGroup()] || "학생"); role.classList.toggle("t", T());
-  $("#logoutTop").hidden = Boolean(D.loginDisabled);
+  const role = $("#role"); role.textContent = D.localTest ? "PC 테스트" : D.loginDisabled ? "로그인 없는 테스트" : isGuest() ? "둘러보기" : T() ? "교사" : (GROUP[myGroup()] || "학생"); role.classList.toggle("t", T());
+  $("#logoutTop").hidden = Boolean(D.loginDisabled); $("#logoutTop").textContent = isGuest() ? "로그인" : "나가기";
   evStore.clear();
   const draft = $("#replyText") ? $("#replyText").value : null, anonDraft = $("#anonText") ? $("#anonText").value : null;
   if(D.homeOnly&&!["today","school"].includes(tab)&&!(tab==="projects"&&projSub==="tools")){ $("#main").innerHTML=fullLoadNotice();if(!fullLoadError)hydrateFullData();return;}
@@ -1913,7 +1950,7 @@ function eventDlg(e){
     <label class="fld"><span>메모</span><input type="text" name="note" id="f-note" maxlength="300" value="${esc(e.note || "")}"></label>`,
     "저장", fd => act("saveEvent", { id: e.id, ...fd, endDate: fd.endDate > fd.date ? fd.endDate : "" }, "저장했습니다"));
 }
-function peventDlg(item){
+function peventDlg(item,opts){
   const e=item||{},t=T();
   openDlg(e.id?"개인일정 수정":t?"학생 개인 일정":"내 일정", `${e.id?'<p>'+esc(e.name)+'의 개인일정</p>':t?`<div class="fld"><span>학생 (여러 명 선택 가능)</span><div class="memberpick">${D.roster.map(r=>`<label><input type="checkbox" name="who" value="${esc(r.name)}"> ${esc(r.name)}</label>`).join("")}</div></div>`:""}
     ${field("일정","title",e.title||"","text",'id="f-pe-title" required maxlength="80"')}
@@ -1923,6 +1960,7 @@ function peventDlg(item){
       const names=fd.who||[];if(t&&!e.id&&!names.length){toast("학생을 한 명 이상 고르세요");return false;}
       if(fd.endDate&&fd.endDate<fd.date){toast("끝나는 날은 시작일 이후로 입력하세요");return false;}
       const ok=await act(e.id?"savePersonal":"addPersonal",{...fd,id:e.id,names},"개인일정을 저장했습니다");
+      if(ok&&opts&&opts.stay){render();return ok;}
       if(ok){calSel=fd.date;calMonth=parse(fd.date);calMonth.setDate(1);showPersonal=true;schedMode="cal";go("schedule");}return ok;
     });
 }
@@ -2075,6 +2113,53 @@ $("#main").addEventListener("submit", async e => {
   const btn = e.target.querySelector("button[type=submit]"); btn.disabled = true;
   if (await act("reply", { id: reqOpen, text }, "보냈습니다")) { const t2 = $("#replyText"); if (t2) t2.value = ""; } else btn.disabled = false;
 });
+
+/* ---------- 내 오늘 화면 저장·꾸미기 ---------- */
+let myHomeSaving=Promise.resolve();
+function saveMyHome(next){
+  const prev=D.myHome;D.myHome=next;if(!dlg.open)render();
+  myHomeSaving=myHomeSaving.then(()=>call("saveMyHome",{home:next})).then(v=>{if(D&&D.myHome===next){D.myHome=v;}}).catch(e=>{if(D&&D.myHome===next){D.myHome=prev;if(!dlg.open)render();}toast(e.message);});
+  return myHomeSaving;
+}
+const myHomeCopy=()=>JSON.parse(JSON.stringify(D.myHome||{todos:[],memo:"",cards:[],hidden:[],tabs:[],hiddenTabs:[]}));
+$("#main").addEventListener("submit",e=>{
+  if(e.target.id!=="todoAdd")return;e.preventDefault();
+  const t=$("#todoText").value.trim(),due=$("#todoDue").value;if(!t)return;
+  const h=myHomeCopy();if((h.todos||[]).length>=60){toast("할 일은 60개까지 저장됩니다. 끝난 일을 지워 주세요");return;}
+  h.todos=[{id:"t"+Date.now().toString(36)+Math.random().toString(36).slice(2,6),t,d:false,due}].concat(h.todos||[]);saveMyHome(h);
+});
+$("#main").addEventListener("change",e=>{
+  const id=e.target.dataset&&e.target.dataset.todoDone;if(!id)return;
+  const h=myHomeCopy();h.todos=(h.todos||[]).map(t=>t.id===id?{...t,d:e.target.checked}:t);saveMyHome(h);
+});
+$("#main").addEventListener("click",e=>{
+  if(e.target.closest("[data-login]")){gate();return;}
+  const del=e.target.closest("[data-todo-del]");if(del){const h=myHomeCopy();h.todos=(h.todos||[]).filter(t=>t.id!==del.dataset.todoDel);saveMyHome(h);return;}
+  if(e.target.closest("[data-memo-save]")){const h=myHomeCopy();h.memo=$("#todoMemo").value;saveMyHome(h).then(()=>toast("메모를 저장했습니다"));return;}
+  if(e.target.closest("[data-today-pevent]")){peventDlg(null,{stay:true});return;}
+  if(e.target.closest("[data-myhome-edit]"))myHomeDlg();
+});
+function myHomeDlg(){
+  const h=myHomeCopy(),cardHidden=new Set(h.hidden||[]),tabHidden=new Set(h.hiddenTabs||[]);
+  const cards=TODAY_CARDS.filter(([k])=>!(k==="focus"&&false)),cardPos=k=>{const i=(h.cards||[]).indexOf(k);return i<0?100+TODAY_CARDS.findIndex(c=>c[0]===k):i;};
+  const tabs=baseTabs(),tabPos=k=>{const i=(h.tabs||[]).indexOf(k);return i<0?100+tabs.findIndex(c=>c[0]===k):i;};
+  const item=(k,l,on,fixed)=>`<div class="mh-item" data-k="${esc(k)}"><label><input type="checkbox" data-mh-show ${on?"checked":""} ${fixed?"disabled":""}> ${esc(l)}${fixed?' <span class="ev-s">(항상 보임)</span>':""}</label><button class="btn sm ghost" type="button" data-mh-up aria-label="${esc(l)} 위로">↑</button><button class="btn sm ghost" type="button" data-mh-down aria-label="${esc(l)} 아래로">↓</button></div>`;
+  openDlg("내 화면 꾸미기",`<p class="ev-s" style="margin:0">체크를 풀면 숨겨지고, ↑↓로 순서를 바꿉니다. 이 계정으로 어느 기기에서 들어와도 같게 보입니다.</p>
+    <h4 style="margin:12px 0 4px">오늘 화면 카드</h4><div class="mh-list" data-mh="cards">${cards.slice().sort((a,b)=>cardPos(a[0])-cardPos(b[0])).map(([k,l])=>item(k,l,!cardHidden.has(k),false)).join("")}</div>
+    <h4 style="margin:14px 0 4px">메뉴</h4><div class="mh-list" data-mh="tabs">${tabs.slice().sort((a,b)=>tabPos(a[0])-tabPos(b[0])).map(([k,l])=>item(k,l,!tabHidden.has(k),k==="today"||k==="me")).join("")}</div>
+    <div class="row" style="margin-top:10px"><button class="btn sm ghost" type="button" data-mh-reset>처음 모양으로</button></div>`,"저장",async()=>{
+      const read=name=>[...form.querySelectorAll('[data-mh="'+name+'"] .mh-item')].map(el=>({k:el.dataset.k,on:el.querySelector("[data-mh-show]").checked}));
+      const c=read("cards"),t=read("tabs"),next=myHomeCopy();
+      next.cards=c.map(x=>x.k);next.hidden=c.filter(x=>!x.on).map(x=>x.k);next.tabs=t.map(x=>x.k);next.hiddenTabs=t.filter(x=>!x.on&&x.k!=="today"&&x.k!=="me").map(x=>x.k);
+      dlg.close();await saveMyHome(next);render();toast("내 화면을 저장했습니다");return true;
+    });
+}
+form.addEventListener("click",e=>{
+  const it=e.target.closest(".mh-item");if(!it)return;
+  if(e.target.closest("[data-mh-up]")&&it.previousElementSibling)it.parentNode.insertBefore(it,it.previousElementSibling);
+  else if(e.target.closest("[data-mh-down]")&&it.nextElementSibling)it.parentNode.insertBefore(it.nextElementSibling,it);
+});
+form.addEventListener("click",e=>{if(!e.target.closest("[data-mh-reset]"))return;const h=myHomeCopy();h.cards=[];h.hidden=[];h.tabs=[];h.hiddenTabs=[];dlg.close();saveMyHome(h).then(()=>{render();toast("처음 모양으로 되돌렸습니다");});});
 
 /* ---------- 시작 ---------- */
 (async () => {
