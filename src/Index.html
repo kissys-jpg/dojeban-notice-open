@@ -329,8 +329,11 @@ var iv=setInterval(function(){
  sec.textContent=t.toFixed(1)+"초";
  fill.style.width=Math.min(95,92*(1-Math.exp(-t/3.2))+3)+"%";
  if(t>8&&stage<1){stage=1;note.textContent="구글 서버 응답이 평소보다 늦습니다. 기다리면 열립니다(가끔 10초 넘게 걸립니다).";}
- if(t>25&&stage<2){stage=2;note.innerHTML="아직 응답이 없습니다. 인터넷 연결을 확인하거나 <a href=\"\" onclick=\"location.reload();return false\">다시 시도</a>해 주세요.";}
+ if(t>15&&stage<2){stage=2;note.innerHTML="아직 응답이 없습니다. 인터넷 연결을 확인하거나 <a href=\"\" onclick=\"location.reload();return false\">다시 시도</a>해 주세요.";}
 },100);
+function shown(msg){if(box.hidden)return;clearInterval(iv);document.getElementById("spNet").className="";note.innerHTML="화면을 여는 중 오류가 났습니다: <b>"+String(msg||"알 수 없는 오류").replace(/[&<>]/g,"")+"</b><br>이 화면을 캡처해 선생님께 보내 주세요. <a href=\"\" onclick=\"location.reload();return false\">다시 시도</a>";}
+window.addEventListener("error",function(e){shown(e.message);});
+window.addEventListener("unhandledrejection",function(e){shown(e.reason&&e.reason.message||e.reason);});
 })();
 </script>
 <div class="loading" id="loading" hidden></div>
@@ -361,10 +364,13 @@ var iv=setInterval(function(){
 /* 외부 입구 페이지에서 열린 경우: google.script.run 대신 웹앱 주소(DOJEBAN_API)를 쿠키 없이 부릅니다. */
 if ((typeof google === "undefined" || !google.script || !google.script.run) && window.DOJEBAN_API) {
   const mkRun = (ok, fail) => new Proxy({}, { get: (_, k) => k === "withSuccessHandler" ? f => mkRun(f, fail) : k === "withFailureHandler" ? f => mkRun(ok, f) : req => {
-    const send=()=>fetch(window.DOJEBAN_API, { method: "POST", credentials: "omit", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ fn: k, req }) });
+    /* 휴대폰 망에서 응답 없이 멈추는 요청을 막습니다: 읽기는 20초, 쓰기·업로드는 90초가 지나면 끊고 읽기는 한 번 다시 보냅니다. */
+    const isRead=req&&["load","login","resourceLinks","todayTeamFiles"].indexOf(req.action)>=0;
+    const once=()=>{const ctl=typeof AbortController==="function"?new AbortController():null;const timer=setTimeout(()=>{if(ctl)ctl.abort();},isRead?20000:90000);return fetch(window.DOJEBAN_API, { method: "POST", credentials: "omit", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ fn: k, req }), signal: ctl?ctl.signal:undefined }).finally(()=>clearTimeout(timer));};
+    const send=()=>once().catch(e=>{if(!isRead)throw e;window.__djRetry=(window.__djRetry||0)+1;return once();});
     const boot=window.DOJEBAN_BOOT,useBoot=boot&&k==="api"&&req.action==="load"&&!req.withLoad&&req.payload&&req.payload.deferLinks===true&&Boolean(req.payload.homeOnly)===Boolean(boot.homeOnly)&&JSON.stringify(req.cred||{})===boot.credential&&Date.now()-boot.started<30000;
     if(boot&&k==="api"&&req.action==="load")delete window.DOJEBAN_BOOT;
-    const response=useBoot?boot.promise.then(v=>v.response?{json:()=>Promise.resolve(v.response)}:send()):send();
+    const response=useBoot?Promise.race([boot.promise,new Promise(r=>setTimeout(()=>r({}),Math.max(0,12000-(Date.now()-boot.started))))]).then(v=>v&&v.response?{json:()=>Promise.resolve(v.response)}:send()):send();
     response
       .then(r => r.json()).then(x => { if (ok) ok(x); }).catch(e => { if (fail) fail(e); });
   } });
