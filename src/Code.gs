@@ -1752,6 +1752,26 @@ function drivePath_(me, r, folderId) {
   if (r.targets && me.role !== "teacher" && chain.length > 1) { const t = materialTarget_(chain[1].getName()); if (t && !matches_(t, me.group)) throw new Error("이 폴더를 볼 권한이 없습니다"); }
   return chain;
 }
+/** 알림판 밖(Drive에서 직접)에서 올린 파일의 올린 사람: Drive API 한 번으로 소유자/마지막 수정자 이름을 가져옵니다(5분 캐시). 배포 계정이면 '선생님'. 이메일은 화면에 보내지 않습니다. */
+function driveUploaders_(folderId) {
+  const cache = CacheService.getScriptCache(), key = "dwho_" + folderId, hit = cache.get(key);
+  if (hit) { try { return JSON.parse(hit); } catch (e) {} }
+  const out = {};
+  try {
+    let me = ""; try { me = String(Session.getEffectiveUser().getEmail() || "").toLowerCase(); } catch (e) {}
+    let token = "", n = 0;
+    do {
+      const url = "https://www.googleapis.com/drive/v3/files?supportsAllDrives=true&includeItemsFromAllDrives=true&pageSize=1000&fields=" + encodeURIComponent("nextPageToken,files(id,owners(displayName,emailAddress),lastModifyingUser(displayName,emailAddress))") + "&q=" + encodeURIComponent("'" + folderId + "' in parents and trashed=false") + (token ? "&pageToken=" + encodeURIComponent(token) : "");
+      const res = UrlFetchApp.fetch(url, { muteHttpExceptions: true, headers: { Authorization: "Bearer " + ScriptApp.getOAuthToken() } });
+      if (res.getResponseCode() !== 200) break;
+      const j = JSON.parse(res.getContentText());
+      (j.files || []).forEach(function (f) { const u = (f.owners && f.owners[0]) || f.lastModifyingUser; if (!u) return; out[f.id] = me && String(u.emailAddress || "").toLowerCase() === me ? "선생님" : String(u.displayName || "").slice(0, 40); });
+      token = j.nextPageToken || "";
+    } while (token && ++n < 3);
+  } catch (e) {}
+  try { cache.put(key, JSON.stringify(out), 300); } catch (e) {}
+  return out;
+}
 function driveWho_(desc) { const m = String(desc || "").match(/올린 사람: ([^·]+)/); return m ? m[1].trim() : ""; }
 function driveBrowse_(me, p) {
   const r = driveRoot2_(me, p.root), chain = drivePath_(me, r, p.folder), cur = chain[chain.length - 1], T = me.role === "teacher";
@@ -1761,6 +1781,7 @@ function driveBrowse_(me, p) {
     else folders.push({ id: f.getId(), name: f.getName() }); }
   const fi = cur.getFiles(); while (fi.hasNext() && files.length < 300) { const f = fi.next(); if (f.isTrashed()||studentPrivateFile_(f.getId())) continue;
     files.push({ id: f.getId(), name: f.getName(), mime: f.getMimeType(), size: f.getSize(), updated: Utilities.formatDate(f.getLastUpdated(), "Asia/Seoul", "yyyy-MM-dd HH:mm"), by: driveWho_(f.getDescription()) }); }
+  if (files.some(function (f) { return !f.by; })) { const who = driveUploaders_(cur.getId()); files.forEach(function (f) { if (!f.by && who[f.id]) f.by = who[f.id]; }); }
   folders.sort(function (a, b) { return a.name.localeCompare(b.name, "ko"); });
   files.sort(function (a, b) { return String(b.updated).localeCompare(String(a.updated)); });
   return { root: r.key, label: r.label, folder: cur.getId(), path: chain.map(function (f, i) { return { id: f.getId(), name: i ? f.getName() : r.label }; }), folders: folders, files: files, canUpload: r.upload, studentUpload: r.key === "materials" ? props_().MATERIAL_STUDENT_UPLOAD !== "0" : true, url: T ? cur.getUrl() : "" };
@@ -1769,6 +1790,7 @@ function driveUpload_(me, p) {
   const r = driveRoot2_(me, p.root); if (!r.upload) throw new Error("이 폴더에는 선생님만 올릴 수 있습니다");
   const chain = drivePath_(me, r, p.folder), cur = chain[chain.length - 1];
   if (!hasUpload_(p.upload)) throw new Error("올릴 파일을 골라 주세요");
+  CacheService.getScriptCache().remove("dwho_" + cur.getId());
   const id = withLock_(function () { return storeFile_(me, p.upload, r.key === "materials" ? "drive" : r.key.indexOf("cert:")===0 ? "cert" : r.key.indexOf("company:")===0 ? "company" : "project", r.key === "materials" ? "" : r.key.indexOf("cert:")===0 ? r.key.slice(5) : r.key.slice(8), cur); });
   CacheService.getScriptCache().remove("dm_v1"); return id;
 }

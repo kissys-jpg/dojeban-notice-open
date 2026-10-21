@@ -286,7 +286,7 @@ body{margin:0} [hidden]{display:none!important}
 #globalSearch{width:min(680px,calc(100vw - 24px));max-height:85dvh;padding:18px;box-sizing:border-box}#globalSearch::backdrop{background:#142c4666}.search-top{display:flex;align-items:center;justify-content:space-between;gap:8px}.search-input{width:100%;box-sizing:border-box;margin:12px 0;padding:12px;font:inherit;border:1px solid var(--line);border-radius:8px}.search-results{display:grid;gap:6px;max-height:55dvh;overflow:auto}.search-result{display:block;width:100%;text-align:left;padding:12px;border:1px solid var(--line);border-radius:8px;background:var(--panel,#fff);color:inherit;font:inherit;cursor:pointer;overflow-wrap:anywhere}.search-result:focus-visible{outline:3px solid #2576b8;outline-offset:-3px}.search-result small{display:block;margin-top:4px;color:var(--muted,#52677c)}
 .schedule-head{display:grid;grid-template-columns:minmax(0,1fr) minmax(300px,420px);gap:16px;align-items:start;margin-bottom:18px}.schedule-head h2{margin:0}.schedule-head p{margin:6px 0 12px}.schedule-sub{min-width:0;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}.schedule-sub>b{display:block;font-size:13px;margin-bottom:8px}.schedule-sub .row{gap:6px;flex-wrap:wrap}.schedule-sub details{margin-top:8px;font-size:12px}.schedule-sub summary{cursor:pointer;color:var(--muted)}
 @media(max-width:760px){.schedule-head{grid-template-columns:minmax(0,1fr);gap:12px}.schedule-sub .btn{white-space:normal}}
-.startup-header{padding:18px max(16px,calc((100vw - 928px)/2));background:var(--surface);border-bottom:1px solid var(--line)}.startup-header b{display:block}.startup-header span,.startup-main p{font-size:13px;color:var(--muted)}.startup-main{max-width:960px;margin:auto;padding:20px 16px;box-sizing:border-box}.startup-main h2{margin:0}.my-todo .todo-add{margin-top:8px;gap:6px;flex-wrap:wrap}.my-todo .todo-add input[type=text]{flex:1 1 160px;min-width:0}.my-todo .todo-add input[type=date]{width:140px}.todo-list{list-style:none;margin:8px 0 0;padding:0}.todo-item{display:flex;align-items:center;gap:8px;padding:6px 0;border-top:1px solid var(--line)}.todo-item label{flex:1;display:flex;gap:8px;align-items:flex-start;min-width:0;overflow-wrap:anywhere;cursor:pointer}.todo-item.done label span{text-decoration:line-through;color:var(--muted)}.todo-item .late{color:#c0392b;font-weight:600}.todo-memo{margin-top:8px}.todo-memo summary{cursor:pointer;font-size:13px;color:var(--muted)}.todo-memo textarea{width:100%;box-sizing:border-box;margin-top:6px}.mh-item{display:flex;align-items:center;gap:6px;padding:6px 0;border-bottom:1px solid var(--line)}.mh-item label{flex:1;min-width:0}.sp{margin:12px 0 4px;max-width:520px}.sp-bar{height:6px;border-radius:6px;background:var(--line);overflow:hidden}.sp-bar i{display:block;height:100%;width:3%;background:var(--accent);transition:width .25s linear}.sp-steps{list-style:none;margin:10px 0 4px;padding:0;font-size:13.5px}.sp-steps li{padding:2px 0 2px 22px;position:relative;color:var(--muted)}.sp-steps li::before{content:"";position:absolute;left:3px;top:8px;width:9px;height:9px;border-radius:50%;border:2px solid var(--line);box-sizing:border-box}.sp-steps li.done::before{background:var(--accent);border-color:var(--accent)}.sp-steps li.now{color:var(--ink);font-weight:600}.sp-steps li.now::before{border-color:var(--accent);animation:spp 1s ease-in-out infinite}.sp-steps b{font-variant-numeric:tabular-nums;font-weight:600;color:var(--accent)}#spNote{font-size:13px;color:var(--muted);margin:2px 0}@keyframes spp{50%{opacity:.3}}@media (prefers-reduced-motion:reduce){.sp-steps li.now::before{animation:none}}.upd b{font-variant-numeric:tabular-nums}.startup-placeholder{height:100px;margin-top:14px;border-radius:12px;border:1px solid var(--line);background:var(--surface)}
+.startup-header{padding:18px max(16px,calc((100vw - 928px)/2));background:var(--surface);border-bottom:1px solid var(--line)}.startup-header b{display:block}.startup-header span,.startup-main p{font-size:13px;color:var(--muted)}.startup-main{max-width:960px;margin:auto;padding:20px 16px;box-sizing:border-box}.startup-main h2{margin:0}.up-panel{position:fixed;right:16px;bottom:16px;z-index:40;width:min(380px,calc(100vw - 32px));max-height:60vh;overflow:auto;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 28px #0003;padding:10px 12px}.up-head{display:flex;align-items:center;gap:8px;margin-bottom:4px}.up-head b{flex:1;font-size:14px}.up-item{padding:6px 0;border-top:1px solid var(--line)}.up-name{display:flex;gap:8px;justify-content:space-between;font-size:13.5px}.up-name span:first-child{overflow-wrap:anywhere;min-width:0}.up-bar{height:6px;border-radius:6px;background:var(--line);overflow:hidden;margin:5px 0 3px}.up-bar i{display:block;height:100%;background:var(--accent);transition:width .3s}.up-bar.ind i{animation:upind 1.2s ease-in-out infinite}.up-ok .up-bar i{background:#2e9d5b}.up-bad .up-bar i{background:#c0392b;width:100%!important}.up-bad .ev-s{color:#c0392b}@keyframes upind{from{transform:translateX(-100%)}to{transform:translateX(290%)}}@media (prefers-reduced-motion:reduce){.up-bar.ind i{animation:none}}.photo-by{display:block;font-size:11.5px;color:var(--muted)}.drv-by{font-weight:600;color:var(--ink)}.my-todo .todo-add{margin-top:8px;gap:6px;flex-wrap:wrap}.my-todo .todo-add input[type=text]{flex:1 1 160px;min-width:0}.my-todo .todo-add input[type=date]{width:140px}.todo-list{list-style:none;margin:8px 0 0;padding:0}.todo-item{display:flex;align-items:center;gap:8px;padding:6px 0;border-top:1px solid var(--line)}.todo-item label{flex:1;display:flex;gap:8px;align-items:flex-start;min-width:0;overflow-wrap:anywhere;cursor:pointer}.todo-item.done label span{text-decoration:line-through;color:var(--muted)}.todo-item .late{color:#c0392b;font-weight:600}.todo-memo{margin-top:8px}.todo-memo summary{cursor:pointer;font-size:13px;color:var(--muted)}.todo-memo textarea{width:100%;box-sizing:border-box;margin-top:6px}.mh-item{display:flex;align-items:center;gap:6px;padding:6px 0;border-bottom:1px solid var(--line)}.mh-item label{flex:1;min-width:0}.sp{margin:12px 0 4px;max-width:520px}.sp-bar{height:6px;border-radius:6px;background:var(--line);overflow:hidden}.sp-bar i{display:block;height:100%;width:3%;background:var(--accent);transition:width .25s linear}.sp-steps{list-style:none;margin:10px 0 4px;padding:0;font-size:13.5px}.sp-steps li{padding:2px 0 2px 22px;position:relative;color:var(--muted)}.sp-steps li::before{content:"";position:absolute;left:3px;top:8px;width:9px;height:9px;border-radius:50%;border:2px solid var(--line);box-sizing:border-box}.sp-steps li.done::before{background:var(--accent);border-color:var(--accent)}.sp-steps li.now{color:var(--ink);font-weight:600}.sp-steps li.now::before{border-color:var(--accent);animation:spp 1s ease-in-out infinite}.sp-steps b{font-variant-numeric:tabular-nums;font-weight:600;color:var(--accent)}#spNote{font-size:13px;color:var(--muted);margin:2px 0}@keyframes spp{50%{opacity:.3}}@media (prefers-reduced-motion:reduce){.sp-steps li.now::before{animation:none}}.upd b{font-variant-numeric:tabular-nums}.startup-placeholder{height:100px;margin-top:14px;border-radius:12px;border:1px solid var(--line);background:var(--surface)}
 </style>
 </head>
 <body>
@@ -1325,13 +1325,13 @@ document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest
 function materialsFolderDlg(){openDlg('자료실 Drive 연결',field('자료실 폴더 주소','url',D.settings?.materialFolderUrl||'','url','required placeholder="Drive 폴더 주소를 붙여넣으세요"')+driveShareHelp(),'연결',fd=>act('saveMaterialsFolder',fd,'자료실 Drive 폴더를 연결했습니다'));}
 async function uploadMaterialsFiles(files){
   if(!T()||materialsUploading)return;const list=Array.from(files||[]);if(!list.length)return;if(list.length>20)return toast('한 번에 20개 이하로 올려 주세요');
-  const target=$('#dropTarget')?.value||'all';materialsUploading=true;let uploaded=0,errors=[];
+  const target=$('#dropTarget')?.value||'all';materialsUploading=true;let uploaded=0,errors=[];upBegin(list);
   try{for(const file of list){const status=$('#materialsUploadStatus');if(status)status.textContent='업로드 중 '+(uploaded+errors.length+1)+' / '+list.length+' · '+file.name;
     try{if(!file.size||file.size>MAX_MB*1024*1024)throw new Error('파일 크기는 0바이트 초과, '+sizeLimitText()+' 이하여야 합니다');
       const upload=await toUpload(file);
-      await call('uploadDriveMaterial',{target,upload});uploaded++;
-    }catch(e){errors.push(file.name+': '+e.message);}
-  }}finally{materialsUploading=false;await reload();const status=$('#materialsUploadStatus');if(status)status.textContent=uploaded+'개 업로드 완료'+(errors.length?' · 실패 '+errors.length+'개: '+errors.join(' / '):'');toast(uploaded+'개 업로드 완료'+(errors.length?' · 일부 파일 실패':''));}
+      await call('uploadDriveMaterial',{target,upload});uploaded++;upDone(file);
+    }catch(e){errors.push(file.name+': '+e.message);upDone(file,e.message);}
+  }}finally{upEnd();materialsUploading=false;await reload();const status=$('#materialsUploadStatus');if(status)status.textContent=uploaded+'개 업로드 완료'+(errors.length?' · 실패 '+errors.length+'개: '+errors.join(' / '):'');toast(uploaded+'개 업로드 완료'+(errors.length?' · 일부 파일 실패':''));}
 }
 $('#main').addEventListener('change',e=>{if(e.target.id==='ojtStudent'){ojtStudent=e.target.value;render();}if(e.target.id==='materialsFiles')uploadMaterialsFiles(e.target.files);});
 $('#main').addEventListener('click',e=>{const drop=e.target.closest('#materialsDrop');if(drop&&e.target.id!=='materialsFiles')$('#materialsFiles')?.click();});
@@ -1490,19 +1490,58 @@ const FILE_ACCEPT = ".pdf,.png,.jpg,.jpeg,.gif,.webp,.heic,.txt,.csv,.md,.zip,.d
 const MAX_MB = 1024, DIRECT_MB = 8;
 const sizeLimitText = () => (MAX_MB >= 1024 ? (MAX_MB / 1024) + "GB" : MAX_MB + "MB");
 const blobB64 = b => new Promise((resolve, reject) => { const r = new FileReader(); r.onload = () => resolve(String(r.result).split(",")[1] || ""); r.onerror = () => reject(new Error("파일을 읽지 못했습니다")); r.readAsDataURL(b); });
+/* ---------- 올리기 진행 표시: 화면 아래 카드에 파일별 단계·%·경과 시간 ---------- */
+let upBatch = null, upTick = null, upHideT = null;
+function upBegin(files){
+  clearTimeout(upHideT);
+  upBatch = { t0: Date.now(), closed: false, msg: "", items: Array.from(files || []).map(f => ({ name: f.name, size: f.size, pct: 0, text: "대기 중", state: "wait", t0: 0 })) };
+  if (!upTick) upTick = setInterval(() => { if (upBatch && !upBatch.closed) upPaint(); else { clearInterval(upTick); upTick = null; } }, 500);
+  upPaint(); return upBatch;
+}
+function upIndex(f){
+  if (!upBatch || upBatch.closed) upBegin([f]);
+  let i = upBatch.items.findIndex(x => x.name === f.name && x.size === f.size && x.state === "wait");
+  if (i < 0) { upBatch.items.push({ name: f.name, size: f.size, pct: 0, text: "대기 중", state: "wait", t0: 0 }); i = upBatch.items.length - 1; }
+  return i;
+}
+function upSet(i, patch){ if (!upBatch || !upBatch.items[i]) return; const it = upBatch.items[i]; if (patch.state === "run" && !it.t0) it.t0 = Date.now(); Object.assign(it, patch); upPaint(); }
+function upEnd(msg){
+  if (!upBatch || upBatch.closed) return; upBatch.closed = true;
+  upBatch.items.forEach(it => { if (it.state === "run" || it.state === "save") { it.state = "ok"; it.pct = 100; it.text = "완료"; } });
+  const ok = upBatch.items.filter(x => x.state === "ok").length, bad = upBatch.items.length - ok;
+  upBatch.msg = msg || (bad ? ok + "개 올림 · " + bad + "개 실패" : ok + "개 모두 올렸습니다");
+  upPaint(); clearTimeout(upHideT); if (!bad) upHideT = setTimeout(() => { upBatch = null; upPaint(); }, 6000);
+}
+function upPaint(){
+  let el = document.getElementById("upPanel");
+  if (!upBatch) { if (el) el.remove(); return; }
+  if (!el) { el = document.createElement("section"); el.id = "upPanel"; el.className = "up-panel"; el.setAttribute("role", "status"); el.setAttribute("aria-live", "polite"); document.body.appendChild(el); }
+  const b = upBatch, done = b.items.filter(x => x.state === "ok" || x.state === "bad").length, sec = s0 => Math.max(0, Math.round((Date.now() - s0) / 1000));
+  const head = b.closed ? b.msg : "Google Drive에 올리는 중 " + done + "/" + b.items.length + " · " + sec(b.t0) + "초";
+  el.innerHTML = '<div class="up-head"><b>' + esc(head) + '</b><button type="button" class="btn sm ghost" data-up-close aria-label="닫기">×</button></div>' + b.items.map(it => {
+    const busy = it.state === "run" || it.state === "save", ind = busy && it.pct == null;
+    return '<div class="up-item up-' + it.state + '"><div class="up-name"><span>' + esc(it.name) + '</span><span class="ev-s">' + fmtSize(it.size) + '</span></div><div class="up-bar' + (ind ? ' ind' : '') + '"><i style="width:' + (ind ? 35 : Math.max(2, Math.min(100, it.pct || 0))) + '%"></i></div><div class="ev-s">' + esc(it.text) + (busy && it.t0 ? " · " + sec(it.t0) + "초" : "") + '</div></div>';
+  }).join("");
+}
+document.addEventListener("click", e => { if (e.target.closest("[data-up-close]")) { upBatch = null; upPaint(); } });
 /* 8MB 이하는 한 번에, 큰 파일은 4MB씩 나눠 Drive에 바로 이어 올린 뒤 {staged: 파일ID}로 넘김 */
 async function toUpload(f){
-  if (f.size <= DIRECT_MB * 1024 * 1024) return { name: f.name, base64: await blobB64(f) };
-  const s = await call("uploadStart", { name: f.name, size: f.size });
-  let off = 0, tries = 0;
-  while (off < f.size) {
-    const b64 = await blobB64(f.slice(off, Math.min(f.size, off + s.chunk)));
-    let r; try { r = await call("uploadChunk", { id: s.id, offset: off, base64: b64 }); tries = 0; } catch (e) { if (++tries > 2) throw new Error(f.name + ": " + e.message); continue; }
-    off = r.got; toast(f.name + " 올리는 중 " + Math.min(100, Math.round(off / f.size * 100)) + "%");
-    if (r.staged) return { name: f.name, staged: r.staged };
-  }
-  throw new Error(f.name + ": 업로드를 마치지 못했습니다");
+  const i = upIndex(f);
+  try {
+    if (f.size <= DIRECT_MB * 1024 * 1024) { upSet(i, { state: "run", pct: null, text: "파일 읽는 중" }); const b64 = await blobB64(f); upSet(i, { state: "save", pct: null, text: "Google Drive로 보내는 중" }); return { name: f.name, base64: b64 }; }
+    upSet(i, { state: "run", pct: 0, text: "업로드 준비 중" });
+    const s = await call("uploadStart", { name: f.name, size: f.size });
+    let off = 0, tries = 0;
+    while (off < f.size) {
+      const b64 = await blobB64(f.slice(off, Math.min(f.size, off + s.chunk)));
+      let r; try { r = await call("uploadChunk", { id: s.id, offset: off, base64: b64 }); tries = 0; } catch (e) { if (++tries > 2) throw new Error(f.name + ": " + e.message); upSet(i, { text: "연결이 끊겨 다시 보내는 중 (" + tries + "/2)" }); continue; }
+      off = r.got; const pct = Math.min(100, Math.round(off / f.size * 100)); upSet(i, { pct, text: pct + "% · " + fmtSize(off) + " / " + fmtSize(f.size) });
+      if (r.staged) { upSet(i, { state: "save", pct: 100, text: "Drive 폴더에 저장 중" }); return { name: f.name, staged: r.staged }; }
+    }
+    throw new Error(f.name + ": 업로드를 마치지 못했습니다");
+  } catch (e) { upSet(i, { state: "bad", text: "실패: " + e.message }); throw e; }
 }
+function upDone(f, err){ if (!upBatch) return; const i = upBatch.items.findIndex(x => x.name === f.name && x.size === f.size && (x.state === "save" || x.state === "run" || x.state === "wait")); if (i >= 0) upSet(i, err ? { state: "bad", text: "실패: " + err } : { state: "ok", pct: 100, text: "완료" }); }
 const fileInput = (keepNote = true, max = 1) => `<div class="fld"><span>첨부파일 (${keepNote ? "선택" : "필수"})</span></div>${filePicker(max)}${keepNote ? `<span class="ev-s">파일을 고르지 않으면 기존 첨부가 유지됩니다. 파일은 선생님 구글 드라이브에 저장됩니다.</span>` : ""}`;
 const driveLink = id => T() && id ? `<a class="btn sm ghost" href="https:\/\/drive.google.com/file/d/${esc(id)}/view" target="_blank" rel="noopener">Drive에서 열기 ↗</a>` : "";
 const fmtSize = n => n >= 1048576 ? (n / 1048576).toFixed(1) + "MB" : Math.max(1, Math.round(n / 1024)) + "KB";
@@ -1587,7 +1626,7 @@ function projectFolderDlg(id){const p=D.projects.find(x=>x.id===id);if(!p)return
 function projectFileDlg(id){
   const p = D.projects.find(x => x.id === id); if (!p) return;
   openDlg(p.team + " · 파일 올리기", fileInput(false, 5) + field("메모 (선택)", "memo", "", "text", 'maxlength="300" placeholder="예: 2차 회로도, 아두이노 코드 v3"') + `<p class="ev-s">파일은 이 팀에 연결된 Google Drive 자료실에 저장됩니다. ${p.folderUrl?`<a href="${esc(p.folderUrl)}" target="_blank" rel="noopener">저장 폴더 열기</a>`:"자료실이 없으면 팀 전용 Drive 폴더를 만듭니다."}</p>`, "올리기",
-    async fd => { if (!draftFiles.length) { toast("올릴 파일을 골라 주세요"); return false; } let ok = 0; const fail = []; for (const f of draftFiles) { try { await call("uploadProjectFile", { project: id, ...fd, upload: await fileToUpload(f) }); ok++; } catch (e) { fail.push(f.name); } } await reload(); toast(ok + "개 올렸습니다" + (fail.length ? " · 실패: " + fail.join(", ") : "")); return !fail.length; });
+    async fd => { if (!draftFiles.length) { toast("올릴 파일을 골라 주세요"); return false; } let ok = 0; const fail = []; for (const f of draftFiles) { try { await call("uploadProjectFile", { project: id, ...fd, upload: await fileToUpload(f) }); ok++; upDone(f); } catch (e) { fail.push(f.name); upDone(f, e.message); } } await reload(); toast(ok + "개 올렸습니다" + (fail.length ? " · 실패: " + fail.join(", ") : "")); return !fail.length; });
 }
 function projectDlg(p={}){openDlg(p.id?'팀프로젝트 수정':'팀프로젝트 등록',field('팀명','team',p.team||'','text','required maxlength="60"')+field('제품명·프로젝트명','product',p.product||'','text','required maxlength="120"')+`<div class="fld"><span>구성원</span><div class="memberpick">${D.roster.map(r=>`<label><input type="checkbox" name="who" value="${esc(r.name)}" ${(p.members||[]).includes(r.name)?'checked':''}> ${esc(r.name)}</label>`).join('')}</div></div>`+area('목표','goal',p.goal||'')+`<div class="fgrid">${field('마감일','due',p.due||'','date')}${sel('상태','status',['준비','진행중','완료','중지'].map(x=>[x,x]),p.status||'준비')}</div>`+field('팀 자료·결과물 링크','link',p.link||''),'저장',fd=>act('saveProject',{id:p.id,...fd,members:fd.who},'프로젝트를 저장했습니다'));}
 function taskDlg(project,id){const t=D.tasks.find(t=>t.id===id)||{},p=D.projects.find(p=>p.id===project);if(!p)return;openDlg(id?'팀 과제 수정':'팀 과제 등록',field('과제명','title',t.title||'','text','required maxlength="150"')+`<div class="fgrid">${sel('담당','assignee',[['','팀 전체'],...p.members.map(n=>[n,n])],t.assignee||'')}${field('마감일','due',t.due||'','date')}</div>`+area('메모·진행 내용','note',t.note||'')+`<label class="check"><input type="checkbox" name="done" ${t.done?'checked':''}> 완료</label>`,'저장',fd=>act('saveTask',{id,project,...fd},'과제를 저장했습니다'));}
@@ -1639,7 +1678,7 @@ function paintDrive(el, st){
   const up = d.canUpload ? `<button class="btn sm pri" data-drv-pick="${esc(root)}">+ Drive에 올리기</button><input type="file" multiple hidden data-drv-file="${esc(root)}">` : "";
   const teacherTools = T() ? (d.url ? `<a class="btn sm ghost" href="${esc(d.url)}" target="_blank" rel="noopener">Drive에서 열기 ↗</a>` : "") + (root === "materials" ? `<button class="btn sm ghost" data-drv-toggle="${d.studentUpload ? "0" : "1"}">학생 올리기 ${d.studentUpload ? "켜짐" : "꺼짐"}</button>` : "") : "";
   const rows = d.folders.map(f => `<button class="drv-row" data-drv-go="${esc(root)}|${esc(f.id)}"><span class="drv-ic">📁</span><span class="drv-nm">${esc(f.name)}${T() && f.target ? ` <span class="chip">${esc(TARGET[f.target] || "")}만</span>` : ""}</span><span class="ev-s">›</span></button>`).join("")
-    + d.files.map(f => `<div class="drv-row"><span class="drv-ic">${FILE_ICON(f.mime)}</span><span class="drv-nm"><span style="overflow-wrap:anywhere">${esc(f.name)}</span><span class="ev-s">${f.size ? fmtSize(f.size) + " · " : ""}${esc(f.updated)}${f.by ? " · " + esc(f.by) : ""}</span></span><button class="btn sm" data-drv-dl="${esc(root)}|${esc(f.id)}">받기</button>${driveLink(f.id)}</div>`).join("");
+    + d.files.map(f => `<div class="drv-row"><span class="drv-ic">${FILE_ICON(f.mime)}</span><span class="drv-nm"><span style="overflow-wrap:anywhere">${esc(f.name)}</span><span class="ev-s">${f.size ? fmtSize(f.size) + " · " : ""}${esc(f.updated)}${f.by ? ' · <b class="drv-by">' + esc(f.by) + '</b>' : ""}</span></span><button class="btn sm" data-drv-dl="${esc(root)}|${esc(f.id)}">받기</button>${driveLink(f.id)}</div>`).join("");
   el.innerHTML = `<div class="pad row" style="padding-bottom:6px"><b>📁</b>${crumbs}<span class="spacer"></span>${teacherTools}<button class="btn sm ghost" data-drv-refresh="${esc(root)}" title="새로고침">↻</button>${up}</div>`
     + (root.indexOf("project:")===0?`<div class="pad ev-s" style="padding-top:0" data-drv-checked>Drive 확인 ${esc(new Date(st.checked||Date.now()).toLocaleTimeString("ko-KR"))} · 30초마다 자동 확인</div>`:"")
     + (st.error ? `<div class="pad ev-s" style="padding-top:0">${esc(st.error)}</div>` : "")
@@ -1649,12 +1688,12 @@ function paintDrive(el, st){
 async function drvUpload(root, list){
   const st = drvState[root]; if (!st || !st.data) return; if (!st.data.canUpload) return toast("이 폴더에는 선생님만 올릴 수 있습니다");
   const files = Array.from(list || []).filter(f => f.size > 0); if (!files.length) return;
-  let ok = 0; const fail = [];
+  let ok = 0; const fail = []; upBegin(files);
   for (const f of files) {
-    if (f.size > MAX_MB * 1024 * 1024) { fail.push(f.name); continue; }
-    try { toast(f.name + " 올리는 중…"); const up = await toUpload(f); await call("driveUpload", { root, folder: st.data.folder, upload: up }); ok++; } catch (e) { fail.push(f.name + "(" + e.message + ")"); }
+    if (f.size > MAX_MB * 1024 * 1024) { fail.push(f.name); upDone(f, sizeLimitText() + " 초과"); continue; }
+    try { const up = await toUpload(f); await call("driveUpload", { root, folder: st.data.folder, upload: up }); ok++; upDone(f); } catch (e) { fail.push(f.name + "(" + e.message + ")"); upDone(f, e.message); }
   }
-  toast(ok + "개 올렸습니다" + (fail.length ? " · 실패: " + fail.join(", ") : "")); loadDrive(root, st.data.folder);
+  upEnd(); loadDrive(root, st.data.folder);
 }
 async function drvDownload(root, id){
   try {
@@ -1693,7 +1732,7 @@ function paintPhotos(){
  el.innerHTML='<div class="row" style="margin-bottom:14px">'+crumbs+'<span class="spacer"></span><button class="btn sm" data-photo-refresh>새로고침</button>'+(d.url?'<a class="btn sm ghost" href="'+esc(d.url)+'" target="_blank" rel="noopener">Drive에서 열기 ↗</a>':"")+(d.canUpload?'<button class="btn sm" data-photo-album>+ 앨범 만들기</button><button class="btn sm pri" data-photo-pick>+ 사진 올리기</button><input type="file" multiple accept="image/jpeg,image/png,image/gif,image/webp,image/heic" hidden id="photoFiles">':"")+'</div>'
  +(d.folders.length?'<h3>앨범</h3><div class="photo-grid albums">'+d.folders.map(f=>'<button class="photo-card" data-photo-folder="'+esc(f.id)+'">'+photoThumb('data-photo-cover="'+esc(f.id)+'"',f.name)+'<span class="photo-caption">📁 '+esc(f.name)+'</span></button>').join('')+'</div>':"")
  +'<div class="row" style="margin:16px 0 10px"><h3>사진</h3><span class="ev-s">'+d.photos.length+'장'+(d.limited?' 이상':'')+'</span></div>'
- +'<div data-photo-drop class="photo-drop">'+(d.photos.length?'<div class="photo-grid">'+d.photos.slice(0,st.limit).map(f=>'<button class="photo-card" data-photo-view="'+esc(f.id)+'" aria-label="'+esc(f.name)+' 크게 보기">'+photoThumb('data-photo-img="'+esc(f.id)+'" data-photo-updated="'+esc(f.updated)+'"',f.name)+'<span class="photo-caption">'+esc(f.name)+'</span></button>').join('')+'</div>':'<p class="ev-s">이 폴더에는 사진이 없습니다. '+(d.canUpload?'사진을 끌어다 놓거나 사진 올리기를 누르세요.':'위 앨범을 선택해 사진을 보세요.')+'</p>')+(d.canUpload?'<p class="ev-s" style="margin-top:12px">사진 여러 장을 여기로 끌어다 놓으면 현재 Drive 폴더에 저장됩니다.</p>':'')+'</div>'
+ +'<div data-photo-drop class="photo-drop">'+(d.photos.length?'<div class="photo-grid">'+d.photos.slice(0,st.limit).map(f=>'<button class="photo-card" data-photo-view="'+esc(f.id)+'" aria-label="'+esc(f.name)+' 크게 보기">'+photoThumb('data-photo-img="'+esc(f.id)+'" data-photo-updated="'+esc(f.updated)+'"',f.name)+'<span class="photo-caption">'+esc(f.name)+(f.by?'<span class="photo-by">'+esc(f.by)+'</span>':'')+'</span></button>').join('')+'</div>':'<p class="ev-s">이 폴더에는 사진이 없습니다. '+(d.canUpload?'사진을 끌어다 놓거나 사진 올리기를 누르세요.':'위 앨범을 선택해 사진을 보세요.')+'</p>')+(d.canUpload?'<p class="ev-s" style="margin-top:12px">사진 여러 장을 여기로 끌어다 놓으면 현재 Drive 폴더에 저장됩니다.</p>':'')+'</div>'
  +(d.photos.length>st.limit?'<button class="btn" style="margin-top:12px" data-photo-more>사진 더 보기</button>':"")+(d.limited?'<p class="ev-s">폴더당 최대 300개 파일·200개 앨범까지 미리 보여줍니다. 많은 사진은 하위 앨범으로 나눠 주세요.</p>':"");
  queuePhotoThumbs(el);
 }
@@ -1713,12 +1752,13 @@ function photoSetupDlg(){openDlg("사진첩 Drive 폴더 연결",'<p class="ev-s
 function photoAlbumDlg(){openDlg("새 앨범 만들기",field("앨범 이름","name","","text",'required maxlength="80" placeholder="예: 2026 현장체험"'),"만들기",async fd=>{try{const r=await call('photoCreateAlbum',{folder:photoState.folder,name:fd.name});await loadPhotos(r.folder);return true;}catch(e){toast(e.message);return false;}});}
 async function photoUploadFiles(list){
  if(!T()||!photoState.data?.canUpload)return;const folder=photoState.folder,files=Array.from(list||[]);let ok=0;const errors=[];
- for(const f of files){try{if(!/\.(jpe?g|png|gif|webp|heic)$/i.test(f.name))throw new Error('사진 파일만 올릴 수 있습니다');if(f.size>MAX_MB*1024*1024)throw new Error(sizeLimitText()+' 이하로 올려 주세요');toast(f.name+' 올리는 중…');await call('photoUpload',{folder,upload:await toUpload(f)});ok++;}catch(e){errors.push(f.name+': '+e.message);}}
- photoCache.clear();await loadPhotos(folder);toast(ok+'장 저장'+(errors.length?' · 실패 '+errors.join(', '):''));
+ upBegin(files);
+ for(const f of files){try{if(!/\.(jpe?g|png|gif|webp|heic)$/i.test(f.name))throw new Error('사진 파일만 올릴 수 있습니다');if(f.size>MAX_MB*1024*1024)throw new Error(sizeLimitText()+' 이하로 올려 주세요');await call('photoUpload',{folder,upload:await toUpload(f)});ok++;upDone(f);}catch(e){errors.push(f.name+': '+e.message);upDone(f,e.message);}}
+ upEnd(ok+'장 저장'+(errors.length?' · '+errors.length+'장 실패':''));photoCache.clear();await loadPhotos(folder);
 }
 async function photoViewer(id){
  const files=photoState.data?.photos||[],i=files.findIndex(f=>f.id===id),f=files[i];if(!f)return;
- openDlg(f.name,'<div class="row" style="margin-bottom:10px"><button type="button" class="btn sm" data-photo-prev="'+esc(files[(i-1+files.length)%files.length].id)+'" '+(files.length<2?'disabled':'')+'>‹ 이전</button><span class="ev-s">'+(i+1)+' / '+files.length+'</span><button type="button" class="btn sm" data-photo-next="'+esc(files[(i+1)%files.length].id)+'" '+(files.length<2?'disabled':'')+'>다음 ›</button><span class="spacer"></span><button type="button" class="btn sm" data-photo-dl="'+esc(f.id)+'">원본 받기</button></div><div class="photo-full"><img id="photoFull" alt="'+esc(f.name)+'" hidden><span id="photoFullStatus" class="ev-s">사진을 불러오는 중…</span></div>',"닫기",()=>{});
+ openDlg(f.name,'<div class="row" style="margin-bottom:10px"><button type="button" class="btn sm" data-photo-prev="'+esc(files[(i-1+files.length)%files.length].id)+'" '+(files.length<2?'disabled':'')+'>‹ 이전</button><span class="ev-s">'+(i+1)+' / '+files.length+(f.by?' · 올린 사람 '+esc(f.by):'')+(f.updated?' · '+esc(f.updated):'')+'</span><button type="button" class="btn sm" data-photo-next="'+esc(files[(i+1)%files.length].id)+'" '+(files.length<2?'disabled':'')+'>다음 ›</button><span class="spacer"></span><button type="button" class="btn sm" data-photo-dl="'+esc(f.id)+'">원본 받기</button></div><div class="photo-full"><img id="photoFull" alt="'+esc(f.name)+'" hidden><span id="photoFullStatus" class="ev-s">사진을 불러오는 중…</span></div>',"닫기",()=>{});
  const target=$('#photoFull');try{const r=await call('photoImage',{id,original:true});if(!target.isConnected)return;target.src='data:'+r.mime+';base64,'+r.base64;target.hidden=false;$('#photoFullStatus').textContent=r.original?'':'큰 사진은 Drive 미리보기입니다. 원본 받기로 전체 해상도를 확인하세요.';}catch(e){if(target.isConnected)$('#photoFullStatus').textContent=e.message;}
 }
 document.addEventListener('click',async e=>{const b=e.target.closest('[data-photo-view],[data-photo-prev],[data-photo-next],[data-photo-dl]');if(!b)return;const x=b.dataset;if(x.photoDl)return drvDownload('photos',x.photoDl);return photoViewer(x.photoView||x.photoPrev||x.photoNext);});
@@ -1934,6 +1974,7 @@ form.addEventListener("submit", async e => {
   fd.who = [...form.querySelectorAll("input[name=who]:checked")].map(x => x.value);
   const ok = $("#dlgOk"); ok.disabled = true; ok.textContent = "저장 중…";
   const r = await onSubmit(fd);
+  if (upBatch && !upBatch.closed) { if (r === false) upBatch.items.forEach(it => { if (it.state !== "ok") { it.state = "bad"; it.text = "저장하지 못했습니다"; } }); upEnd(); }
   if (r === false){ ok.disabled = false; ok.textContent = "다시 저장"; } else dlg.close();
 });
 const opt = (v, cur, l) => `<option value="${esc(v)}" ${v === cur ? "selected" : ""}>${esc(l)}</option>`;
