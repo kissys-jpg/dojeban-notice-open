@@ -25,6 +25,7 @@ const SCHOOL_YEAR = 0;               // 0이면 자동(3월~이듬해 2월). 바
 
 /* 앱이 새로 만드는 탭 (처음 열 때 자동 생성) */
 const APP_TABS = {
+  equipmentLoans: { name: "앱_기자재사용", head: ["ID", "기자재ID", "사용자", "수량", "사용일", "반납예정일", "용도", "장소", "등록자", "등록시각", "반납일", "반납처리자"] },
   roster:   { name: "앱_명단",     head: ["이름", "구분", "학년반", "PIN", "메모", "방과후참여", "노션포트폴리오"] },
   notices:  { name: "앱_공지",     head: ["ID", "작성시각", "대상", "제목", "내용", "고정", "확인기한"] },
   events:   { name: "앱_일정",     head: ["ID", "날짜", "종료일", "시간", "종류", "대상", "제목", "장소", "메모"] },
@@ -65,7 +66,7 @@ function doPost(e) {
 
 /** 웹페이지가 부르는 단 하나의 입구. 모든 요청은 로그인 정보를 함께 보냅니다.
  *  속도: 읽기는 캐시(최대 90초)를 쓰고, 쓰기 뒤에는 바뀐 탭만 캐시를 지운 다음 화면 데이터를 같은 응답에 담아 돌려줍니다. */
-const READ_ACTIONS_ = { todayTeamFiles:1, studentPrivate:1, purchaseSheetLinks:1, photoBrowse:1, photoImage:1, resourceLinks:1, companySetupInfo:1, companyTemplateFile:1, noticeImage:1, noticeDownload:1, login: 1, load: 1, downloadFile: 1, checkSetup: 1, legacyAttendance: 1 };
+const READ_ACTIONS_ = { equipmentLedger:1, todayTeamFiles:1, studentPrivate:1, purchaseSheetLinks:1, photoBrowse:1, photoImage:1, resourceLinks:1, companySetupInfo:1, companyTemplateFile:1, noticeImage:1, noticeDownload:1, login: 1, load: 1, downloadFile: 1, checkSetup: 1, legacyAttendance: 1 };
 const BUMP_ACTIONS_ = { syncCalendar: 1, saveSettings: 1, setAutomation: 1, createCalendar: 1, sendNotifications: 1 };
 function api(req) {
   const started=Date.now();
@@ -99,6 +100,9 @@ function api(req) {
 }
 function dispatch_(me, action, p) {
   switch (action) {
+    case "equipmentLedger": return equipmentLedger_(me);
+    case "borrowEquipment": return borrowEquipment_(me, p);
+    case "returnEquipment": return returnEquipment_(me, p);
     case "ack":          need_(me, "student"); return ack_(me, p.id);
     case "noticeImage": return noticeImage_(me,p);
     case "noticeDownload": return noticeDownload_(me,p);
@@ -176,6 +180,42 @@ function dispatch_(me, action, p) {
   }
 }
 function ok_(data) { return JSON.parse(JSON.stringify({ ok: true, data: data })); }
+/* 기자재는 첫 화면 응답에 넣지 않고 메뉴에서만 조회합니다. 현재 재고는 캐시 없이 확인합니다. */
+const EQUIPMENT_ = [{ id: "raspberry-pi", name: "라즈베리파이", total: 14 }];
+function equipmentRows_() {
+  USE_CACHE_ = false; MEMO_[APP_TABS.equipmentLoans.name] = null;
+  return rows_("equipmentLoans").map(function(r) { const v=r.v; return { row:r._row, id:v[0], item:v[1], user:v[2], qty:Number(v[3]), date:v[4], due:v[5], purpose:v[6], place:v[7], createdBy:v[8], createdAt:v[9], returned:v[10]||"", returnedBy:v[11]||"" }; });
+}
+function equipmentLedger_(me) {
+  const all=equipmentRows_();
+  return { items:EQUIPMENT_.map(function(e) { const used=all.filter(function(r){return r.item===e.id&&!r.returned;}).reduce(function(n,r){return n+r.qty;},0); return {id:e.id,name:e.name,total:e.total,used:used,available:e.total-used}; }), loans:all.filter(function(r){return me.role==="teacher"||r.user===me.name;}).map(function(r){delete r.row;return r;}).reverse() };
+}
+function borrowEquipment_(me,p) {
+  return withLock_(function() {
+    const item=EQUIPMENT_.find(function(e){return e.id===p.item;}); if(!item)throw new Error("기자재를 확인해 주세요");
+    const id=String(p.id||"");if(!/^eq[a-z0-9]{10,40}$/.test(id))throw new Error("등록 요청을 다시 열어 주세요");
+    const user=me.role==="teacher"?required_(p.user,80):me.name;
+    const qty=Number(p.qty);if(!Number.isInteger(qty)||qty<1||qty>item.total)throw new Error("수량은 1~"+item.total+"대의 정수로 입력해 주세요");
+    const date=dateValid_(p.date),due=dateValid_(p.due,true);if(date>today_())throw new Error("사용일은 오늘까지 입력할 수 있습니다");if(due&&due<date)throw new Error("반납예정일은 사용일 이후로 입력해 주세요");
+    const purpose=required_(p.purpose,200),place=clean_(p.place,80),all=equipmentRows_();
+    const prior=all.find(function(r){return r.id===id;});
+    if(prior){if(prior.createdBy!==me.name||prior.user!==user||prior.item!==item.id||prior.qty!==qty||prior.date!==date||prior.due!==due||prior.purpose!==purpose||prior.place!==place)throw new Error("이미 처리된 등록 요청입니다. 창을 다시 열어 주세요");return equipmentLedger_(me);}
+    const used=all.filter(function(r){return r.item===item.id&&!r.returned;}).reduce(function(n,r){return n+r.qty;},0);
+    if(qty>item.total-used)throw new Error("현재 사용 가능 수량은 "+(item.total-used)+"대입니다. 새로고침 후 확인해 주세요");
+    const sh=sheet_("equipmentLoans");sh.getRange(sh.getLastRow()+1,1,1,12).setNumberFormat("@");
+    append_("equipmentLoans",[id,item.id,user,qty,date,due,purpose,place,me.name,now_(),"",""]);
+    SpreadsheetApp.flush();
+    return equipmentLedger_(me);
+  });
+}
+function returnEquipment_(me,p) {
+  return withLock_(function() {
+    const row=equipmentRows_().find(function(r){return r.id===p.id;});if(!row)throw new Error("사용 기록을 찾지 못했습니다");
+    if(me.role!=="teacher"&&row.user!==me.name)throw new Error("본인 사용 기록만 반납할 수 있습니다");
+    if(!row.returned){const date=dateValid_(p.date);if(date<row.date||date>today_())throw new Error("반납일은 사용일부터 오늘 사이로 입력해 주세요");sheet_("equipmentLoans").getRange(row.row,11,1,2).setNumberFormat("@").setValues([[date,me.name]]);SpreadsheetApp.flush();}
+    return equipmentLedger_(me);
+  });
+}
 function need_(me, role) { if (me.role !== role) throw new Error(role === "teacher" ? "선생님만 할 수 있습니다" : "학생 계정으로 들어와 주세요"); }
 
 /* ===================== 로그인 ===================== */
@@ -301,7 +341,7 @@ function bumpAll_() {
   MEMO_ = {}; DIRTY_ = {};
 }
 function prefetchLoad_() {
-  const names = Object.keys(APP_TABS).map(function (k) { return APP_TABS[k].name; }).concat([TAB_BOM]);
+  const names = Object.keys(APP_TABS).filter(function(k){return k!=="equipmentLoans";}).map(function (k) { return APP_TABS[k].name; }).concat([TAB_BOM]);
   if (!CacheService.getScriptCache().get("sheetData_v1")) names.push(TAB_AFTER, TAB_PERSONAL);
   prefetch_(names);
 }
@@ -635,7 +675,7 @@ function homeLoad_(me){
  const sheet=scheduleData_(sy),inRange=function(e){return e.date&&e.date<=until&&(e.endDate||e.date)>=today;};
  const visible=function(target){return T||matches_(target,me.group);};
  const allNotices=rows_("notices").map(function(x){const v=x.v;return {id:v[0],at:v[1],target:targetKey_(v[2]),title:v[3],body:v[4],pinned:/^(o|y|고정|true)$/i.test(String(v[5]).trim()),due:v[6]};}).filter(function(n){return n.id&&visible(n.target);});
- const recent=allNotices.slice().sort(function(a,b){return String(b.at).localeCompare(String(a.at));}).slice(0,3),meta=noticeMeta_();
+ const recent=allNotices.filter(function(n){return !n.due||n.due>=today;}).sort(function(a,b){return String(b.at).localeCompare(String(a.at));}).slice(0,3),meta=noticeMeta_();
  const gm=String(sheet.personal.gradeLabel||"").match(/([1-3])/),target=gm?({1:"pre1",2:"pre2",3:"learner"})[gm[1]]:"all";
  const schedule=(sheet.after||[]).map(function(a){const aft=isAfterschoolTitle_(a.title);return Object.assign({},a,{afterschool:aft,info:!aft,allDay:!aft&&HOLIDAY_.test(a.title)});});
  const events=rows_("events").map(function(x){const v=x.v;return {id:v[0],date:v[1],endDate:v[2],time:v[3],kind:kindKey_(v[4]),target:targetKey_(v[5]),title:v[6],place:v[7],note:v[8]};}).filter(function(e){return e.id&&visible(e.target)&&inRange(e)&&e.kind!=="OJT"&&e.kind!=="OFF";});
@@ -1418,7 +1458,16 @@ function saveCertSchedule_(p) {return withLock_(function(){
   upsert_("certSchedule",id,[id,cert.id,phase,title,date,end,place,note,link,now_()]);return id;
 });}
 function deleteCertSchedule_(p){return withLock_(function(){const r=record_("certSchedule",p.id);sheet_("certSchedule").deleteRow(r._row);return true;});}
-function certificationCalendarEvents_(items){return (items||[]).map(function(e){const c=certification_(e.cert);return {id:"cert-"+e.id,key:"cert:"+e.id,uid:"cert-"+e.id,cert:c.id,title:"자격증 · "+c.name+" · "+e.phase+" · "+e.title,date:e.date,endDate:e.endDate||"",place:e.place||"",note:[e.note,e.link].filter(Boolean).join("\n")};});}
+function certificationCalendarEvents_(items){return (items||[]).map(function(e){
+ const c=certification_(e.cert),exam=["필기 시험","실기 시험","시험"].indexOf(e.phase)>=0,period=exam&&e.endDate&&e.endDate>e.date;
+ let date=e.date,endDate=e.endDate||"",hint="";
+ if(period){
+  let weekend="";for(let i=0;i<7;i++){const day=plusDate_(e.date,i);if(day>e.endDate)break;const dow=new Date(day+"T00:00:00Z").getUTCDay();if(dow===6||dow===0){weekend=day;break;}}
+  date=weekend||e.date;endDate="";hint="공식 시험 기간: "+e.date+" ~ "+e.endDate+"\n달력에는 "+(weekend?"기간 중 첫 주말":"주말이 없어 시작일")+"에 한 번만 표시합니다. 개인별 확정 시험일은 수험표에서 확인하세요.";
+ }
+ return {id:"cert-"+e.id,key:"cert:"+e.id,uid:"cert-"+e.id,cert:c.id,title:"자격증 · "+c.name+" · "+e.phase+" · "+e.title+(period?" (기간 안내)":""),date:date,endDate:endDate,place:e.place||"",note:[hint,e.note,e.link].filter(Boolean).join("\n")};
+});}
+
 function saveCertFolder_(p){return withLock_(function(){
   const cert=certification_(p.cert),props=PropertiesService.getScriptProperties(),key="CERT_FOLDER_"+cert.id;
   let f;
