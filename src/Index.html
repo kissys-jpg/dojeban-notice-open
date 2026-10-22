@@ -135,7 +135,8 @@ a.lnk{color:var(--info);overflow-wrap:anywhere}
 .notice{padding:16px;display:flex;flex-direction:column;gap:8px;border-bottom:1px solid var(--line)}
 .notice:last-child{border-bottom:0}
 .notice h3{font-size:16px;font-weight:600}
-.notice .body{white-space:pre-wrap;overflow-wrap:anywhere;max-width:68ch}
+.notice .body,.board-body{white-space:pre-wrap;overflow-wrap:anywhere;max-width:68ch}
+.board-body{line-height:1.85;margin:20px 0;font-size:15px}
 .notice .meta{font-size:12.5px;color:var(--muted)}
 .ack-ok{font-size:13px;color:var(--ok);font-weight:600}
 .readers{font-size:13px;color:var(--muted);background:var(--sunk);border-radius:8px;padding:8px 10px}
@@ -287,6 +288,7 @@ body{margin:0} [hidden]{display:none!important}
 .schedule-head{display:grid;grid-template-columns:minmax(0,1fr) minmax(300px,420px);gap:16px;align-items:start;margin-bottom:18px}.schedule-head h2{margin:0}.schedule-head p{margin:6px 0 12px}.schedule-sub{min-width:0;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}.schedule-sub>b{display:block;font-size:13px;margin-bottom:8px}.schedule-sub .row{gap:6px;flex-wrap:wrap}.schedule-sub details{margin-top:8px;font-size:12px}.schedule-sub summary{cursor:pointer;color:var(--muted)}
 @media(max-width:760px){.schedule-head{grid-template-columns:minmax(0,1fr);gap:12px}.schedule-sub .btn{white-space:normal}}
 .startup-header{padding:18px max(16px,calc((100vw - 928px)/2));background:var(--surface);border-bottom:1px solid var(--line)}.startup-header b{display:block}.startup-header span,.startup-main p{font-size:13px;color:var(--muted)}.startup-main{max-width:960px;margin:auto;padding:20px 16px;box-sizing:border-box}.startup-main h2{margin:0}.up-panel{position:fixed;right:16px;bottom:16px;z-index:40;width:min(380px,calc(100vw - 32px));max-height:60vh;overflow:auto;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 28px #0003;padding:10px 12px}.up-head{display:flex;align-items:center;gap:8px;margin-bottom:4px}.up-head b{flex:1;font-size:14px}.up-item{padding:6px 0;border-top:1px solid var(--line)}.up-name{display:flex;gap:8px;justify-content:space-between;font-size:13.5px}.up-name span:first-child{overflow-wrap:anywhere;min-width:0}.up-bar{height:6px;border-radius:6px;background:var(--line);overflow:hidden;margin:5px 0 3px}.up-bar i{display:block;height:100%;background:var(--accent);transition:width .3s}.up-bar.ind i{animation:upind 1.2s ease-in-out infinite}.up-ok .up-bar i{background:#2e9d5b}.up-bad .up-bar i{background:#c0392b;width:100%!important}.up-bad .ev-s{color:#c0392b}@keyframes upind{from{transform:translateX(-100%)}to{transform:translateX(290%)}}@media (prefers-reduced-motion:reduce){.up-bar.ind i{animation:none}}.photo-by{display:block;font-size:11.5px;color:var(--muted)}.drv-by{font-weight:600;color:var(--ink)}.my-todo .todo-add{margin-top:8px;gap:6px;flex-wrap:wrap}.my-todo .todo-add input[type=text]{flex:1 1 160px;min-width:0}.my-todo .todo-add input[type=date]{width:140px}.todo-list{list-style:none;margin:8px 0 0;padding:0}.todo-item{display:flex;align-items:center;gap:8px;padding:6px 0;border-top:1px solid var(--line)}.todo-item label{flex:1;display:flex;gap:8px;align-items:flex-start;min-width:0;overflow-wrap:anywhere;cursor:pointer}.todo-item.done label span{text-decoration:line-through;color:var(--muted)}.todo-item .late{color:#c0392b;font-weight:600}.todo-memo{margin-top:8px}.todo-memo summary{cursor:pointer;font-size:13px;color:var(--muted)}.todo-memo textarea{width:100%;box-sizing:border-box;margin-top:6px}.mh-item{display:flex;align-items:center;gap:6px;padding:6px 0;border-bottom:1px solid var(--line)}.mh-item label{flex:1;min-width:0}.sp{margin:12px 0 4px;max-width:520px}.sp-bar{height:6px;border-radius:6px;background:var(--line);overflow:hidden}.sp-bar i{display:block;height:100%;width:3%;background:var(--accent);transition:width .25s linear}.sp-steps{list-style:none;margin:10px 0 4px;padding:0;font-size:13.5px}.sp-steps li{padding:2px 0 2px 22px;position:relative;color:var(--muted)}.sp-steps li::before{content:"";position:absolute;left:3px;top:8px;width:9px;height:9px;border-radius:50%;border:2px solid var(--line);box-sizing:border-box}.sp-steps li.done::before{background:var(--accent);border-color:var(--accent)}.sp-steps li.now{color:var(--ink);font-weight:600}.sp-steps li.now::before{border-color:var(--accent);animation:spp 1s ease-in-out infinite}.sp-steps b{font-variant-numeric:tabular-nums;font-weight:600;color:var(--accent)}#spNote{font-size:13px;color:var(--muted);margin:2px 0}@keyframes spp{50%{opacity:.3}}@media (prefers-reduced-motion:reduce){.sp-steps li.now::before{animation:none}}.upd b{font-variant-numeric:tabular-nums}.startup-placeholder{height:100px;margin-top:14px;border-radius:12px;border:1px solid var(--line);background:var(--surface)}
+.drv-row{flex-wrap:wrap}.drv-row .drv-nm{flex:1 1 140px}
 </style>
 </head>
 <body>
@@ -526,6 +528,7 @@ function baseTabs(){
   else t = [["today","오늘"],["notices","공지"],["schedule","일정"],["anon","익명게시판"],["purchases","구매요청"],["portfolio","포트폴리오"],["me","내 정보"]];
   t.splice(t.findIndex(([k])=>k==="portfolio"),0,["projects","프로젝트"],["contest","대회"],["cert","자격증"],["company","기업정보"],["photos","사진첩"]);
   const si = t.findIndex(x => x[0] === "schedule"); t.splice(si < 0 ? 1 : si + 1, 0, ["school", "시간표·급식"]);
+  t.splice(t.findIndex(([k])=>k==="purchases")+1,0,["equipment","실습기자재"]);
   return t;
 }
 function go(k){
@@ -767,7 +770,7 @@ function todayActionItems(){
  }else{
   (D.portfolio||[]).filter(p=>p.status==="보완요청"||p.status==="보완").forEach(p=>push("portfolio",p.id,p.title,"포트폴리오 보완 요청 · 피드백 확인",0));
   (D.experienceIntros||[]).filter(i=>i.status==="보완요청").forEach(i=>push("intro",i.id,"직무체험 자기소개 보완",i.companyName,0));
-  (D.notices||[]).filter(n=>!(D.myAcks||[]).includes(n.id)).forEach(n=>push("notice",n.id,n.title,n.due?"공지 확인 · "+fmtMD(n.due)+"까지":"아직 확인하지 않은 공지",2,n.due));
+  (D.notices||[]).filter(n=>(!n.due||n.due>=TODAY)&&!(D.myAcks||[]).includes(n.id)).forEach(n=>push("notice",n.id,n.title,n.due?"공지 확인 · "+fmtMD(n.due)+"까지":"아직 확인하지 않은 공지",2,n.due));
  }
  (D.tasks||[]).filter(t=>!t.done&&projects.has(t.project)&&!["완료","중지"].includes(projects.get(t.project).status)&&(T()||!t.assignee||t.assignee===D.me.name)).forEach(t=>push("task",t.id,t.title,(t.due?(t.due<TODAY?"마감 지남 · ":t.due===TODAY?"오늘 마감 · ":"")+fmtMD(t.due)+"까지 · ":"마감 미정 · ")+projects.get(t.project).team,t.due&&t.due<=TODAY?0:1,t.due));
  return items.sort((a,b)=>a.priority-b.priority||String(a.date).localeCompare(String(b.date))).slice(0,20);
@@ -857,7 +860,7 @@ $('#main').addEventListener('click',e=>{const b=e.target.closest('button');if(!b
 /* 프로젝트 게시판: 프로젝트·자격증 내용과 자료 공유 */
 let projSub=null,boardOpen=null,boardFilter='all',boardQuery='',boardDraftFiles=[];
 function boardList(){const q=boardQuery.trim().toLowerCase();return [...(D.boardPosts||[])].filter(p=>(boardFilter==='all'||p.category===boardFilter)&&[p.title,p.subject,p.body].join(' ').toLowerCase().includes(q)).sort((a,b)=>String(b.updated).localeCompare(String(a.updated)));}
-function boardFilesHtml(files){return (files||[]).map(f=>'<div class="row" style="margin-top:8px"><span style="flex:1;overflow-wrap:anywhere">'+esc(f.name)+' <small class="muted">'+fmtSize(f.size)+'</small></span><button class="btn sm" data-file="'+esc(f.id)+'">받기</button></div>').join('');}
+function boardFilesHtml(files){return (files||[]).map(f=>'<div class="row" style="margin-top:8px"><span style="flex:1;overflow-wrap:anywhere">'+esc(f.name)+' <small class="muted">'+fmtSize(f.size)+'</small></span><button class="btn sm" data-file="'+esc(f.id)+'">받기</button>'+documentPreviewButton(f,'file')+'</div>').join('');}
 /* 프로젝트: 공유 게시판(전체 공개)과 우리 팀(구성원 전용 과제·자료함)을 한 메뉴로 */
 function projHubTabs(){ const hasTeam=T()||(D.projects&&D.projects.length>0); return [['board','공유 게시판']].concat(hasTeam?[['team',T()?'프로젝트 관리':'우리 팀']]:[]).concat([['materials','자료실'],['tools','무료 도구']]); }
 function projHubBar(){ const cur=tab==='materials'?'materials':projSub; return '<div class="row" style="margin-bottom:12px" aria-label="프로젝트 보기">'+projHubTabs().map(([k,l])=>'<button class="chipbtn" data-projsub="'+k+'" aria-pressed="'+(cur===k)+'">'+l+'</button>').join('')+'</div>'; }
@@ -886,12 +889,12 @@ function vCertTop(){
  }else if(certView==='posts'){
   const posts=(D.boardPosts||[]).filter(p=>p.category==='자격증'&&p.subject===c.name);
   body=extraHead(c.name+' 준비 게시글','질문, 준비 방법과 학습 자료를 함께 나눕니다.','<button class="btn pri" data-cert-post-new="'+esc(c.id)+'">+ 글쓰기</button>')+'<section class="panel">'+(posts.length?posts.map(p=>'<button class="listbtn" data-board-open="'+esc(p.id)+'"><h3>'+esc(p.title)+'</h3><p>'+esc(p.body.slice(0,100))+'</p></button>').join(''):emptyBox('아직 준비 게시글이 없습니다'))+'</section>';
- }else body=extraHead(c.name+' 시험 일정','회차·과목별 접수, 시험, 합격 발표 일정을 확인하세요.',T()?'<button class="btn pri" data-cert-event-new="'+esc(c.id)+'">+ 일정 등록</button>':'')+'<section class="panel pad">'+certScheduleHtml((D.certSchedule||[]).filter(e=>e.cert===c.id).sort((a,b)=>a.date.localeCompare(b.date)))+'</section>';
+ }else body=extraHead(c.name+' 시험 일정','공식 시험 기간을 표시합니다. 달력에는 기간 중 첫 주말에 한 번만 표시하며, 개인별 시험일은 수험표를 확인하세요.',T()?'<button class="btn pri" data-cert-event-new="'+esc(c.id)+'">+ 일정 등록</button>':'')+'<section class="panel pad">'+certScheduleHtml((D.certSchedule||[]).filter(e=>e.cert===c.id).sort((a,b)=>a.date.localeCompare(b.date)))+'</section>';
  return top+picker+nav+body+relatedNotices("cert:"+c.id,c.name);
 }
 function certScheduleHtml(items,withName=false){
  if(!items.length)return emptyBox('등록된 일정이 없습니다','공식 공고를 확인한 뒤 일정을 등록해 주세요.');
- return items.map(e=>{const c=(D.certifications||[]).find(c=>c.id===e.cert);return '<article style="border-bottom:1px solid var(--line);padding:12px 0;overflow-wrap:anywhere"><div class="row"><span class="chip">'+esc(e.phase)+'</span><span class="ev-s">'+esc(e.date)+(e.endDate&&e.endDate!==e.date?' ~ '+esc(e.endDate):'')+'</span></div><h3>'+(withName&&c?esc(c.name)+' · ':'')+esc(e.title)+'</h3>'+(e.place?'<p class="ev-s">'+esc(e.place)+'</p>':'')+'<div class="body">'+esc(e.note||'')+'</div><div class="row" style="margin-top:8px">'+extraLink(e.link)+'<button class="btn sm" data-cert-calendar="'+esc(e.id)+'">달력 보기</button>'+(T()?'<button class="btn sm" data-cert-event-edit="'+esc(e.id)+'">수정</button><button class="btn sm ghost danger" data-cert-event-delete="'+esc(e.id)+'">삭제</button>':'')+'</div></article>';}).join('');
+ return items.map(e=>{const c=(D.certifications||[]).find(c=>c.id===e.cert);return '<article style="border-bottom:1px solid var(--line);padding:12px 0;overflow-wrap:anywhere"><div class="row"><span class="chip">'+esc(e.phase)+'</span><span class="ev-s">'+esc(e.date)+(e.endDate&&e.endDate!==e.date?' ~ '+esc(e.endDate):'')+'</span></div><h3>'+(withName&&c?esc(c.name)+' · ':'')+esc(e.title)+'</h3>'+(e.place?'<p class="ev-s">'+esc(e.place)+'</p>':'')+'<div class="body" style="white-space:pre-wrap">'+esc(e.note||'')+'</div><div class="row" style="margin-top:8px">'+extraLink(e.link)+'<button class="btn sm" data-cert-calendar="'+esc(e.id)+'">달력 보기</button>'+(T()?'<button class="btn sm" data-cert-event-edit="'+esc(e.id)+'">수정</button><button class="btn sm ghost danger" data-cert-event-delete="'+esc(e.id)+'">삭제</button>':'')+'</div></article>';}).join('');
 }
 function certEventDlg(e){
  const c=(D.certifications||[]).find(c=>c.id===e.cert);if(!c)return;
@@ -909,7 +912,7 @@ $('#main').addEventListener('click',async e=>{
  if(x.certEventNew)return certEventDlg({cert:x.certEventNew});
  if(x.certEventEdit)return certEventDlg((D.certSchedule||[]).find(e=>e.id===x.certEventEdit)||{});
  if(x.certEventDelete){if(!arm(b,'cert-'+x.certEventDelete))return;return act('deleteCertSchedule',{id:x.certEventDelete},'자격증 일정을 삭제했습니다');}
- if(x.certCalendar){const ev=(D.certSchedule||[]).find(e=>e.id===x.certCalendar);if(ev){calSel=ev.date;calMonth=parse(ev.date);calMonth.setDate(1);schedMode='cal';go('schedule');}return;}
+ if(x.certCalendar){const ev=(D.certCalendar||[]).find(e=>e.key==='cert:'+x.certCalendar)||(D.certSchedule||[]).find(e=>e.id===x.certCalendar);if(ev){calSel=ev.date;calMonth=parse(ev.date);calMonth.setDate(1);schedMode='cal';go('schedule');}return;}
  if(x.certInfo){certSelected=x.certInfo;certView='schedule';boardOpen=null;return go('cert');}
  if(x.certPostNew){const c=(D.certifications||[]).find(c=>c.id===x.certPostNew);if(c)return boardDlg({category:'자격증',subject:c.name,status:'준비'});}
  if(x.certFolder)return certFolderDlg(x.certFolder);
@@ -945,7 +948,7 @@ function vProjectHub(){
 function vBoard(lock){
  const posts=D.boardPosts||[],comments=D.boardComments||[];
  if(boardOpen){const p=posts.find(p=>p.id===boardOpen);if(!p){boardOpen=null;return vBoard();}const cs=comments.filter(c=>c.post===p.id).sort((a,b)=>String(a.at).localeCompare(String(b.at)));
- return '<div class="sec-h"><button class="btn ghost" data-board-back>‹ 목록</button>'+(T()||p.mine?'<div class="row"><button class="btn" data-board-edit="'+esc(p.id)+'">수정</button><button class="btn ghost danger" data-board-delete="'+esc(p.id)+'">삭제</button></div>':'')+'</div><section class="panel pad"><div class="row"><span class="chip">'+esc(p.category)+'</span><span class="chip">'+esc(p.status)+'</span><span class="meta">전체 공유</span></div><h2>'+esc(p.title)+'</h2><p class="ev-s">'+esc(p.subject||'')+(p.date?' · 관련일 '+esc(fmtMD(p.date)):'')+' · '+esc(p.author)+' · '+esc(p.updated)+'</p>'+contestBoardDetails(p)+(p.category==='대회'?relatedNotices('contest:'+p.id,p.subject||p.title):'')+'<div class="body">'+esc(p.body)+'</div><div class="row" style="margin-top:12px">'+extraLink(p.link)+'</div>'+(p.files.length?'<h3>공유 자료</h3>'+boardFilesHtml(p.files):'')+'</section><section class="panel"><div class="pad"><h3>댓글 · '+cs.length+'</h3></div>'+cs.map(c=>'<div class="msg"><b>'+esc(c.author)+'</b> <span class="ev-s">'+esc(c.at)+'</span><p>'+esc(c.body)+'</p>'+(T()||c.mine?'<button class="btn sm ghost danger" data-board-comment-delete="'+esc(c.id)+'">댓글 삭제</button>':'')+'</div>').join('')+'<form id="boardCommentForm" class="pad"><label class="fld"><span>질문·의견</span><textarea id="boardCommentText" required maxlength="1500"></textarea></label><button class="btn pri" type="submit">댓글 달기</button></form></section>';
+ return '<div class="sec-h"><button class="btn ghost" data-board-back>‹ 목록</button>'+(T()||p.mine?'<div class="row"><button class="btn" data-board-edit="'+esc(p.id)+'">수정</button><button class="btn ghost danger" data-board-delete="'+esc(p.id)+'">삭제</button></div>':'')+'</div><section class="panel pad"><div class="row"><span class="chip">'+esc(p.category)+'</span><span class="chip">'+esc(p.status)+'</span><span class="meta">전체 공유</span></div><h2>'+esc(p.title)+'</h2><p class="ev-s">'+esc(p.subject||'')+(p.date?' · 관련일 '+esc(fmtMD(p.date)):'')+' · '+esc(p.author)+' · '+esc(p.updated)+'</p>'+contestBoardDetails(p)+(p.category==='대회'?relatedNotices('contest:'+p.id,p.subject||p.title):'')+'<div class="body board-body">'+esc(p.body)+'</div><div class="row" style="margin-top:12px">'+extraLink(p.link)+'</div>'+(p.files.length?'<h3>공유 자료</h3>'+boardFilesHtml(p.files):'')+'</section><section class="panel"><div class="pad"><h3>댓글 · '+cs.length+'</h3></div>'+cs.map(c=>'<div class="msg"><b>'+esc(c.author)+'</b> <span class="ev-s">'+esc(c.at)+'</span><p>'+esc(c.body)+'</p>'+(T()||c.mine?'<button class="btn sm ghost danger" data-board-comment-delete="'+esc(c.id)+'">댓글 삭제</button>':'')+'</div>').join('')+'<form id="boardCommentForm" class="pad"><label class="fld"><span>질문·의견</span><textarea id="boardCommentText" required maxlength="1500"></textarea></label><button class="btn pri" type="submit">댓글 달기</button></form></section>';
  }
  const prevFilter=boardFilter;if(lock)boardFilter=lock;const list=boardList();boardFilter=prevFilter;return (lock?extraHead('자격증','자격증 시험 일정, 준비 자료, 합격 후기를 함께 나눕니다. 시험일을 넣으면 달력에도 표시됩니다.','<button class="btn pri" data-cert-new>+ 자격증 글쓰기</button>'):extraHead('공유 게시판','프로젝트 결과물, 자격증 준비 자료, 대회 정보와 일정을 함께 공유합니다.','<button class="btn pri" data-board-new>+ 글쓰기</button>'))+'<section class="panel pad">'+(lock?'':'<div class="row" aria-label="게시판 구분">'+[['all','전체'],['프로젝트','프로젝트'],['자격증','자격증'],['대회','대회']].map(([k,l])=>'<button class="chipbtn" data-board-filter="'+k+'" aria-pressed="'+(boardFilter===k)+'">'+l+'</button>').join('')+'</div>')+'<label class="fld" style="margin-top:12px"><span>검색</span><input type="search" id="boardQuery" value="'+esc(boardQuery)+'" placeholder="제목·프로젝트명·자격증명·대회명·내용 검색"></label><p class="ev-s">이 게시판의 새 글과 첨부는 전체 학생에게 공유됩니다. 개인 활동 기록은 포트폴리오에 남겨 주세요.</p></section><section class="panel">'+(list.length?list.map(p=>'<button class="listbtn" data-board-open="'+esc(p.id)+'"><div><div class="row"><span class="chip">'+esc(p.category)+'</span><span class="chip">'+esc(p.status)+'</span></div><h3>'+esc(p.title)+'</h3><div class="ev-s">'+esc(p.subject||'')+(p.date?' · '+esc(fmtMD(p.date)):'')+'</div><p>'+esc(p.body.slice(0,100))+(p.body.length>100?'…':'')+'</p><div class="ev-s">'+esc(p.author)+' · '+esc(p.updated)+' · 첨부 '+p.files.length+'개 · 댓글 '+comments.filter(c=>c.post===p.id).length+'</div></div></button>').join(''):emptyBox(posts.length?'검색 결과가 없습니다':'아직 공유한 글이 없습니다','글쓰기로 프로젝트·자격증·대회 정보를 올려 주세요.'))+'</section>';
 }
@@ -986,7 +989,7 @@ function vToday(){
   const visibleEvents=allEvents().filter(e=>!isScheduleTrainingTime(e));
   const todays = sortEv(visibleEvents.filter(e => e.date <= TODAY && (e.endDate || e.date) >= TODAY));
   const soon = sortEv(visibleEvents.filter(e => e.date > TODAY && e.date <= addDays(TODAY, 14)));
-  const notices = [...D.notices].sort((a,b)=>String(b.at).localeCompare(String(a.at))).slice(0, 3);
+  const notices = D.notices.filter(n=>!n.due||n.due>=TODAY).sort((a,b)=>String(b.at).localeCompare(String(a.at))).slice(0, 3);
   const sub = isGuest() ? "로그인 없이 보는 중 · 전체 공개 공지·급식·학교 일정만 보입니다." : T() ? "오늘 일정과 최근 공지입니다." : `${esc(D.me.name)} · ${esc(GROUP[myGroup()] || "")}에 해당하는 일정과 공지만 보여 줍니다.`;
   let h = `<div class="sec-h"><div><h2>${fmtMD(TODAY)} 오늘</h2><p>${sub}</p></div><div class="row">${isGuest()?'<button class="btn sm pri" data-login>로그인</button>':""}${canMyHome()?'<button class="btn sm" data-myhome-edit>화면 꾸미기</button>':""}<button class="btn sm" data-projsub="tools">무료 도구</button><button class="btn sm ghost" data-reload>새로고침</button></div></div>`;
   const cards={
@@ -1010,7 +1013,7 @@ function vToday(){
       <div class="stat"><div class="v">${(D.anonPosts || []).length}</div><div class="k">익명게시글</div></div>
       <div class="stat"><div class="v">${D.purchases.filter(p => p.state === "요청").length}</div><div class="k">새 구매요청</div></div></div>`;
   } else if(!T()&&!isGuest()) {
-    const un = D.notices.filter(n => !D.myAcks.includes(n.id)).length;
+    const un = D.notices.filter(n => (!n.due||n.due>=TODAY)&&!D.myAcks.includes(n.id)).length;
     if (un) h += `<div class="banner row"><span>확인하지 않은 공지 ${un}건</span><span class="spacer"></span><button class="btn sm" data-go="notices">공지 보기</button></div>`;
 
   }
@@ -1028,7 +1031,7 @@ function noticeExtras(n){
  +(n.eventDate?'<div class="row" style="margin:8px 0"><span class="ev-s">일정 '+esc(n.eventDate)+(n.eventEnd&&n.eventEnd!==n.eventDate?' ~ '+esc(n.eventEnd):'')+(n.place?' · '+esc(n.place):'')+'</span><button class="btn sm" data-notice-calendar="'+esc(n.id)+'">달력 보기</button></div>':'')
  +(images.length?'<div class="notice-gallery">'+images.map(f=>'<button type="button" class="notice-photo" data-notice-photo="'+esc(f.id)+'" aria-label="'+esc(f.name)+' 크게 보기"><img data-notice-img="'+esc(f.id)+'" alt="'+esc(f.name)+'" hidden><span class="ev-s" data-notice-img-status>사진 불러오는 중…</span></button>').join('')+'</div>':'')
  +((n.links||[]).length?'<div class="row" style="margin:10px 0">'+n.links.map((link,i)=>'<a class="btn sm" href="'+esc(safeUrl(link))+'" target="_blank" rel="noopener noreferrer">관련 링크 '+(i+1)+' ↗</a>').join('')+'</div>':'')
- +(files.length?'<div class="notice-attachments">'+files.map(f=>'<div class="row"><span style="flex:1;min-width:0;overflow-wrap:anywhere">'+esc(f.name)+' <span class="ev-s">'+fmtSize(f.size)+'</span></span><button class="btn sm" data-notice-file="'+esc(f.id)+'">원본 받기</button></div>').join('')+'</div>':'');
+ +(files.length?'<div class="notice-attachments">'+files.map(f=>'<div class="row"><span style="flex:1;min-width:0;overflow-wrap:anywhere">'+esc(f.name)+' <span class="ev-s">'+fmtSize(f.size)+'</span></span><button class="btn sm" data-notice-file="'+esc(f.id)+'">원본 받기</button>' + documentPreviewButton(f,'notice') + '</div>').join('')+'</div>':'');
 }
 function relatedNotices(relation,label){
  const items=sortedNotices().filter(n=>n.relation===relation);
@@ -1641,7 +1644,7 @@ function driveBox(){
   if (err) return `<section class="panel">${head}<div class="pad ev-s">${esc(err.error)}</div></section>`;
   if (!list.length) return `<section class="panel">${head}${emptyBox(s.materialFolder ? "폴더에 파일이 없습니다" : "자료실 드라이브 폴더가 연결되지 않았습니다", s.materialFolder ? "폴더에 파일을 넣으면 10분 안에 보입니다 (새로고침하면 바로)." : "자료실의 ‘Drive 연결 설정’ 버튼으로 폴더를 연결하거나, 파일을 끌어다 놓아 새 자료실 폴더를 만드세요.")}</section>`;
   return `<section class="panel">${head}
-    ${Object.entries(groups).map(([g, fs]) => `<div class="pad" style="padding-bottom:0"><b>${esc(g)}</b></div>${fs.map(f => `<div class="row" style="padding:8px 16px;border-top:1px solid var(--line)"><div style="flex:1;min-width:0"><div style="overflow-wrap:anywhere">${esc(f.name)}</div><div class="ev-s">${esc(MIME_LABEL(f.mime))}${f.size ? " · " + fmtSize(f.size) : ""} · ${esc(f.updated)}${T() ? " · " + esc(TARGET[f.target] || "전체") : ""}</div></div><button class="btn sm" data-dfile="${esc(f.id)}">받기</button>${driveLink(f.id)}</div>`).join("")}`).join("")}</section>`;
+    ${Object.entries(groups).map(([g, fs]) => `<div class="pad" style="padding-bottom:0"><b>${esc(g)}</b></div>${fs.map(f => `<div class="row" style="padding:8px 16px;border-top:1px solid var(--line)"><div style="flex:1;min-width:0"><div style="overflow-wrap:anywhere">${esc(f.name)}</div><div class="ev-s">${esc(MIME_LABEL(f.mime))}${f.size ? " · " + fmtSize(f.size) : ""} · ${esc(f.updated)}${T() ? " · " + esc(TARGET[f.target] || "전체") : ""}</div></div><button class="btn sm" data-dfile="${esc(f.id)}">받기</button>${documentPreviewButton(f,"material-file")}${driveLink(f.id)}</div>`).join("")}`).join("")}</section>`;
 }
 function notionBox(){
   const s = D.settings || {}, list = (D.notionPages || []).filter(x => !x.error), err = (D.notionPages || []).find(x => x.error);
@@ -1678,7 +1681,7 @@ function paintDrive(el, st){
   const up = d.canUpload ? `<button class="btn sm pri" data-drv-pick="${esc(root)}">+ Drive에 올리기</button><input type="file" multiple hidden data-drv-file="${esc(root)}">` : "";
   const teacherTools = T() ? (d.url ? `<a class="btn sm ghost" href="${esc(d.url)}" target="_blank" rel="noopener">Drive에서 열기 ↗</a>` : "") + (root === "materials" ? `<button class="btn sm ghost" data-drv-toggle="${d.studentUpload ? "0" : "1"}">학생 올리기 ${d.studentUpload ? "켜짐" : "꺼짐"}</button>` : "") : "";
   const rows = d.folders.map(f => `<button class="drv-row" data-drv-go="${esc(root)}|${esc(f.id)}"><span class="drv-ic">📁</span><span class="drv-nm">${esc(f.name)}${T() && f.target ? ` <span class="chip">${esc(TARGET[f.target] || "")}만</span>` : ""}</span><span class="ev-s">›</span></button>`).join("")
-    + d.files.map(f => `<div class="drv-row"><span class="drv-ic">${FILE_ICON(f.mime)}</span><span class="drv-nm"><span style="overflow-wrap:anywhere">${esc(f.name)}</span><span class="ev-s">${f.size ? fmtSize(f.size) + " · " : ""}${esc(f.updated)}${f.by ? ' · <b class="drv-by">' + esc(f.by) + '</b>' : ""}</span></span><button class="btn sm" data-drv-dl="${esc(root)}|${esc(f.id)}">받기</button>${driveLink(f.id)}</div>`).join("");
+    + d.files.map(f => `<div class="drv-row"><span class="drv-ic">${FILE_ICON(f.mime)}</span><span class="drv-nm"><span style="overflow-wrap:anywhere">${esc(f.name)}</span><span class="ev-s">${f.size ? fmtSize(f.size) + " · " : ""}${esc(f.updated)}${f.by ? ' · <b class="drv-by">' + esc(f.by) + '</b>' : ""}</span></span><button class="btn sm" data-drv-dl="${esc(root)}|${esc(f.id)}">받기</button>${documentPreviewButton(f,root)}${driveLink(f.id)}</div>`).join("");
   el.innerHTML = `<div class="pad row" style="padding-bottom:6px"><b>📁</b>${crumbs}<span class="spacer"></span>${teacherTools}<button class="btn sm ghost" data-drv-refresh="${esc(root)}" title="새로고침">↻</button>${up}</div>`
     + (root.indexOf("project:")===0?`<div class="pad ev-s" style="padding-top:0" data-drv-checked>Drive 확인 ${esc(new Date(st.checked||Date.now()).toLocaleTimeString("ko-KR"))} · 30초마다 자동 확인</div>`:"")
     + (st.error ? `<div class="pad ev-s" style="padding-top:0">${esc(st.error)}</div>` : "")
@@ -1695,6 +1698,34 @@ async function drvUpload(root, list){
   }
   upEnd(); loadDrive(root, st.data.folder);
 }
+function documentPreviewKind(f){
+ const mime=String(f.mime||""),name=String(f.name||"");
+ if(mime==="application/pdf"||/\.pdf$/i.test(name))return "pdf";
+ if(/^image\/(png|jpeg|gif|webp)$/.test(mime))return "image";
+ if(/^(text\/plain|text\/csv)$/.test(mime))return "text";
+ if(/^application\/vnd\.google-apps\.(document|spreadsheet|presentation|drawing)$/.test(mime)||/\.(docx?|xlsx?|pptx?|odt|ods|odp)$/i.test(name))return "drive";
+ return "";
+}
+function documentPreviewButton(f,root){
+ const kind=documentPreviewKind(f);if(!kind)return "";
+ if(kind==="drive")return '<a class="btn sm" href="https:\/\/drive.google.com/file/d/'+esc(encodeURIComponent(f.id))+'/view" target="_blank" rel="noopener noreferrer" title="공유받은 구글 계정으로 열기">바로보기 ↗</a>';
+ return '<button class="btn sm" data-document-preview="'+esc(root)+'|'+esc(f.id)+'">바로보기</button>';
+}
+let documentPreviewUrl=null,documentPreviewTicket=0;
+async function previewDocument(root,id){
+ const ticket=++documentPreviewTicket;
+ openDlg('문서 바로보기','<p data-document-status>문서를 불러오는 중…</p><div data-document-content></div>','닫기',()=>true);
+ const content=form.querySelector('[data-document-content]'),status=form.querySelector('[data-document-status]');
+ try{
+  const parts=[];let off=0,r;
+  do{r=await call(root==='notice'?'noticeDownload':root==='file'?'downloadFile':root==='material-file'?'driveMaterialFile':'driveDownload',{root,id,offset:off});if(ticket!==documentPreviewTicket||!content.isConnected||!dlg.open)return;const b=Uint8Array.from(atob(r.base64||''),c=>c.charCodeAt(0));parts.push(b);off+=b.length;if(!b.length&&!r.done)throw Error('문서를 읽지 못했습니다');}while(!r.done&&off<r.size);
+  const kind=documentPreviewKind(r);if(!['pdf','image','text'].includes(kind))throw Error('바로보기를 지원하지 않는 형식입니다. 원본 받기를 이용해 주세요.');
+  if(kind==='text'){const pre=document.createElement('pre');pre.style.cssText='white-space:pre-wrap;overflow-wrap:anywhere;max-height:65vh;overflow:auto';pre.textContent=await new Blob(parts).text();if(ticket!==documentPreviewTicket)return;content.appendChild(pre);}
+  else{const mime=kind==='pdf'?'application/pdf':r.mime;documentPreviewUrl=URL.createObjectURL(new Blob(parts,{type:mime}));const view=document.createElement(kind==='pdf'?'object':'img');if(kind==='pdf'){view.data=documentPreviewUrl;view.type='application/pdf';const a=document.createElement('a');a.href=documentPreviewUrl;a.target='_blank';a.rel='noopener';a.textContent='문서 새 창에서 보기';view.appendChild(a);}else view.src=documentPreviewUrl;view.title=r.name;view.setAttribute('data-document-view',kind);view.style.cssText=kind==='pdf'?'width:100%;height:65vh;border:0':'max-width:100%;max-height:65vh;object-fit:contain';if(kind==='image')view.alt=r.name;content.appendChild(view);}
+  status.textContent=r.name;
+ }catch(e){if(ticket===documentPreviewTicket&&status.isConnected)status.textContent=e.message;}
+}
+$('#main').addEventListener('click',e=>{const b=e.target.closest('[data-document-preview]');if(!b)return;const x=b.dataset.documentPreview,i=x.lastIndexOf('|');previewDocument(x.slice(0,i),x.slice(i+1));});
 async function drvDownload(root, id){
   try {
     const parts = []; let off = 0, r, mime = "", name = "";
@@ -1793,7 +1824,7 @@ function folderReqDlg(target,label){
 function vMaterials(){return extraHead('자료실','구글 드라이브·노션·선생님이 올린 학습 자료입니다.',T()?'<div class="row"><button class="btn" data-materials-connect>Drive 연결 설정</button><button class="btn pri" data-extra-new="material">+ 자료</button></div>':'')+(T()?folderReqAdmin():folderReqBox('materials','자료실'))+resourceLinkStatus()+materialControls()+((D.folderReady||{}).materials?driveBrowser('materials'):driveDropBox()+driveBox())+notionBox()+`<section class="panel"><div class="pad" style="padding-bottom:4px"><span class="label">선생님이 올린 자료</span></div>${D.materials.length?sortedMaterials(D.materials.filter(m=>materialMatches(m.title,m.body,m.category||"일반")),"title","at").map(m=>`<article class="notice"><div class="row">${targetChip(m.target)}<span class="chip">${esc(m.category||'일반')}</span><span class="meta">${esc(m.at)}</span></div><h3>${esc(m.title)}</h3><div class="body">${esc(m.body)}</div><div class="row">${extraLink(m.link)}${extraFile(m.file)}${T()?`<button class="btn sm" data-material-edit="${esc(m.id)}">수정</button>${extraDelete('materials',m.id)}`:''}</div></article>`).join(''):emptyBox('등록된 자료가 없습니다')}</section>`;}
 function materialDlg(m={}){openDlg(m.id?'자료 수정':'자료 등록',field('제목','title',m.title||'','text','required maxlength="150"')+`<div class="fgrid">${targetSel(m.target)}${field('분류','category',m.category||'학습자료')}</div>`+area('설명','body',m.body||'',5000)+field('자료 링크','link',m.link||'')+'<p class="ev-s">첨부파일은 연결된 Google Drive 자료실의 대상별 폴더에 저장됩니다.</p>'+fileInput(),'저장',fd=>actUpload('saveMaterial',{id:m.id,...fd},'자료를 저장했습니다'));}
 /* ---------- 메뉴 아이콘·짧은 이름, 화면 꾸미기(이 기기에만 저장) ---------- */
-const TAB_LOOK = { photos:["📷","사진첩"], today:["🏠","오늘"], notices:["📢","공지"], learner:["🏭","근로자"], training:["🏭","근로자"], schedule:["📅","일정"], school:["🍱","시간표"], purchases:["🛒","구매"], anon:["💬","익명게시판"], projects:["🧩","프로젝트"], contest:["🏆","대회"], cert:["📜","자격증"], company:["🏢","기업"], portfolio:["🎒","포폴"], roster:["👥","명단"], me:["⚙️","설정"] };
+const TAB_LOOK = { equipment:["🧰","기자재"], photos:["📷","사진첩"], today:["🏠","오늘"], notices:["📢","공지"], learner:["🏭","근로자"], training:["🏭","근로자"], schedule:["📅","일정"], school:["🍱","시간표"], purchases:["🛒","구매"], anon:["💬","익명게시판"], projects:["🧩","프로젝트"], contest:["🏆","대회"], cert:["📜","자격증"], company:["🏢","기업"], portfolio:["🎒","포폴"], roster:["👥","명단"], me:["⚙️","설정"] };
 const LOOK_ACCENTS = [["#d4561c","주황"],["#2f6fd6","파랑"],["#1f8a5b","초록"],["#7a4bd0","보라"],["#d6457f","분홍"],["#149c96","민트"],["#b8860b","노랑"],["#1f3a52","남색"]];
 const LOOK_BGS = [["","기본"],["#fbf6ee","크림"],["#eef5fc","하늘"],["#f0f7ec","연두"],["#f6f0fb","라벤더"],["#fdf0f3","벚꽃"],["dark","어둡게"]];
 const LOOK_EMOJI = ["도","🐱","🐶","🐰","🦊","🐻","🐼","🐨","🐧","🐥","🐸","🦄","🐳","🤖","🚀","⭐","🌈","🍀","🔧","⚡"];
@@ -1927,15 +1958,37 @@ function render(){
   evStore.clear();
   const draft = $("#replyText") ? $("#replyText").value : null, anonDraft = $("#anonText") ? $("#anonText").value : null;
   if(D.homeOnly&&!["today","school"].includes(tab)&&!(tab==="projects"&&projSub==="tools")){ $("#main").innerHTML=fullLoadNotice();if(!fullLoadError)hydrateFullData();return;}
-  $("#main").innerHTML = ({today:vToday, notices:vNotices, schedule:vSchedule, requests:vRequests, anon:vAnon, training:vTraining, purchases:()=>vPurchases()+noticeCategorySection("준비물·구매"), ojtcalendar:vOjtCalendar, roster:vRosterSub, register:vRegisterSub, attendance:vAttendance, units:vUnits, portfolio:vPortfolio, board:vProjectHub, projects:vProjectHub, materials:vMaterialsSub, photos:vPhotos, contest:vContestTop, cert:vCertTop, company:vCompany, school:vSchool, me:vMe}[tab] || vToday)();
+  $("#main").innerHTML = ({today:vToday, notices:vNotices, schedule:vSchedule, requests:vRequests, anon:vAnon, training:vTraining, purchases:()=>vPurchases()+noticeCategorySection("준비물·구매"), ojtcalendar:vOjtCalendar, roster:vRosterSub, register:vRegisterSub, attendance:vAttendance, units:vUnits, portfolio:vPortfolio, board:vProjectHub, projects:vProjectHub, materials:vMaterialsSub, photos:vPhotos, equipment:vEquipment, contest:vContestTop, cert:vCertTop, company:vCompany, school:vSchool, me:vMe}[tab] || vToday)();
   if (learnerOpen) $("#main").insertAdjacentHTML("afterbegin", `<nav class="tabs" role="tablist" aria-label="학습근로자 하위 메뉴" style="margin:4px 0 16px">${LEARNER_TABS.map(([k,l]) => `<button class="tab" role="tab" data-learner-tab="${k}" aria-selected="${k===tab}">${esc(l)}</button>`).join('')}</nav>`);
   if (D.loginDisabled) $("#main").insertAdjacentHTML("afterbegin", `<div class="banner" role="status">${D.localTest ? "PC 테스트 · 입력한 자료는 이 컴퓨터에만 저장됩니다. 실제 구글시트에는 반영되지 않습니다." : "로그인 없는 테스트 모드 · 주소를 아는 사람은 학생 기록 조회와 작성·관리를 할 수 있습니다."}</div>`);
   bindBoardComment();
-  hydrateDrives(); hydrateNoticeImages();hydrateResourceLinks();hydratePhotos();hydratePurchaseLinks();
+  hydrateDrives(); hydrateNoticeImages();hydrateResourceLinks();hydratePhotos();hydratePurchaseLinks();hydrateEquipment();
   if (draft !== null && $("#replyText")) $("#replyText").value = draft;
   if (anonDraft !== null && $("#anonText")) $("#anonText").value = anonDraft;
   if (armed){ const b = [...document.querySelectorAll("[data-del],[data-delpe],[data-extra-delete],[data-anon-del],[data-file-del],[data-co-del]")].find(x => (x.dataset.del || x.dataset.extraDelete || x.dataset.anonDel || x.dataset.fileDel || (x.dataset.coDel ? "co|" + x.dataset.coDel : "") || "pe|" + x.dataset.delpe) === armed); if (b){ b.classList.add("armed"); b.textContent = "삭제 확인"; } }
 }
+
+/* ---------- 실습기자재 사용대장: 서버 저장, 학생은 본인 기록만 ---------- */
+function vEquipment(){
+  const data=D.equipment;
+  if(!data)return '<section class="panel pad"><h2>실습기자재 사용대장</h2><p role="status">'+esc(D.equipmentError||'사용 현황을 불러오는 중…')+'</p>'+(D.equipmentError?'<button class="btn" data-equipment-refresh>다시 불러오기</button>':'')+'</section>';
+  return '<section class="panel pad"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><h2>실습기자재 사용대장</h2><button class="btn sm" data-equipment-refresh>새로고침</button></div><p class="ev-s">'+(T()?'전체 사용 기록을 관리합니다. 수량은 등록된 기록 기준입니다.':'내 사용 기록만 표시합니다. 수량은 전체 등록 기록 기준입니다.')+'</p>'+data.items.map(item=>'<article class="panel pad"><h3>'+esc(item.name)+'</h3><p>총 <b>'+item.total+'대</b> · 사용 중 <b>'+item.used+'대</b> · 사용 가능 <b>'+item.available+'대</b></p><button class="btn pri" data-equipment-borrow="'+esc(item.id)+'" '+(item.available<1?'disabled':'')+'>사용 등록</button></article>').join('')+'<h3>사용·반납 기록</h3>'+(data.loans.length?data.loans.map(r=>'<article class="panel pad" style="overflow-wrap:anywhere;margin-bottom:8px"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><b>'+esc((data.items.find(i=>i.id===r.item)||{}).name||r.item)+' · '+r.qty+'대</b><span class="badge">'+(r.returned?'반납 완료':'사용 중')+'</span></div><p>'+esc(r.user)+' · 사용일 '+esc(r.date)+(r.due?' · 반납예정 '+esc(r.due):'')+'</p><p>'+esc(r.purpose)+(r.place?' · '+esc(r.place):'')+'</p>'+(r.returned?'<p class="ev-s">반납일 '+esc(r.returned)+'</p>':'<button class="btn sm" data-equipment-return="'+esc(r.id)+'">반납 처리</button>')+'</article>').join(''):'<p class="empty">등록된 사용 기록이 없습니다. 기존 사용 중인 기자재가 있으면 먼저 등록해 주세요.</p>')+'</section>';
+}
+function hydrateEquipment(){
+  if(tab!=="equipment"||!D||D.equipment||D.equipmentPending||D.equipmentError)return;
+  const target=D,owner=JSON.stringify(cred||{});target.equipmentPending=true;
+  call('equipmentLedger').then(data=>{if(D===target&&JSON.stringify(cred||{})===owner)target.equipment=data;}).catch(e=>{if(D===target)target.equipmentError=e.message;}).finally(()=>{target.equipmentPending=false;if(D===target&&tab==='equipment'&&!dlg.open)render();});
+}
+async function equipmentSave(action,payload){
+  const target=D,owner=JSON.stringify(cred||{});
+  try{const data=await call(action,payload);if(D===target&&JSON.stringify(cred||{})===owner){D.equipment=data;D.equipmentError='';render();}toast(action==='borrowEquipment'?'사용 기록을 저장했습니다':'반납 처리했습니다');return true;}catch(e){toast(e.message);return false;}
+}
+$('#main').addEventListener('click',e=>{
+ const b=e.target.closest('[data-equipment-refresh],[data-equipment-borrow],[data-equipment-return]');if(!b)return;
+ if(b.hasAttribute('data-equipment-refresh')){if(D.equipmentPending)return;delete D.equipment;delete D.equipmentError;render();return;}
+ if(b.dataset.equipmentBorrow){const item=D.equipment.items.find(i=>i.id===b.dataset.equipmentBorrow),id='eq'+Date.now().toString(36)+Math.random().toString(36).slice(2,12);openDlg(item.name+' 사용 등록',(T()?field('사용자','user','','text','required maxlength="80"'):('<p>사용자: '+esc(D.me.name)+'</p>'))+field('수량 (현재 '+item.available+'대 가능)','qty',1,'number','required min="1" max="'+item.available+'" step="1"')+field('사용일','date',TODAY,'date','required max="'+TODAY+'"')+field('반납예정일 (선택)','due','','date')+field('사용 용도','purpose','','text','required maxlength="200"')+field('사용 장소 (선택)','place','','text','maxlength="80"'),'등록',fd=>equipmentSave('borrowEquipment',{...fd,item:item.id,id}));return;}
+ const row=D.equipment.loans.find(r=>r.id===b.dataset.equipmentReturn);if(row)openDlg('기자재 반납 처리','<p>'+esc(row.user)+' · '+row.qty+'대 전체를 반납 처리합니다.</p>'+field('반납일','date',TODAY,'date','required min="'+esc(row.date)+'" max="'+TODAY+'"'),'반납 완료',fd=>equipmentSave('returnEquipment',{id:row.id,date:fd.date}));
+});
 
 /* ---------- 대화상자 ---------- */
 const dlg = $("#dlg"), form = $("#dlgForm"); let onSubmit = null;
@@ -1949,7 +2002,7 @@ $("#main").addEventListener("click", e => { const b = e.target.closest("[data-lo
   render(); });
 applyLook();
 form.addEventListener("click", e => { const b = e.target.closest("[data-unpick]"); if (b) { draftFiles.splice(Number(b.dataset.unpick), 1); renderDraftFiles(); } });
-dlg.addEventListener("close", () => { dlgDrop = null; });
+dlg.addEventListener("close", () => { dlgDrop = null; documentPreviewTicket++;if(documentPreviewUrl){URL.revokeObjectURL(documentPreviewUrl);documentPreviewUrl=null;} });
 dlg.addEventListener("paste", e=>{if(!dlg.open||!dlgDrop)return;const files=Array.from(e.clipboardData&&e.clipboardData.files||[]);if(files.length){e.preventDefault();dlgDrop(files.map((f,i)=>f.type.startsWith('image/')?new File([f],'붙여넣기-'+Date.now()+'-'+i+'.'+(f.type.split('/')[1]||'png'),{type:f.type}):f));}});
 form.addEventListener("click",e=>{const b=e.target.closest('[data-notice-original]');if(b)drvDownload('notice',b.dataset.noticeOriginal);if(e.target.closest('[data-notice-extract-links]')){const text=form.querySelector('[name="body"]').value,box=form.querySelector('[name="linksText"]'),found=text.match(/https:[/][/][^\s<>"']+/g)||[];box.value=[...new Set([...box.value.split(/\r?\n/),...found].map(s=>s.trim().replace(/[.,，。)]+$/g,'')).filter(Boolean))].slice(0,8).join('\n');toast(found.length?'본문의 링크를 가져왔습니다':'본문에 https 링크가 없습니다');}});
 const hasFiles = e => e.dataTransfer && Array.from(e.dataTransfer.types || []).includes("Files");
