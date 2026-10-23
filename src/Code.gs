@@ -25,7 +25,7 @@ const SCHOOL_YEAR = 0;               // 0이면 자동(3월~이듬해 2월). 바
 
 /* 앱이 새로 만드는 탭 (처음 열 때 자동 생성) */
 const APP_TABS = {
-  equipmentLoans: { name: "앱_기자재사용", head: ["ID", "기자재ID", "사용자", "수량", "사용일", "반납예정일", "용도", "장소", "등록자", "등록시각", "반납일", "반납처리자"] },
+  equipmentLoans: { name: "앱_기자재사용", head: ["ID", "기자재ID", "사용자", "수량", "사용일", "반납예정일", "용도", "장소", "등록자", "등록시각", "반납일", "반납처리자", "기자재번호"] },
   roster:   { name: "앱_명단",     head: ["이름", "구분", "학년반", "PIN", "메모", "방과후참여", "노션포트폴리오"] },
   notices:  { name: "앱_공지",     head: ["ID", "작성시각", "대상", "제목", "내용", "고정", "확인기한"] },
   events:   { name: "앱_일정",     head: ["ID", "날짜", "종료일", "시간", "종류", "대상", "제목", "장소", "메모"] },
@@ -103,6 +103,7 @@ function dispatch_(me, action, p) {
     case "equipmentLedger": return equipmentLedger_(me);
     case "borrowEquipment": return borrowEquipment_(me, p);
     case "returnEquipment": return returnEquipment_(me, p);
+    case "assignEquipmentUnits": return assignEquipmentUnits_(me, p);
     case "ack":          need_(me, "student"); return ack_(me, p.id);
     case "noticeImage": return noticeImage_(me,p);
     case "noticeDownload": return noticeDownload_(me,p);
@@ -181,14 +182,35 @@ function dispatch_(me, action, p) {
 }
 function ok_(data) { return JSON.parse(JSON.stringify({ ok: true, data: data })); }
 /* 기자재는 첫 화면 응답에 넣지 않고 메뉴에서만 조회합니다. 현재 재고는 캐시 없이 확인합니다. */
-const EQUIPMENT_ = [{ id: "raspberry-pi", name: "라즈베리파이", total: 14 }];
+const EQUIPMENT_ = [{ id: "raspberry-pi", name: "라즈베리파이", unitName: "라즈베리", total: 14 }];
+function equipmentNumbers_(value,item,optional) {
+  if(optional&&(value===undefined||value===null||value===""))return [];
+  const nums=Array.isArray(value)?value:typeof value==="string"?value.split(","):[];
+  if(!nums.length||nums.some(function(n){return !/^[1-9][0-9]*$/.test(String(n))||Number(n)>item.total;})||new Set(nums.map(Number)).size!==nums.length)throw new Error("사용할 기자재 번호를 중복 없이 선택해 주세요 (1~"+item.total+"번)");
+  return nums.map(Number).sort(function(a,b){return a-b;});
+}
 function equipmentRows_() {
   USE_CACHE_ = false; MEMO_[APP_TABS.equipmentLoans.name] = null;
-  return rows_("equipmentLoans").map(function(r) { const v=r.v; return { row:r._row, id:v[0], item:v[1], user:v[2], qty:Number(v[3]), date:v[4], due:v[5], purpose:v[6], place:v[7], createdBy:v[8], createdAt:v[9], returned:v[10]||"", returnedBy:v[11]||"" }; });
+  return rows_("equipmentLoans").map(function(r) { const v=r.v,item=EQUIPMENT_.find(function(e){return e.id===v[1];});let units=[];
+    try{if(item)units=equipmentNumbers_(v[12],item,true);}catch(e){}
+    const qty=Number(v[3]);if(units.length!==qty)units=[];
+    return { row:r._row, id:v[0], item:v[1], user:v[2], qty:qty, date:v[4], due:v[5], purpose:v[6], place:v[7], createdBy:v[8], createdAt:v[9], returned:v[10]||"", returnedBy:v[11]||"", units:units }; });
 }
 function equipmentLedger_(me) {
   const all=equipmentRows_();
-  return { items:EQUIPMENT_.map(function(e) { const used=all.filter(function(r){return r.item===e.id&&!r.returned;}).reduce(function(n,r){return n+r.qty;},0); return {id:e.id,name:e.name,total:e.total,used:used,available:e.total-used}; }), loans:all.filter(function(r){return me.role==="teacher"||r.user===me.name;}).map(function(r){delete r.row;return r;}).reverse() };
+  return { items:EQUIPMENT_.map(function(e) {
+    const active=all.filter(function(r){return r.item===e.id&&!r.returned;}),used=active.reduce(function(n,r){return n+r.qty;},0),unassigned=active.filter(function(r){return !r.units.length;}).reduce(function(n,r){return n+r.qty;},0);
+    return {id:e.id,name:e.name,total:e.total,used:used,available:e.total-used,unassigned:unassigned,
+      units:Array.from({length:e.total},function(_,i){const number=i+1,users=active.filter(function(r){return r.units.includes(number);}).map(function(r){return r.user;});return {number:number,label:e.unitName+number,users:users};})};
+  }), loans:all.filter(function(r){return me.role==="teacher"||r.user===me.name;}).map(function(r){delete r.row;return r;}).reverse() };
+}
+function equipmentConflict_(all,item,units,exclude) {
+  if(all.some(function(r){return r.id!==exclude&&r.item===item.id&&!r.returned&&r.units.some(function(n){return units.includes(n);});}))throw new Error("선택한 번호는 이미 사용 중입니다. 새로고침 후 확인해 주세요");
+}
+function equipmentWriteUnits_(sh,row,units) {
+  const head=sh.getRange(1,13).getValue();if(head&&head!=="기자재번호")throw new Error("기자재 시트 13열을 확인해 주세요. 기존 내용은 변경하지 않았습니다");
+  if(!head)sh.getRange(1,13).setValue("기자재번호");
+  sh.getRange(row,13).setNumberFormat("@").setValue(units.join(","));
 }
 function borrowEquipment_(me,p) {
   return withLock_(function() {
@@ -197,15 +219,31 @@ function borrowEquipment_(me,p) {
     const user=me.role==="teacher"?required_(p.user,80):me.name;
     const qty=Number(p.qty);if(!Number.isInteger(qty)||qty<1||qty>item.total)throw new Error("수량은 1~"+item.total+"대의 정수로 입력해 주세요");
     const date=dateValid_(p.date),due=dateValid_(p.due,true);if(date>today_())throw new Error("사용일은 오늘까지 입력할 수 있습니다");if(due&&due<date)throw new Error("반납예정일은 사용일 이후로 입력해 주세요");
-    const purpose=required_(p.purpose,200),place=clean_(p.place,80),all=equipmentRows_();
+    const purpose=required_(p.purpose,200),place=clean_(p.place,80),all=equipmentRows_(),units=equipmentNumbers_(p.units,item,true);
     const prior=all.find(function(r){return r.id===id;});
-    if(prior){if(prior.createdBy!==me.name||prior.user!==user||prior.item!==item.id||prior.qty!==qty||prior.date!==date||prior.due!==due||prior.purpose!==purpose||prior.place!==place)throw new Error("이미 처리된 등록 요청입니다. 창을 다시 열어 주세요");return equipmentLedger_(me);}
+    if(prior){if(prior.createdBy!==me.name||prior.user!==user||prior.item!==item.id||prior.qty!==qty||prior.date!==date||prior.due!==due||prior.purpose!==purpose||prior.place!==place||prior.units.join(",")!==units.join(","))throw new Error("이미 처리된 등록 요청입니다. 창을 다시 열어 주세요");return equipmentLedger_(me);}
+    if(units.length!==qty)throw new Error("화면을 새로고침하고 사용할 번호를 선택해 주세요. 선택 번호 수와 수량이 같아야 합니다");
     const used=all.filter(function(r){return r.item===item.id&&!r.returned;}).reduce(function(n,r){return n+r.qty;},0);
     if(qty>item.total-used)throw new Error("현재 사용 가능 수량은 "+(item.total-used)+"대입니다. 새로고침 후 확인해 주세요");
-    const sh=sheet_("equipmentLoans");sh.getRange(sh.getLastRow()+1,1,1,12).setNumberFormat("@");
-    append_("equipmentLoans",[id,item.id,user,qty,date,due,purpose,place,me.name,now_(),"",""]);
+    equipmentConflict_(all,item,units,"");
+    const sh=sheet_("equipmentLoans"),head=sh.getRange(1,13).getValue();
+    if(head&&head!=="기자재번호")throw new Error("기자재 시트 13열을 확인해 주세요. 기존 내용은 변경하지 않았습니다");
+    if(!head)sh.getRange(1,13).setValue("기자재번호");
+    sh.getRange(sh.getLastRow()+1,1,1,13).setNumberFormat("@");
+    append_("equipmentLoans",[id,item.id,user,qty,date,due,purpose,place,me.name,now_(),"","",units.join(",")]);
     SpreadsheetApp.flush();
     return equipmentLedger_(me);
+  });
+}
+function assignEquipmentUnits_(me,p) {
+  return withLock_(function(){
+    const all=equipmentRows_(),row=all.find(function(r){return r.id===p.id;});if(!row)throw new Error("사용 기록을 찾지 못했습니다");
+    if(me.role!=="teacher"&&row.user!==me.name)throw new Error("본인 사용 기록만 번호를 지정할 수 있습니다");
+    if(row.returned)throw new Error("반납된 기록의 번호는 바꾸지 않습니다");
+    const item=EQUIPMENT_.find(function(e){return e.id===row.item;}),units=equipmentNumbers_(p.units,item,false);
+    if(units.length!==row.qty)throw new Error("기존 수량 "+row.qty+"대와 같은 개수의 번호를 선택해 주세요");
+    if(row.units.length){if(row.units.join(",")!==units.join(","))throw new Error("이미 번호가 지정된 기록입니다. 새로고침해 주세요");return equipmentLedger_(me);}
+    equipmentConflict_(all,item,units,row.id);equipmentWriteUnits_(sheet_("equipmentLoans"),row.row,units);SpreadsheetApp.flush();return equipmentLedger_(me);
   });
 }
 function returnEquipment_(me,p) {
