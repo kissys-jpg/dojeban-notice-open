@@ -10,7 +10,8 @@
 const CFG_ = PropertiesService.getScriptProperties();
 const TEACHER_PASSWORD = CFG_.getProperty("TEACHER_PASSWORD") || "여기에_비밀번호";
 const STUDENT_LOGIN_REQUIRED_ = CFG_.getProperty("STUDENT_LOGIN_REQUIRED") !== "false";
-function publicAccessEnabled_(){ return CFG_.getProperty("PUBLIC_ACCESS_ENABLED") !== "false"; }
+/* 2026-10-27 로그인 필수 결정: 이전 자유 접속 설정은 새 정책에서 관리자가 다시 허용할 때만 적용. */
+function publicAccessEnabled_(){ return CFG_.getProperty("PUBLIC_ACCESS_ENABLED") === "true" && CFG_.getProperty("PUBLIC_ACCESS_LOGIN_POLICY") === "2026-10-27"; }
 const PUBLIC_ACCESS_ENABLED_ = publicAccessEnabled_();
 const NO_LOGIN_TEST_MODE = !STUDENT_LOGIN_REQUIRED_ && String(CFG_.getProperty("NO_LOGIN_TEST_MODE") || "").trim().toLowerCase() === "true";
 const SPREADSHEET_ID = CFG_.getProperty("SPREADSHEET_ID") || "";
@@ -90,7 +91,7 @@ function api(req) {
     const me = PUBLIC_ACCESS_ENABLED_&&!INTRO_AUTH_ ? {role:"guest",name:"손님",group:""} : STUDENT_LOGIN_REQUIRED_ ? auth_(cred0) : (action === "submitPublicIntro" || action === "introTemplate" || (action === "introSubmissionList" && !INTRO_AUTH_)) ? {role:"guest",name:"손님"} : INTRO_AUTH_ ? auth_(cred0) : NO_LOGIN_TEST_MODE ? { role: "teacher", name: "선생님" } : (GUEST_VIEW && !cred0.teacher && !String(cred0.name || "").trim() && !String(cred0.pin || "").trim()) ? { role: "guest", name: "손님", group: "" } : auth_(cred0);
     const p = req.payload || {};
     if(ADMIN_ACTIONS_[action])needAdmin_(me);
-    if (me.role === "guest") { if(STUDENT_LOGIN_REQUIRED_&&!PUBLIC_VIEW_ALL_&&["introSubmissionList","submitPublicIntro"].indexOf(action)>=0)throw Error("학생 이름으로 로그인해 주세요"); /* 전체 공개(PUBLIC_VIEW_ALL) 동안은 로그인 없이 이름·학년으로 자기소개서 파일 제출(2026-10-27 선생님 지시) */if (!GUEST_ACTIONS_[action] && !(PUBLIC_VIEW_ALL_ && VIEWER_ACTIONS_[action])) throw new Error("로그인하면 이용할 수 있습니다"); req.withLoad = false; }
+    if (me.role === "guest") { if(STUDENT_LOGIN_REQUIRED_&&!PUBLIC_VIEW_ALL_&&["introSubmissionList","submitPublicIntro"].indexOf(action)>=0)throw Error("학생 학번으로 로그인해 주세요"); /* 전체 공개(PUBLIC_VIEW_ALL) 동안은 로그인 없이 이름·학년으로 자기소개서 파일 제출(2026-10-27 선생님 지시) */if (!GUEST_ACTIONS_[action] && !(PUBLIC_VIEW_ALL_ && VIEWER_ACTIONS_[action])) throw new Error("로그인하면 이용할 수 있습니다"); req.withLoad = false; }
     if (me.role === 'teacher' && ((action === 'load' && !(req.payload && req.payload.homeOnly === true)) || req.withLoad)) migrateRequestsToAnon_();
     let data;
     const viewer = me.role === "guest" && PUBLIC_VIEW_ALL_ && VIEWER_ACTIONS_[action];
@@ -114,7 +115,7 @@ function api(req) {
 }
 function dispatch_(me, action, p) {
   switch (action) {
-    case "setPublicAccess": needAdmin_(me);if(!INTRO_AUTH_)throw Error("최고관리자로 로그인해 주세요");CFG_.setProperty("PUBLIC_ACCESS_ENABLED",p.enabled===true?"true":"false");return {enabled:p.enabled===true};
+    case "setPublicAccess": needAdmin_(me);if(!INTRO_AUTH_)throw Error("최고관리자로 로그인해 주세요");CFG_.setProperty("PUBLIC_ACCESS_ENABLED",p.enabled===true?"true":"false");CFG_.setProperty("PUBLIC_ACCESS_LOGIN_POLICY","2026-10-27");return {enabled:p.enabled===true};
     case "setupStaffAccounts": return setupStaffAccounts_(me,p);
     case "staffAccounts": return staffAccounts_(me);
     case "changeStaffPassword": return changeStaffPassword_(me,p);
@@ -326,9 +327,14 @@ function changeStaffPassword_(me,p){need_(me,"teacher");if(!me.staffAccount)thro
 function studentAccount_(name){const s=CFG_.getProperty(accountKey_(name));return s?JSON.parse(s):null;}
 function studentPasswordHash_(password,salt){const pepper=CFG_.getProperty("STUDENT_AUTH_PEPPER");if(!pepper)throw Error("학생 계정 등록이 필요합니다");return authHex_(Utilities.computeHmacSha256Signature(salt+":"+password,pepper,Utilities.Charset.UTF_8));}
 function studentAccountMe_(a){if(!a||!a.active||!/^[123]03\d{2}$/.test(a.studentId))throw Error("등록된 1~3학년 3반 학생만 로그인할 수 있습니다");const r=roster_().find(function(r){return r.name===a.name;});if(!r)throw Error("학생 계정 등록이 필요합니다");return {role:"student",name:a.name,studentId:a.studentId,group:r.group,klass:a.studentId[0]+"-3",afterschool:r.afterschool};}
+function studentLoginAccount_(login){
+ if(!/^[123]03\d{2}$/.test(login))return studentAccount_(login);
+ const props=CFG_.getProperties(),keys=Object.keys(props).filter(function(k){return /^STUDENT_AUTH_[a-f0-9]{64}$/.test(k);});
+ for(let i=0;i<keys.length;i++){const a=JSON.parse(props[keys[i]]);if(a.studentId===login)return a;}return null;
+}
 function class3StudentAuth_(name,password){
- if(!name||!password)throw Error("이름과 비밀번호를 입력해 주세요");const cache=CacheService.getScriptCache(),key="student_fail_"+authDigest_(name);if(Number(cache.get(key)||0)>=5)throw Error("비밀번호를 여러 번 틀렸습니다. 10분 뒤 다시 시도하세요");
- const a=studentAccount_(name);if(!a||!a.active||studentPasswordHash_(password,a.salt)!==a.hash){cache.put(key,String(Number(cache.get(key)||0)+1),600);throw Error("이름이나 비밀번호가 맞지 않습니다. 초기 비밀번호는 학번입니다");}cache.remove(key);return studentAccountMe_(a);
+ if(!name||!password)throw Error("학번과 비밀번호를 입력해 주세요");const a=studentLoginAccount_(name),cache=CacheService.getScriptCache(),key="student_fail_"+authDigest_(a?a.name:name);if(Number(cache.get(key)||0)>=5)throw Error("비밀번호를 여러 번 틀렸습니다. 10분 뒤 다시 시도하세요");
+ if(!a||!a.active||studentPasswordHash_(password,a.salt)!==a.hash){cache.put(key,String(Number(cache.get(key)||0)+1),600);throw Error("학번 또는 비밀번호가 맞지 않습니다. 초기 비밀번호는 학번입니다");}cache.remove(key);return studentAccountMe_(a);
 }
 function createStudentSession_(me,remember){return withLock_(function(){const a=studentAccount_(me.name);studentAccountMe_(a);const props=CFG_.getProperties(),now=Date.now(),mine=[];Object.keys(props).filter(function(k){return k.indexOf("STUDENT_SESSION_")===0;}).forEach(function(k){let s;try{s=JSON.parse(props[k]);}catch(e){}if(!s||s.expires<=now)CFG_.deleteProperty(k);else if(s.name===me.name)mine.push(k);});while(mine.length>=5)CFG_.deleteProperty(mine.shift());const token=Utilities.getUuid().replace(/-/g,"")+Utilities.getUuid().replace(/-/g,"");CFG_.setProperty("STUDENT_SESSION_"+authDigest_(token),JSON.stringify({name:a.name,version:a.version,expires:now+(remember?30*86400000:12*3600000)}));return token;});}
 function studentSessionAuth_(token){if(!/^[a-f0-9]{64}$/.test(token))throw Error("로그인이 만료되었습니다. 다시 로그인해 주세요");const key="STUDENT_SESSION_"+authDigest_(token),raw=CFG_.getProperty(key),s=raw?JSON.parse(raw):null,a=s&&studentAccount_(s.name);if(!s||s.expires<=Date.now()||!a||!a.active||s.version!==a.version){CFG_.deleteProperty(key);throw Error("로그인이 만료되었습니다. 다시 로그인해 주세요");}return studentAccountMe_(a);}
@@ -1371,7 +1377,7 @@ function downloadFile_(me,id) {
   if(r.v[5]==="materials"){const entry=record_("materials",r.v[6]);visible=entry.v[6]===id&&(me.role==="teacher"||me.role==="guest"||matches_(targetKey_(entry.v[2]),me.group));}
   if(r.v[5]==="project"){project_(me,r.v[6]);visible=true;}
   if(r.v[5]==="board"){const entry=record_("board",r.v[6]);visible=entry.v[12]!=="1"&&boardFileIds_(entry.v[9]).indexOf(id)>=0;}
-  if(r.v[5]==="intro"){const entry=record_("experienceIntro",r.v[6]);visible=INTRO_AUTH_&&entry.v[8]===id&&((me.role==="teacher"&&entry.v[3]!=="초안")||(!String(entry.v[0]).startsWith("introPublic")&&entry.v[1]===me.name));}
+  if(r.v[5]==="intro"){const entry=record_("experienceIntro",r.v[6]);visible=INTRO_AUTH_&&(entry.v[8]===id||introExtraFiles_(entry).indexOf(id)>=0)&&((me.role==="teacher"&&entry.v[3]!=="초안")||(!String(entry.v[0]).startsWith("introPublic")&&entry.v[1]===me.name));}
   if(r.v[5]==="notice"){noticeFile_(me,id);visible=true;}
   if(!visible) throw new Error("이 첨부파일을 볼 권한이 없습니다");
   const df=DriveApp.getFileById(id);if(df.getSize()>MAX_DOWNLOAD_MB_*1024*1024) throw new Error("파일이 커서("+MAX_DOWNLOAD_MB_+"MB 초과) 앱에서 바로 내려받을 수 없습니다. 선생님께 Drive 공유를 요청하세요");const blob=df.getBlob(),bytes=blob.getBytes();if(bytes.length>MAX_DOWNLOAD_MB_*1024*1024) throw new Error("파일이 커서("+MAX_DOWNLOAD_MB_+"MB 초과) 앱에서 바로 내려받을 수 없습니다. 선생님께 Drive 공유를 요청하세요");return {name:r.v[2],mime:r.v[3],base64:Utilities.base64Encode(bytes)};
@@ -2312,7 +2318,7 @@ function companyInfo_(me){
  source.companies.forEach(function(c){out[c.id]=Object.assign({},out[c.id]||{},c,{learners:count[c.id]||0,fromSource:true});});
  return Object.keys(out).map(function(k){const c=out[k];if(!c.folderUrl&&!c.fromSource&&props_()["COMPANY_FOLDER_"+c.id])c.folderUrl="https://drive.google.com/drive/folders/"+props_()["COMPANY_FOLDER_"+c.id];return c;}).filter(function(c){return T||c.open;});
 }
-function companyLoad_(me){const versions=introVersionInfo_(),info=companyInfo_(me),ids={};info.forEach(function(c){ids[c.id]=c;});const source=companySource_(),T=me.role==="teacher";return {introAuthRequired:!INTRO_AUTH_,companyResources:companyResources_(me),companySourceError:T?source.error||"":"",companyJobs:source.jobs.filter(function(j){return ids[j.company]&&(T||j.open);}),companyEvents:source.events.filter(function(e){return ids[e.company]&&(T||e.open);}).map(function(e){return Object.assign({},e,{title:"기업 · "+ids[e.company].name+" · "+e.title,target:"all"});}),experienceIntros:rows_("experienceIntro").filter(function(r){return INTRO_AUTH_&&(T?r.v[3]!=="초안":!String(r.v[0]).startsWith("introPublic")&&r.v[1]===me.name);}).map(function(r){let a={};try{a=JSON.parse(r.v[4]||"{}");}catch(ignore){}return Object.assign({id:r.v[0],name:r.v[1],company:r.v[2],companyName:(ids[r.v[2]]||{}).name||"이전 선택 기업",status:r.v[3],answers:a,updated:r.v[5],feedback:r.v[6]||"",teacherNote:r.v[7]||"",file:r.v[8]||"",fileName:r.v[8]?((rows_("files").find(function(f){return f.v[0]===r.v[8];})||{v:[]}).v[2]||""):""},versions[r.v[0]]||{isLatest:true,introGroup:r.v[0],version:1,versionCount:1});})};}
+function companyLoad_(me){const versions=introVersionInfo_(),info=companyInfo_(me),ids={};info.forEach(function(c){ids[c.id]=c;});const source=companySource_(),T=me.role==="teacher";return {introAuthRequired:!INTRO_AUTH_,companyResources:companyResources_(me),companySourceError:T?source.error||"":"",companyJobs:source.jobs.filter(function(j){return ids[j.company]&&(T||j.open);}),companyEvents:source.events.filter(function(e){return ids[e.company]&&(T||e.open);}).map(function(e){return Object.assign({},e,{title:"기업 · "+ids[e.company].name+" · "+e.title,target:"all"});}),experienceIntros:rows_("experienceIntro").filter(function(r){return INTRO_AUTH_&&(T?r.v[3]!=="초안":!String(r.v[0]).startsWith("introPublic")&&r.v[1]===me.name);}).map(function(r){let a={};try{a=JSON.parse(r.v[4]||"{}");}catch(ignore){}return Object.assign({id:r.v[0],name:r.v[1],company:r.v[2],companyName:(ids[r.v[2]]||{}).name||"이전 선택 기업",status:r.v[3],answers:a,updated:r.v[5],feedback:r.v[6]||"",teacherNote:r.v[7]||"",file:r.v[8]||"",fileName:r.v[8]?((rows_("files").find(function(f){return f.v[0]===r.v[8];})||{v:[]}).v[2]||""):"",extraFiles:introExtraFiles_(r).map(function(fid){return {id:fid,name:(rows_("files").find(function(f){return f.v[0]===fid;})||{v:[]}).v[2]||"추가 파일"};})},versions[r.v[0]]||{isLatest:true,introGroup:r.v[0],version:1,versionCount:1});})};}
 function validateCompanyTemplate_(id){const book=SpreadsheetApp.openById(id),sh=book.getSheetByName("작성양식");if(!sh||book.getSheets().length!==1)throw new Error("배포용 빈 작성양식 시트를 연결해 주세요");const rows=sh.getDataRange().getDisplayValues();if(!rows[4]||rows[4][0]!=="항목"||rows[4][1]!=="작성 내용")throw new Error("빈 양식의 항목·작성 내용 열을 확인해 주세요");if(rows.slice(5).some(function(r){return String(r[1]||"").trim();}))throw new Error("원본 양식에 답변이 입력되어 있습니다. 빈 양식을 연결하고 작성본은 별도 사본으로 관리해 주세요");return true;}
 function saveCompanyResources_(p){return withLock_(function(){const id=companySheetId_(p.sheetUrl);if(id){const book=SpreadsheetApp.openById(id);companyRows_(book,"기업정보",["기업ID","기업명","학생공개"]);companyRows_(book,"기업직무",["직무ID","기업ID","직무명","학생공개"]);companyRows_(book,"기업일정",["일정ID","기업ID","학생공개","제목","시작일"]);}const links={};["companyTemplate","introTemplate"].forEach(function(k){const v=p[k]||"";if(v){const tid=companySheetId_(v);validateCompanyTemplate_(tid);links[k]="https://docs.google.com/spreadsheets/d/"+tid+"/edit";}else links[k]="";});PropertiesService.getScriptProperties().setProperties({COMPANY_INFO_SHEET:id,COMPANY_REQUEST_TEMPLATE:links.companyTemplate,EXPERIENCE_INTRO_TEMPLATE:links.introTemplate});PROPS_=null;COMPANY_SOURCE_=null;CacheService.getScriptCache().remove("company_source_v1");CacheService.getScriptCache().remove("company_home_v1");return {connected:!!id};});}
 function seedCompanySource_(){return withLock_(function(){const id=props_().COMPANY_INFO_SHEET;if(!id)throw new Error("기업정보 관리 시트를 먼저 연결해 주세요");const book=SpreadsheetApp.openById(id),sh=book.getSheetByName("기업정보"),heads=sh.getDataRange().getDisplayValues()[0],have={};companyRows_(book,"기업정보",["기업ID","기업명","학생공개"]).forEach(function(r){have[r["기업ID"]]=true;});let n=0;rows_("companies").forEach(function(r){const v=r.v;if(!v[0]||have[v[0]])return;const vals={"기업ID":v[0],"기업명":v[1],"학생공개":v[11]==="0"?"0":"1","업종":v[7],"기업소개":v[9],"홈페이지":v[10],"실제근무지":v[2],"담당부서":v[8]};writeCells_(sh,sh.getLastRow()+1,heads.map(function(h){return vals[h]||"";}));have[v[0]]=true;n++;});COMPANY_SOURCE_=null;CacheService.getScriptCache().remove("company_source_v1");CacheService.getScriptCache().remove("company_home_v1");return {added:n};});}
@@ -2421,7 +2427,7 @@ function introSubmissionList_(me){
  rows_("experienceIntro").forEach(function(r){const v=versions[r.v[0]];if(!v)return;if(STUDENT_LOGIN_REQUIRED_&&me.role==="student"){const owner=studentAccount_(r.v[1]);if(!owner||!owner.active)return;}let item=seen[v.introGroup];if(!item){item={name:String(r.v[1]||""),grade:v.grade,status:"제출 완료"};if(shared){item.documents=[];item.history=[];item.count=v.versionCount;}seen[v.introGroup]=item;list.push(item);}if(!shared)return;
  const f=files[r.v[8]],documents=[];let a={};try{a=JSON.parse(r.v[4]||"{}");}catch(ignore){}
  if(!r.v[8]&&Object.keys(INTRO_FIELDS_).some(function(k){return k!=="schoolGrade"&&String(a[k]||"").trim();}))documents.push({id:r.v[0],label:"이전 온라인 작성본 HTML"});else if(f&&f[5]==="intro"&&f[6]===r.v[0]&&/\.docx$/i.test(f[2]))documents.push({id:r.v[0],label:"Word 제출본 HTML"});
- const entry={id:r.v[0],version:v.version,submittedAt:v.submittedAt,fileName:f&&f[5]==="intro"&&f[6]===r.v[0]?f[2]:"이전 온라인 작성본",documents:documents};if(v.isLatest){item.latest=entry;item.documents=documents;}else item.history.unshift(entry);
+ const entry={id:r.v[0],version:v.version,submittedAt:v.submittedAt,fileName:(f&&f[5]==="intro"&&f[6]===r.v[0]?f[2]:"이전 온라인 작성본")+(introExtraFiles_(r).length?" 외 "+introExtraFiles_(r).length+"개":""),documents:documents};if(v.isLatest){item.latest=entry;item.documents=documents;}else item.history.unshift(entry);
  });return list.sort(function(a,b){return a.grade.localeCompare(b.grade,"ko")||a.name.localeCompare(b.name,"ko");});
 }
 function introAnswersHtml_(entry){let a={};try{a=JSON.parse(entry.v[4]||"{}");}catch(e){}const g=function(k){return String(a[k]||"").trim();};
@@ -2431,9 +2437,11 @@ function submitPublicIntro_(p){
  const name=clean_(p.name,40).trim(),grade=String(p.grade||"");
  if(!name||!['1','2','3'].includes(grade))throw Error("이름과 학년을 입력해 주세요");
  if(!/^[a-zA-Z0-9-]{20,60}$/.test(String(p.submissionKey||"")))throw Error("제출 화면을 다시 열어 주세요");
- const safe={publicKey:String(p.submissionKey),company:"",status:"제출",confirm:p.confirm===true,mode:"file",upload:p.upload,answers:{schoolGrade:grade+"학년"}};
+ const safe={publicKey:String(p.submissionKey),company:"",status:"제출",confirm:p.confirm===true,mode:"file",upload:p.upload,uploads:Array.isArray(p.uploads)?p.uploads.slice(0,INTRO_MAX_FILES_+1):undefined,answers:{schoolGrade:grade+"학년"}};
  saveExperienceIntro_({role:"student",name:name},safe,true);return {submitted:true};
 }
+const INTRO_MAX_FILES_=5;
+function introExtraFiles_(entry){try{const a=JSON.parse(entry.v[4]||"{}");return Array.isArray(a.extraFiles)?a.extraFiles.map(String):[];}catch(e){return [];}}
 function saveExperienceIntro_(me,p,newOnly){if(p.mode!=="file")throw Error("자기소개서는 파일로만 제출할 수 있습니다");return withLock_(function(){
  if(newOnly&&rows_("experienceIntro").some(function(r){return r.v[0]==="introPublic"+p.publicKey;}))return true;
  const company=String(p.company||"");if(company&&!companyInfo_(me).some(function(c){return c.id===company;}))throw new Error("공개된 기업을 선택해 주세요");
@@ -2444,8 +2452,11 @@ function saveExperienceIntro_(me,p,newOnly){if(p.mode!=="file")throw Error("자�
  Object.keys(INTRO_FIELDS_).forEach(function(k){const val=p.answers===undefined?prior[k]:(p.answers||{})[k];answers[k]=k==="portfolio"&&state==="제출"?urlValid_(val):clean_(val,k==="headline"?150:2500).trim();});
  if(state==="제출"&&p.compactVersion&&Object.keys(answers).reduce(function(n,k){return n+answers[k].length;},0)>1200)throw new Error("소개서는 1쪽을 기준으로 답변 전체를 1,200자 이내로 정리해 주세요");
  if(state==="제출"){if(p.confirm!==true)throw new Error("작성 내용을 확인해 주세요");if(!fileMode)["headline","motivation","strength","experience","goals"].forEach(function(k){if(!answers[k])throw new Error(INTRO_FIELDS_[k]+" 항목을 작성해 주세요");});}
- const id=newOnly?"introPublic"+p.publicKey:old?old.v[0]:uid_("intro");let file=old?old.v[8]||"":"";
- if(fileMode){const u=p.upload;if(!u||!u.base64||u.staged)throw new Error("작성한 파일을 선택해 주세요 (8MB 이하)");if(!/\.(docx?|hwpx?|odt|pdf|xlsx?|txt|png|jpe?g|heic|webp)$/i.test(String(u.name||"")))throw new Error("문서, PDF, 엑셀 또는 사진 파일을 골라 주세요");if(String(u.base64).length>8*1024*1024*1.37||Utilities.base64Decode(u.base64).length>8*1024*1024)throw new Error("파일을 8MB 이하로 줄여 주세요");file=storeFile_(me,u,"intro",id,introFolder_());}
+ const id=newOnly?"introPublic"+p.publicKey:old?old.v[0]:uid_("intro");let file=old?old.v[8]||"":"";if(Array.isArray(prior.extraFiles))answers.extraFiles=prior.extraFiles;
+ if(fileMode){const list=(Array.isArray(p.uploads)&&p.uploads.length?p.uploads:[p.upload]).filter(Boolean);if(!list.length)throw new Error("작성한 파일을 선택해 주세요 (파일당 8MB 이하)");if(list.length>INTRO_MAX_FILES_)throw new Error("파일은 한 번에 "+INTRO_MAX_FILES_+"개까지 낼 수 있습니다");let total=0;
+  list.forEach(function(u){if(!u||!u.base64||u.staged)throw new Error("작성한 파일을 선택해 주세요 (파일당 8MB 이하)");if(!/\.(docx?|hwpx?|odt|pdf|xlsx?|txt|png|jpe?g|heic|webp)$/i.test(String(u.name||"")))throw new Error("문서, PDF, 엑셀 또는 사진 파일을 골라 주세요: "+String(u.name||"").slice(0,60));const n=Utilities.base64Decode(u.base64).length;if(String(u.base64).length>8*1024*1024*1.37||n>8*1024*1024)throw new Error("파일을 8MB 이하로 줄여 주세요: "+String(u.name||"").slice(0,60));total+=n;});
+  if(total>20*1024*1024)throw new Error("한 번에 내는 파일은 모두 합쳐 20MB 이하로 해 주세요");
+  const folder=introFolder_();file=storeFile_(me,list[0],"intro",id,folder);answers.extraFiles=list.slice(1).map(function(u){return storeFile_(me,u,"intro",id,folder);});}
  upsert_("experienceIntro",id,[id,me.name,company,state,JSON.stringify(answers),now_(),old?old.v[6]:"",old?old.v[7]||"":"",file]);syncIntroManagementIfReady_();return id;
 });}
 function reviewExperienceIntro_(p){return withLock_(function(){const r=record_("experienceIntro",p.id);if(r.v[3]==="초안")throw new Error("제출된 자기소개만 검토할 수 있습니다");if(["확인","보완요청"].indexOf(p.status)<0)throw new Error("검토 상태를 선택해 주세요");const v=r.v.slice(0,9);v[7]=p.teacherNote===undefined?r.v[7]||"":clean_(p.teacherNote,700);v[3]=p.status;v[5]=now_();v[6]=clean_(p.feedback,2000);writeCells_(sheet_("experienceIntro"),r._row,v);syncIntroManagementIfReady_();return true;});}
