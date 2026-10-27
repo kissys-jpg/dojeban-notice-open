@@ -72,6 +72,8 @@ html.big body{font-size:16.5px}
 
 .tab:focus-visible,.btn:focus-visible,.chipbtn:focus-visible,.st:focus-visible,.cal-day:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 
+.nav-context{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+.hub-nav{display:flex;flex-wrap:wrap;gap:6px;padding:10px 0;border-bottom:1px solid var(--line)}
 main{max-width:960px;margin:0 auto;padding-inline:16px;padding-block:20px 60px;display:flex;flex-direction:column;gap:18px}
 .sec-h{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .sec-h h2{font-size:19px;font-weight:700}
@@ -211,10 +213,72 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--accent);outline-
 .check{display:flex;gap:8px;align-items:center;font-size:14px}
 
 dialog{border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--ink);padding:0;width:min(560px,calc(100vw - 32px));max-height:calc(100vh - 48px)}
+dialog.intro-guide{box-sizing:border-box;width:calc(100vw - 16px);max-width:980px}
+.ig{--ig-paper:#fff;--ig-ink:#18201b;--ig-muted:#5b665f;--ig-line:#d8dfd9;--ig-mask:#1d6b4f;--ig-soft:#e3efe8;--ig-copper:#b5652b;--ig-weak:#9a3b2f;--ig-weak-soft:#f7e9e6;--ig-bg:#f3f5f2;--ig-display:"Gothic A1","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+ display:grid;gap:28px;color:var(--ig-ink);background:var(--ig-bg);margin:-4px;padding:18px 16px 24px;border-radius:8px;font:15px/1.7 var(--f-body)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .ig{--ig-paper:#18201b;--ig-ink:#e7ede8;--ig-muted:#9fb0a5;--ig-line:#2c3830;--ig-mask:#5fc49a;--ig-soft:#1d3329;--ig-copper:#e09a62;--ig-weak:#f09a8c;--ig-weak-soft:#3a201c;--ig-bg:#111612}}
+:root[data-theme="dark"] .ig{--ig-paper:#18201b;--ig-ink:#e7ede8;--ig-muted:#9fb0a5;--ig-line:#2c3830;--ig-mask:#5fc49a;--ig-soft:#1d3329;--ig-copper:#e09a62;--ig-weak:#f09a8c;--ig-weak-soft:#3a201c;--ig-bg:#111612}
+.ig h3,.ig h4,.ig h5{font-family:var(--ig-display);margin:0;line-height:1.3;text-wrap:balance}
+.ig-top{display:grid;gap:8px}
+.ig-tag{font:500 11.5px/1 var(--f-mono);letter-spacing:.08em;color:var(--ig-mask)}
+.ig-top h3{font-size:clamp(21px,4vw,28px);font-weight:800}
+.ig-lead{color:var(--ig-muted);max-width:68ch;margin:0}
+.ig-ex{display:inline-block;font:600 12px/1 var(--f-body);background:var(--ig-weak-soft);color:var(--ig-weak);padding:5px 8px;border-radius:4px;width:max-content}
+.ig-sheet{background:var(--ig-paper);border:1px solid var(--ig-line);border-radius:10px;overflow:hidden}
+.ig-sh{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:baseline;padding:16px 20px;border-bottom:2px solid var(--ig-mask)}
+.ig-sh .nm{font:800 22px/1.2 var(--ig-display)}
+.ig-meta{display:flex;flex-wrap:wrap;gap:4px 14px;color:var(--ig-muted);font-size:13.5px}
+.ig-rev{margin-left:auto;font:500 11.5px/1 var(--f-mono);color:var(--ig-muted);letter-spacing:.06em}
+.ig-headline{padding:18px 20px 4px;margin:0;font:700 clamp(17px,2.6vw,21px)/1.5 var(--ig-display);max-width:40ch}
+.ig-chips{display:flex;flex-wrap:wrap;gap:6px;padding:8px 20px 16px}
+.ig-chips span{font-size:12.5px;background:var(--ig-soft);color:var(--ig-mask);padding:4px 9px;border-radius:999px;font-weight:600}
+.ig-grid{display:grid;grid-template-columns:1.25fr 1fr;border-top:1px solid var(--ig-line)}
+.ig-grid>section{padding:16px 20px;min-width:0;display:grid;gap:10px;align-content:start}
+.ig-grid>section+section{border-left:1px solid var(--ig-line)}
+.ig-lb{font:500 11.5px/1.2 var(--f-mono);color:var(--ig-muted);letter-spacing:.06em}
+.ig-photo{aspect-ratio:16/9;max-width:100%;border-radius:6px;background:var(--ig-soft);overflow:hidden}
+.ig-photo canvas{width:100%;height:100%;display:block}
+.ig-steps{display:grid;gap:6px;margin:0;padding:0;list-style:none}
+.ig-steps li{display:grid;grid-template-columns:72px 1fr;gap:10px;font-size:14.5px}
+.ig-steps b{font:500 12px/1.9 var(--f-mono);color:var(--ig-copper)}
+.ig-num{font-variant-numeric:tabular-nums;font-weight:700;color:var(--ig-mask)}
+.ig-ev{border-left:3px solid var(--ig-copper);padding:2px 0 2px 12px;margin:0;font-size:14.5px}
+.ig p.ig-p{margin:0}
+.ig-ask{margin:0;padding:14px 20px 18px;border-top:1px dashed var(--ig-line);display:grid;gap:4px}
+.ig-ask b{font:700 16px/1.5 var(--ig-display)}
+.ig-guide{display:grid;gap:14px}
+.ig-guide>div:first-child{display:grid;gap:6px}
+.ig-guide h4{font-size:20px;font-weight:800}
+.ig-rule{display:grid;grid-template-columns:44px 1fr;gap:14px;background:var(--ig-paper);border:1px solid var(--ig-line);border-radius:10px;padding:16px 18px}
+.ig-rule .n{font:800 22px/1 var(--ig-display);color:var(--ig-mask);font-variant-numeric:tabular-nums}
+.ig-rule>div{min-width:0;display:grid;gap:8px}
+.ig-rule h5{font-size:16px;font-weight:700}
+.ig-rule p{margin:0;max-width:68ch}
+.ig-pair{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.ig-pair div{border-radius:6px;padding:9px 11px;font-size:14px}
+.ig-weak{background:var(--ig-weak-soft)}
+.ig-weak::before{content:"이렇게 쓰면 지루해요";display:block;font:600 11.5px/1.4 var(--f-body);color:var(--ig-weak);margin-bottom:2px}
+.ig-strong{background:var(--ig-soft)}
+.ig-strong::before{content:"이렇게 바꿔 보세요";display:block;font:600 11.5px/1.4 var(--f-body);color:var(--ig-mask);margin-bottom:2px}
+.ig-avoid{background:var(--ig-paper);border:1px solid var(--ig-line);border-radius:10px;padding:16px 18px}
+.ig-avoid ul{margin:6px 0 0;padding-left:18px}
+.ig-try{background:var(--ig-paper);border:2px solid var(--ig-mask);border-radius:10px;padding:16px 18px;display:grid;gap:8px}
+.ig-try ol{margin:0;padding-left:20px;display:grid;gap:4px}
+@media (max-width:640px){.ig-grid{grid-template-columns:1fr}.ig-grid>section+section{border-left:0;border-top:1px solid var(--ig-line)}.ig-pair{grid-template-columns:1fr}.ig-rev{margin-left:0}.ig-rule{grid-template-columns:30px 1fr;gap:10px;padding:14px}.ig-sh,.ig-grid>section,.ig-ask{padding-left:14px;padding-right:14px}.ig-headline,.ig-chips{padding-left:14px;padding-right:14px}}
 dialog::backdrop{background:rgba(10,16,22,.45)}
 dialog form{display:flex;flex-direction:column;gap:14px;padding:20px}
 dialog h3{font-size:17px}
 .dlg-act{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+dialog.intro-word-preview{box-sizing:border-box;width:calc(100vw - 16px);max-width:none;height:calc(100vh - 16px);height:calc(100dvh - 16px);max-height:none}
+dialog.intro-word-preview form{height:100%;box-sizing:border-box;min-height:0;padding:12px;gap:8px}
+[data-intro-document-status]{margin:0;font-size:13px;overflow-wrap:anywhere}
+[data-intro-document-content]{flex:1;min-height:0}
+[data-intro-document-content] iframe{width:100%;height:100%;border:0;display:block}
+dialog.document-preview{width:calc(100vw - 16px);max-width:none;height:calc(100vh - 16px);height:calc(100dvh - 16px);max-height:none;box-sizing:border-box}
+dialog.document-preview form{height:100%;min-height:0;box-sizing:border-box;padding:12px;gap:8px}
+dialog.document-preview [data-document-status]{margin:0;overflow-wrap:anywhere}
+dialog.document-preview [data-document-content]{flex:1;min-height:0;overflow:auto}
+dialog.document-preview [data-document-view=pdf]{display:block;width:100%;height:100%;border:0}
 
 .empty{padding:28px 18px;text-align:center;color:var(--muted);font-size:14px}
 .empty b{display:block;color:var(--ink);font-weight:600;margin-bottom:4px;font-size:15px}
@@ -287,7 +351,9 @@ body{margin:0} [hidden]{display:none!important}
 #globalSearch{width:min(680px,calc(100vw - 24px));max-height:85dvh;padding:18px;box-sizing:border-box}#globalSearch::backdrop{background:#142c4666}.search-top{display:flex;align-items:center;justify-content:space-between;gap:8px}.search-input{width:100%;box-sizing:border-box;margin:12px 0;padding:12px;font:inherit;border:1px solid var(--line);border-radius:8px}.search-results{display:grid;gap:6px;max-height:55dvh;overflow:auto}.search-result{display:block;width:100%;text-align:left;padding:12px;border:1px solid var(--line);border-radius:8px;background:var(--panel,#fff);color:inherit;font:inherit;cursor:pointer;overflow-wrap:anywhere}.search-result:focus-visible{outline:3px solid #2576b8;outline-offset:-3px}.search-result small{display:block;margin-top:4px;color:var(--muted,#52677c)}
 .schedule-head{display:grid;grid-template-columns:minmax(0,1fr) minmax(300px,420px);gap:16px;align-items:start;margin-bottom:18px}.schedule-head h2{margin:0}.schedule-head p{margin:6px 0 12px}.schedule-sub{min-width:0;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}.schedule-sub>b{display:block;font-size:13px;margin-bottom:8px}.schedule-sub .row{gap:6px;flex-wrap:wrap}.schedule-sub details{margin-top:8px;font-size:12px}.schedule-sub summary{cursor:pointer;color:var(--muted)}
 @media(max-width:760px){.schedule-head{grid-template-columns:minmax(0,1fr);gap:12px}.schedule-sub .btn{white-space:normal}}
-.startup-header{padding:18px max(16px,calc((100vw - 928px)/2));background:var(--surface);border-bottom:1px solid var(--line)}.startup-header b{display:block}.startup-header span,.startup-main p{font-size:13px;color:var(--muted)}.startup-main{max-width:960px;margin:auto;padding:20px 16px;box-sizing:border-box}.startup-main h2{margin:0}.up-panel{position:fixed;right:16px;bottom:16px;z-index:40;width:min(380px,calc(100vw - 32px));max-height:60vh;overflow:auto;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 28px #0003;padding:10px 12px}.up-head{display:flex;align-items:center;gap:8px;margin-bottom:4px}.up-head b{flex:1;font-size:14px}.up-item{padding:6px 0;border-top:1px solid var(--line)}.up-name{display:flex;gap:8px;justify-content:space-between;font-size:13.5px}.up-name span:first-child{overflow-wrap:anywhere;min-width:0}.up-bar{height:6px;border-radius:6px;background:var(--line);overflow:hidden;margin:5px 0 3px}.up-bar i{display:block;height:100%;background:var(--accent);transition:width .3s}.up-bar.ind i{animation:upind 1.2s ease-in-out infinite}.up-ok .up-bar i{background:#2e9d5b}.up-bad .up-bar i{background:#c0392b;width:100%!important}.up-bad .ev-s{color:#c0392b}@keyframes upind{from{transform:translateX(-100%)}to{transform:translateX(290%)}}@media (prefers-reduced-motion:reduce){.up-bar.ind i{animation:none}}.photo-by{display:block;font-size:11.5px;color:var(--muted)}.drv-by{font-weight:600;color:var(--ink)}.my-todo .todo-add{margin-top:8px;gap:6px;flex-wrap:wrap}.my-todo .todo-add input[type=text]{flex:1 1 160px;min-width:0}.my-todo .todo-add input[type=date]{width:140px}.todo-list{list-style:none;margin:8px 0 0;padding:0}.todo-item{display:flex;align-items:center;gap:8px;padding:6px 0;border-top:1px solid var(--line)}.todo-item label{flex:1;display:flex;gap:8px;align-items:flex-start;min-width:0;overflow-wrap:anywhere;cursor:pointer}.todo-item.done label span{text-decoration:line-through;color:var(--muted)}.todo-item .late{color:#c0392b;font-weight:600}.todo-memo{margin-top:8px}.todo-memo summary{cursor:pointer;font-size:13px;color:var(--muted)}.todo-memo textarea{width:100%;box-sizing:border-box;margin-top:6px}.mh-item{display:flex;align-items:center;gap:6px;padding:6px 0;border-bottom:1px solid var(--line)}.mh-item label{flex:1;min-width:0}.sp{margin:12px 0 4px;max-width:520px}.sp-bar{height:6px;border-radius:6px;background:var(--line);overflow:hidden}.sp-bar i{display:block;height:100%;width:3%;background:var(--accent);transition:width .25s linear}.sp-steps{list-style:none;margin:10px 0 4px;padding:0;font-size:13.5px}.sp-steps li{padding:2px 0 2px 22px;position:relative;color:var(--muted)}.sp-steps li::before{content:"";position:absolute;left:3px;top:8px;width:9px;height:9px;border-radius:50%;border:2px solid var(--line);box-sizing:border-box}.sp-steps li.done::before{background:var(--accent);border-color:var(--accent)}.sp-steps li.now{color:var(--ink);font-weight:600}.sp-steps li.now::before{border-color:var(--accent);animation:spp 1s ease-in-out infinite}.sp-steps b{font-variant-numeric:tabular-nums;font-weight:600;color:var(--accent)}#spNote{font-size:13px;color:var(--muted);margin:2px 0}@keyframes spp{50%{opacity:.3}}@media (prefers-reduced-motion:reduce){.sp-steps li.now::before{animation:none}}.upd b{font-variant-numeric:tabular-nums}.startup-placeholder{height:100px;margin-top:14px;border-radius:12px;border:1px solid var(--line);background:var(--surface)}
+.startup-header{padding:18px max(16px,calc((100vw - 928px)/2));background:var(--surface);border-bottom:1px solid var(--line)}.startup-header b{display:block}.startup-header span,.startup-main p{font-size:13px;color:var(--muted)}.startup-.nav-context{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+.hub-nav{display:flex;flex-wrap:wrap;gap:6px;padding:10px 0;border-bottom:1px solid var(--line)}
+main{max-width:960px;margin:auto;padding:20px 16px;box-sizing:border-box}.startup-main h2{margin:0}.up-panel{position:fixed;right:16px;bottom:16px;z-index:40;width:min(380px,calc(100vw - 32px));max-height:60vh;overflow:auto;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 28px #0003;padding:10px 12px}.up-head{display:flex;align-items:center;gap:8px;margin-bottom:4px}.up-head b{flex:1;font-size:14px}.up-item{padding:6px 0;border-top:1px solid var(--line)}.up-name{display:flex;gap:8px;justify-content:space-between;font-size:13.5px}.up-name span:first-child{overflow-wrap:anywhere;min-width:0}.up-bar{height:6px;border-radius:6px;background:var(--line);overflow:hidden;margin:5px 0 3px}.up-bar i{display:block;height:100%;background:var(--accent);transition:width .3s}.up-bar.ind i{animation:upind 1.2s ease-in-out infinite}.up-ok .up-bar i{background:#2e9d5b}.up-bad .up-bar i{background:#c0392b;width:100%!important}.up-bad .ev-s{color:#c0392b}@keyframes upind{from{transform:translateX(-100%)}to{transform:translateX(290%)}}@media (prefers-reduced-motion:reduce){.up-bar.ind i{animation:none}}.photo-by{display:block;font-size:11.5px;color:var(--muted)}.drv-by{font-weight:600;color:var(--ink)}.my-todo .todo-add{margin-top:8px;gap:6px;flex-wrap:wrap}.my-todo .todo-add input[type=text]{flex:1 1 160px;min-width:0}.my-todo .todo-add input[type=date]{width:140px}.todo-list{list-style:none;margin:8px 0 0;padding:0}.todo-item{display:flex;align-items:center;gap:8px;padding:6px 0;border-top:1px solid var(--line)}.todo-item label{flex:1;display:flex;gap:8px;align-items:flex-start;min-width:0;overflow-wrap:anywhere;cursor:pointer}.todo-item.done label span{text-decoration:line-through;color:var(--muted)}.todo-item .late{color:#c0392b;font-weight:600}.todo-memo{margin-top:8px}.todo-memo summary{cursor:pointer;font-size:13px;color:var(--muted)}.todo-memo textarea{width:100%;box-sizing:border-box;margin-top:6px}.mh-item{display:flex;align-items:center;gap:6px;padding:6px 0;border-bottom:1px solid var(--line)}.mh-item label{flex:1;min-width:0}.sp{margin:12px 0 4px;max-width:520px}.sp-bar{height:6px;border-radius:6px;background:var(--line);overflow:hidden}.sp-bar i{display:block;height:100%;width:3%;background:var(--accent);transition:width .25s linear}.sp-steps{list-style:none;margin:10px 0 4px;padding:0;font-size:13.5px}.sp-steps li{padding:2px 0 2px 22px;position:relative;color:var(--muted)}.sp-steps li::before{content:"";position:absolute;left:3px;top:8px;width:9px;height:9px;border-radius:50%;border:2px solid var(--line);box-sizing:border-box}.sp-steps li.done::before{background:var(--accent);border-color:var(--accent)}.sp-steps li.now{color:var(--ink);font-weight:600}.sp-steps li.now::before{border-color:var(--accent);animation:spp 1s ease-in-out infinite}.sp-steps b{font-variant-numeric:tabular-nums;font-weight:600;color:var(--accent)}#spNote{font-size:13px;color:var(--muted);margin:2px 0}@keyframes spp{50%{opacity:.3}}@media (prefers-reduced-motion:reduce){.sp-steps li.now::before{animation:none}}.upd b{font-variant-numeric:tabular-nums}.startup-placeholder{height:100px;margin-top:14px;border-radius:12px;border:1px solid var(--line);background:var(--surface)}
 .drv-row{flex-wrap:wrap}.drv-row .drv-nm{flex:1 1 140px}
 
 .equipment-unit-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(125px,1fr));gap:8px;margin:12px 0}.equipment-unit{display:flex;flex-direction:column;gap:4px;border:1px solid var(--line,#ddd);border-radius:10px;padding:10px;overflow-wrap:anywhere;min-width:0}.equipment-unit label,.equipment-unit>span:first-child{display:flex;align-items:center;gap:6px}.equipment-unit input[type=checkbox]{width:18px;height:18px;flex:none;margin:0;accent-color:#d4561c}.equipment-unit.in-use{background:#fff4e8;border-color:#e2a66c}.equipment-unit>span:last-child{font-size:13px}.equipment-choices{border:0;padding:0;min-width:0;margin:12px 0}.equipment-warning{padding:10px;background:#fff4e8;border-radius:8px}details[data-equipment-details]>summary{cursor:pointer;padding:8px 0;font-size:17px}
@@ -349,6 +415,7 @@ window.addEventListener("unhandledrejection",function(e){shown(e.reason&&e.reaso
         <div class="mark" aria-hidden="true" data-home>도</div>
         <div class="ttl"><h1 data-home role="link" tabindex="0" title="오늘(홈)으로">도제반 알림판</h1><p>경기항공고 로봇자동화과 · 전자기기생산 L2 도제</p><p class="upd" id="updAt" hidden></p></div>
         <button class="btn sm" id="searchTop" aria-haspopup="dialog" aria-keyshortcuts="Control+k Meta+k">검색</button>
+        <button class="btn sm" id="profileTop" title="내 정보·설정">내 정보</button>
         <span class="role" id="role"></span>
         <button class="btn sm ghost" id="logoutTop">나가기</button>
       </div>
@@ -426,9 +493,15 @@ const anonGroupLabel = category => ANON_GROUPS[category] || '공통';
 const isLearner = () => !T() && myGroup() === "learner";
 let calSel = TODAY, schedMode = "cal", aftWeek = null, showPersonal = true, reqOpen = null, reqFilter = "active", openReaders = new Set(), armed = null, armT;
 const T = () => D && D.me.role === "teacher";
+const A = () => T()&&D.me.isAdmin!==false;
 const myGroup = () => D && D.me.group || "";
 const isGuest = () => Boolean(D && D.me && D.me.role === "guest");
-const GUEST_TABS = ["today", "school"];
+const newUid = () => { try { if (window.crypto && crypto.randomUUID) return crypto.randomUUID(); } catch (e) {} const b = new Uint8Array(16); (window.crypto || {}).getRandomValues ? crypto.getRandomValues(b) : b.forEach((_, i) => b[i] = Math.random() * 256); return Array.from(b, x => x.toString(16).padStart(2, "0")).join("").replace(/^(.{8})(.{4})(.{4})(.{4})/, "$1-$2-$3-$4-"); };
+const isViewer = () => Boolean(D && D.me && D.me.viewer);
+const VIEWER_WRITE_RE = /^data-.*(new|edit|del|save|upload|remove|review|reply|add|setup|create|share|borrow|return|assign|connect|todo|memo|myhome|account|extra|grant|decide|approve|reject|report|resolve|sync|send|seed|refresh|makepins|copypins|private|att-all|ics-make|ics-reset|tr-event|photo-default|retry|setstatus)/;
+let viewerObs=null;
+function viewerStrip(){if(!isViewer()){if(viewerObs){viewerObs.disconnect();viewerObs=null;}return;}const sweep=()=>document.querySelectorAll("#main button,#main a.btn,#main form,#main label.btn,#main input[type=file],dialog button,dialog form").forEach(e=>{if(e.tagName==="FORM"&&e.closest("#main")){e.remove();return;}if(e.tagName!=="FORM"&&[...e.attributes].some(a=>VIEWER_WRITE_RE.test(a.name)&&a.name!=="data-intro-shared"))e.remove();});sweep();if(!viewerObs){viewerObs=new MutationObserver(()=>{if(isViewer())sweep();});viewerObs.observe(document.body,{childList:true,subtree:true});}}
+const GUEST_TABS = ["today","notices","schedule","after","school","projects","board","contest","cert","company","materials","tools"];
 const matches = (t, g) => !t || t === "all" || t === g || (t === "pre" && (g === "pre1" || g === "pre2"));
 
 /* ---------- 서버 호출 ---------- */
@@ -438,7 +511,7 @@ function setBusy(d){ busy += d; $("#loading").hidden = busy <= 0; }
 function callRaw(action, payload, c, withLoad){
   setBusy(1);
   return new Promise((res, rej) => {
-    google.script.run.withSuccessHandler(r => { setBusy(-1); if (r && r.ok) res(r); else rej(new Error(r && r.error || "응답이 없습니다")); })
+    google.script.run.withSuccessHandler(r => { setBusy(-1); if(r&&r.loginRequired!==undefined)lsSet("dj.login.required",r.loginRequired?"true":"false");if (r && r.ok) res(r); else rej(Object.assign(new Error(r && r.error || "응답이 없습니다"),{loginRequired:!!(r&&r.loginRequired),studentLoginRequired:!!(r&&r.studentLoginRequired)})); })
       .withFailureHandler(e => { setBusy(-1); rej(new Error("연결이 끊겼습니다. 잠시 후 다시 시도해 주세요.")); })
       .api({ action, payload: payload || {}, cred: c || cred, withLoad: !!withLoad });
   });
@@ -454,27 +527,38 @@ function hydrateResourceLinks(){
 function resourceLinkStatus(){return D.linksDeferred?'<section class="panel pad" role="status">'+(resourceLinkError?esc(resourceLinkError)+' <button class="btn sm" data-resource-retry>다시 불러오기</button>':'Drive·노션 자료 목록을 불러오는 중…')+'</section>':"";}
 /* 메뉴를 누르기 전에는 전체 자료를 추가로 읽지 않습니다. */
 function hydrateFullData(){
- if(!D||!D.homeOnly||isGuest())return Promise.resolve(D);if(fullLoadPending)return fullLoadPending;
+ if(!D||!D.homeOnly)return Promise.resolve(D);if(fullLoadPending)return fullLoadPending;
  const epoch=fullLoadEpoch,owner=JSON.stringify(cred||{});fullLoadError="";
  fullLoadPending=call("load",{deferLinks:true}).then(data=>{if(epoch!==fullLoadEpoch||owner!==JSON.stringify(cred||{}))return;setData(data);if(searchDialog.open)paintGlobalSearch();return data;}).catch(e=>{if(epoch!==fullLoadEpoch)return;fullLoadError=e.message;if(!dlg.open)render();toast(e.message);}).finally(()=>{if(epoch===fullLoadEpoch){fullLoadPending=null;if(D&&D.homeOnly&&fullLoadError&&tab==="today"&&!dlg.open)render();}});return fullLoadPending;
 }
 function fullLoadNotice(){return '<section class="panel pad" role="status"><h2>자료를 불러오고 있습니다…</h2><p>이 메뉴에 필요한 최신 자료를 확인합니다.</p>'+(fullLoadError?'<p>'+esc(fullLoadError)+'</p><button class="btn" data-full-retry>다시 불러오기</button>':'')+'</section>';}
 $("#main").addEventListener("click",e=>{if(e.target.closest("[data-home-details],[data-full-retry]")){fullLoadError="";hydrateFullData();render();}});
 /* 첫 화면 빠르게: 이 기기에 로그인을 유지한 경우에만 마지막 첫 화면 자료(공지 3건·급식·2주 일정)를 저장해 두고, 다음 방문 때 먼저 보여 준 뒤 새 자료로 바꿉니다. 로그아웃하면 지웁니다. */
-const HOME_KEY="dj.home.v1";
+const HOME_KEY="dj.home.v2";
 const credTag=c=>{const t=JSON.stringify(c||{});let h=2166136261;for(let i=0;i<t.length;i++){h^=t.charCodeAt(i);h=Math.imul(h,16777619);}return (h>>>0).toString(36)+"."+t.length;};
 function saveHome(d){ if(!d||!d.homeOnly)return; if(JSON.stringify(cred||{})!==(lsGet("dj.cred")||"{}"))return; try{lsSet(HOME_KEY,JSON.stringify({who:credTag(cred),day:d.today,at:Date.now(),data:d}));}catch{} }
 function cachedHome(c){ try{const x=JSON.parse(lsGet(HOME_KEY)||"null");if(!x||x.who!==credTag(c)||x.day!==ymd(new Date())||Date.now()-x.at>43200000)return null;return x.data;}catch{return null;} }
-function setData(d){ if(d&&d.homeOnly&&!d.fromCache)saveHome(d); if(!d.homeOnly)fullLoadError=""; $("#startupScreen").hidden=true; if(!D)tab=tab==="school"?"school":"today"; D = d;resourceLinkError=""; TODAY = D.today || TODAY; showUpdated(); render(); }
+let introDeepPending=location.hash==='#intro';
+function setData(d){ if(d&&d.homeOnly&&!d.fromCache)saveHome(d); if(!d.homeOnly)fullLoadError=""; $("#startupScreen").hidden=true; if(!D)tab=tab==="school"?"school":"today"; D = d;resourceLinkError=""; TODAY = D.today || TODAY; showUpdated(); render(); if(introDeepPending){introDeepPending=false;queueMicrotask(openIntroEntry);} }
 function showUpdated(){ const el = $("#updAt"), u = D && D.lastUpdate; if (!el) return; if (D && D.fromCache){ el.innerHTML = "저장된 화면 · 최신 자료 받는 중 <b>"+(performance.now()/1000).toFixed(1)+"초</b>"; el.hidden = false; clearTimeout(showUpdated.t); showUpdated.t = setTimeout(showUpdated, 200); return; } if (!u || !u.at){ el.textContent = ""; el.hidden = true; return; } const day = u.at.slice(0,10), hm = u.at.slice(11,16); el.textContent = "최근 업데이트 " + (day === TODAY ? "오늘" : Number(day.slice(5,7)) + "." + Number(day.slice(8,10))) + (hm ? " " + hm : "") + (u.what ? " · " + u.what : ""); el.hidden = false; }
-async function reload(){ drvStale(); const epoch=fullLoadEpoch,owner=JSON.stringify(cred||{});try { const data=await call("load", {deferLinks:true,homeOnly:!!(D&&D.homeOnly)});if(epoch!==fullLoadEpoch||owner!==JSON.stringify(cred||{}))return;if(data.homeOnly&&D&&!D.homeOnly)return;setData(data); } catch (e) { if (/PIN|비밀번호|이름/.test(e.message)) { logout(e.message); } else toast(e.message); } }
+async function reload(){ drvStale(); const epoch=fullLoadEpoch,owner=JSON.stringify(cred||{});try { const data=await call("load", {deferLinks:true,homeOnly:!!(D&&D.homeOnly)});if(epoch!==fullLoadEpoch||owner!==JSON.stringify(cred||{}))return;if(data.homeOnly&&D&&!D.homeOnly)return;setData(data); } catch (e) { if (/PIN|비밀번호|이름|로그인|등록된/.test(e.message)) { logout(e.message); } else toast(e.message); } }
 async function act(action, payload, msg){
+  if(isViewer()){toast("보기 전용입니다. 로그인하면 쓸 수 있습니다.");return false;}
   try { const r = await callRaw(action, payload, null, true); if (msg) toast(msg); if (r.load) setData(r.load); else await reload(); return true; }
   catch (e) { toast(e.message); return false; }
 }
 
+function storeStudentSession(token,remember){cred={session:token};lsSet('dj.cred',remember?JSON.stringify(cred):null);try{sessionStorage.setItem('dj.session',JSON.stringify(cred));}catch{}}
+function studentAccountPanel(){if(!D.me.studentId)return '';return '<section class="panel pad"><h3>내 로그인 정보</h3><p>'+esc(D.me.name)+' · 학번 '+esc(D.me.studentId)+' · '+esc(D.me.klass)+'</p><label class="check"><input type="checkbox" id="studentAccountKeep" '+(lsGet('dj.cred')?'checked':'')+'> 이 기기에 내 로그인 정보 저장</label><div class="row"><button class="btn" data-account-save>내 정보 저장</button><button class="btn" data-student-password>비밀번호 변경</button></div><p class="ev-s">저장을 선택하면 비밀번호 대신 로그인 토큰을 저장합니다. 공용 기기에서는 나갈 때 로그아웃해 주세요.</p></section>';}
+function studentPasswordDlg(){openDlg('내 비밀번호 변경',field('현재 비밀번호','currentPassword','','password','required autocomplete="current-password" maxlength="64"')+field('새 비밀번호 (5~64자)','password','','password','required minlength="5" maxlength="64" autocomplete="new-password"')+field('새 비밀번호 확인','confirmPassword','','password','required maxlength="64" autocomplete="new-password"')+'<p class="ev-s">변경하면 이전 비밀번호와 다른 기기의 저장된 로그인은 사용할 수 없습니다.</p>','변경',async fd=>{try{const remember=!!lsGet('dj.cred'),r=await call(D.me.staffAccount?'changeStaffPassword':'changeStudentPassword',{...fd,remember});storeStudentSession(r.session,remember);toast('비밀번호를 변경했습니다');return true;}catch(e){toast(e.message);return false;}});}
+function staffAccountPanel(){return '<section class="panel pad"><h3>'+esc(D.me.name)+' · '+(A()?'최고관리자':'교사')+'</h3>'+(D.me.staffAccount?'<label class="check"><input type="checkbox" id="studentAccountKeep" '+(lsGet('dj.cred')?'checked':'')+'> 이 기기에 내 로그인 정보 저장</label><div class="row"><button class="btn" data-account-save>내 정보 저장</button><button class="btn" data-staff-password>내 비밀번호 변경</button></div>':'<p>최고관리자 계정으로 교사 계정 등록을 먼저 완료해 주세요.</p>')+(A()?'<p>교사 계정·학생 계정과 전체 연동 설정은 최고관리자가 관리합니다.</p><div class="row"><button class="btn" data-setup-staff>교사 계정 등록·초기 비밀번호 설정</button><button class="btn" data-staff-list>교사 계정·권한 보기</button></div>':'')+'</section>';}
+async function staffAccountsDlg(){openDlg('교사 계정과 권한','<div id="staffAccountList" role="status">계정을 확인하는 중…</div>','닫기',()=>true);const box=$('#staffAccountList');try{const list=await call('staffAccounts');if(!box.isConnected)return;box.innerHTML=list.length?'<div class="tbl-wrap"><table><thead><tr><th>이름</th><th>권한</th><th>상태</th></tr></thead><tbody>'+list.map(a=>'<tr><td>'+esc(a.name)+'</td><td>'+(a.access==='admin'?'최고관리자':'교사')+'</td><td>'+(a.active?'사용':'중지')+'</td></tr>').join('')+'</tbody></table></div>':'등록된 교사 계정이 없습니다.';}catch(e){if(box.isConnected)box.textContent=e.message;}}
+function setupStaffDlg(){openDlg('교사 계정 등록','<p>교사 명단 파일을 선택하고 공통 초기 비밀번호를 직접 입력해 주세요. 최고관리자는 기존 관리자 비밀번호를 유지합니다.</p><input id="staffImportFile" type="file" accept=".json,application/json" required>'+field('교사 공통 초기 비밀번호','staffPassword','','password','required minlength="5" maxlength="64" autocomplete="new-password"')+'<label class="check"><input type="checkbox" name="resetTeachers" checked> 기존 교사 비밀번호도 공통 초기값으로 맞추기</label><p id="staffImportSummary" role="status"></p>','등록',async fd=>{try{const f=$('#staffImportFile').files[0];if(!f||f.size>100000)throw Error('교사 등록용 파일을 선택해 주세요');const d=JSON.parse(await f.text()),remember=!!lsGet('dj.cred'),r=await call('setupStaffAccounts',{adminName:d.adminName,teachers:d.teachers,password:fd.staffPassword,resetTeachers:fd.resetTeachers,remember});storeStudentSession(r.session,remember);toast('최고관리자 1명과 교사 '+r.teachers+'명 등록 완료');await reload();return true;}catch(e){toast(e.message);return false;}});$('#staffImportFile').onchange=async()=>{try{const f=$('#staffImportFile').files[0];if(!f||f.size>100000)throw Error();const d=JSON.parse(await f.text());$('#staffImportSummary').textContent='최고관리자 1명 · 교사 '+d.teachers.length+'명';}catch{$('#staffImportSummary').textContent='교사 등록 파일을 확인해 주세요.';}};}
+function importClass3Dlg(){openDlg('1~3학년 3반 학생 계정 등록','<p>교사 등록용 JSON 파일을 선택해 주세요. 파일의 이름과 학번만 사용하며, 초기 비밀번호는 학번입니다. 다시 등록해도 변경한 비밀번호는 유지합니다.</p><input id="class3ImportFile" type="file" accept=".json,application/json" required><p id="class3ImportSummary" role="status"></p>','등록',async()=>{try{const file=$('#class3ImportFile').files[0];if(!file||file.size>100000)throw Error('교사 등록용 JSON 파일을 선택해 주세요');const parsed=JSON.parse(await file.text()),r=await call('importClass3Students',{students:parsed.students});toast('학생 계정 '+r.total+'명 등록 완료');await reload();return true;}catch(e){toast(e.message);return false;}});$('#class3ImportFile').onchange=async()=>{try{const f=$('#class3ImportFile').files[0];if(!f||f.size>100000)throw Error();const data=JSON.parse(await f.text()),list=data.students;if(!Array.isArray(list))throw Error();$('#class3ImportSummary').textContent='등록 대상 '+list.length+'명 · 1학년 '+list.filter(s=>String(s.studentId)[0]==='1').length+'명 · 2학년 '+list.filter(s=>String(s.studentId)[0]==='2').length+'명 · 3학년 '+list.filter(s=>String(s.studentId)[0]==='3').length+'명';}catch{$('#class3ImportSummary').textContent='등록 파일을 확인해 주세요.';}};}
+$('#main').addEventListener('click',e=>{if(e.target.closest('[data-student-password],[data-staff-password]'))studentPasswordDlg();if(e.target.closest('[data-public-access]'))act('setPublicAccess',{enabled:!D.publicAccess},D.publicAccess?'로그인 필수로 잠갔습니다':'자유 접속을 허용했습니다');if(e.target.closest('[data-setup-staff]'))setupStaffDlg();if(e.target.closest('[data-staff-list]'))staffAccountsDlg();if(e.target.closest('[data-import-class3]'))importClass3Dlg();if(e.target.closest('[data-account-save]')){if(!cred||!cred.session)return;storeStudentSession(cred.session,$('#studentAccountKeep').checked);lsSet(T()?'dj.teacher.name':'dj.name',D.me.name);toast('내 로그인 정보를 저장했습니다');}});
 /* ---------- 로그인 ---------- */
 function gate(msg){
+  navHistory=[];navAnchor='';
   $("#startupScreen").hidden=true;
   $("#shell").hidden = true; $("#gate").hidden = false;
   const mode = lsGet("dj.mode") || "student";
@@ -484,30 +568,32 @@ function gate(msg){
     <form id="loginForm" class="panel pad" style="display:flex;flex-direction:column;gap:12px">
       ${mode === "student" ? `
         <label class="fld"><span>이름</span><input type="text" id="lg-name" autocomplete="name" required maxlength="30" value="${esc(lsGet("dj.name") || "")}"></label>
-        <label class="fld"><span>PIN (선생님께 받은 4자리)</span><input type="password" id="lg-pin" inputmode="numeric" autocomplete="current-password" required maxlength="8"></label>`
-      : `<label class="fld"><span>선생님 비밀번호</span><input type="password" id="lg-pw" autocomplete="current-password" required></label>`}
-      <label class="check"><input type="checkbox" id="lg-keep"> 이 기기에서 로그인 유지</label>
+        <label class="fld"><span>비밀번호 (처음에는 학번)</span><input type="password" id="lg-pin" autocomplete="current-password" required maxlength="64"></label>`
+      : `<label class="fld"><span>교사 이름</span><input type="text" id="lg-teacher-name" autocomplete="username" maxlength="30" value="${esc(lsGet("dj.teacher.name")||"")}"></label><label class="fld"><span>선생님 비밀번호</span><input type="password" id="lg-pw" autocomplete="current-password" required></label>`}
+      <label class="check"><input type="checkbox" id="lg-keep"> 내 로그인 정보 저장 (이 기기)</label>
       <button class="btn pri" type="submit">들어가기</button>
     </form>
-    <button class="btn ghost" type="button" id="guestBrowse">로그인 없이 둘러보기</button>
-    <p style="font-size:13px">로그인 없이 보면 전체 공지·급식·시간표·학교 일정만 보입니다. PIN을 모르면 선생님께 물어보세요. 홈 화면에 추가하면 앱처럼 열 수 있습니다.</p></div>`;
-  $("#guestBrowse").onclick = () => enterGuest();
+    ${lsGet("dj.login.required")==="true"?"":'<button class="btn ghost" type="button" id="guestBrowse">로그인 없이 둘러보기</button>'}
+    <p style="font-size:13px">1~3학년 3반 학생은 이름과 비밀번호로 로그인하세요. 초기 비밀번호는 학번(예: 20313)입니다. 홈 화면에 추가하면 앱처럼 열 수 있습니다.</p></div>`;
+  if($("#guestBrowse"))$("#guestBrowse").onclick = () => enterGuest();
   $("#gate").querySelectorAll("[data-mode]").forEach(b => b.onclick = () => { lsSet("dj.mode", b.dataset.mode); gate(); });
   $("#loginForm").onsubmit = async e => {
     e.preventDefault();
-    const c = mode === "student" ? { name: $("#lg-name").value.trim(), pin: $("#lg-pin").value.trim() } : { teacher: $("#lg-pw").value };
+    const c = mode === "student" ? { name: $("#lg-name").value.trim(), pin: $("#lg-pin").value.trim() } : { teacherName:$("#lg-teacher-name").value.trim(),teacher: $("#lg-pw").value };
     try {
-      const data = await call("load", {deferLinks:true,homeOnly:true}, c);
-      cred = c;
-      if ($("#lg-keep").checked) lsSet("dj.cred", JSON.stringify(c)); else lsSet("dj.cred", null);
-      if (c.name) lsSet("dj.name", c.name);
+      const login=await call("login",{remember:$("#lg-keep").checked},c),authCred=login.session?{session:login.session}:c;
+      const data = await call("load", {deferLinks:true,homeOnly:true}, authCred);
+      cred = authCred;
+      if ($("#lg-keep").checked) lsSet("dj.cred", JSON.stringify(cred)); else lsSet("dj.cred", null);
+      try{if(cred.session)sessionStorage.setItem("dj.session",JSON.stringify(cred));else sessionStorage.removeItem("dj.session");}catch{}
+      if (c.name) lsSet("dj.name", c.name);if(c.teacherName)lsSet("dj.teacher.name",c.teacherName);
       $("#gate").hidden = true; $("#shell").hidden = false;
       setData(data);
     } catch (err) { gate(err.message); }
   };
 }
-function logout(msg){ fullLoadEpoch++;fullLoadPending=null;fullLoadError=""; clearGlobalSearch(); todayDriveNews.clear();todayNewsOwner="";resourceLinkEpoch++;resourceLinkPending=null; if (D && D.loginDisabled) return reload(); const guestOk = Boolean(D && D.guestView); cred = null; D = null; noticeImages.clear(); noticeImagesPending.clear(); lsSet("dj.cred", null); lsSet(HOME_KEY, null); if (guestOk && !msg) return enterGuest(); gate(msg); }
-$("#logoutTop").onclick = () => isGuest() ? gate() : logout();
+function logout(msg){ if(cred&&cred.session)call("logoutSession",{token:cred.session}).catch(()=>{});try{sessionStorage.removeItem("dj.session");}catch{}fullLoadEpoch++;fullLoadPending=null;fullLoadError=""; clearGlobalSearch(); todayDriveNews.clear();todayNewsOwner="";resourceLinkEpoch++;resourceLinkPending=null; if (D && D.loginDisabled) return reload(); const guestOk = Boolean(D && D.guestView); cred = null; D = null; noticeImages.clear(); noticeImagesPending.clear(); lsSet("dj.cred", null); lsSet(HOME_KEY, null); if (guestOk && !msg) return enterGuest(); gate(msg); }
+$("#logoutTop").onclick = () => (isGuest()||isViewer()) ? gate() : logout();
 /* 로그인 없이 둘러보기: 비어 있는 로그인 정보로 들어오면 서버가 '손님'으로 공개 자료만 보냅니다. */
 async function enterGuest(){ try { const data = await call("load", {deferLinks:true,homeOnly:true}, {}); if (!data.me || data.me.role !== "guest" && !data.loginDisabled) throw new Error("로그인해 주세요"); cred = {}; $("#gate").hidden = true; $("#shell").hidden = false; tab = "today"; setData(data); } catch (e) { gate(e.message); } }
 
@@ -515,38 +601,110 @@ async function enterGuest(){ try { const data = await call("load", {deferLinks:t
 const LEARNER_TABS = [['training','도제훈련'],['ojtcalendar','OJT 시간표'],['attendance','훈련 출결'],['units','능력단위']];
 let learnerTab = LEARNER_TABS.some(([k]) => k === lsGet('dj.learnerTab')) ? lsGet('dj.learnerTab') : 'training';
 function isLearnerTab(k){ return LEARNER_TABS.some(([key]) => key === k); }
-function tabsFor(){
-  if (isGuest()) return [["today","오늘"],["school","시간표·급식"]];
-  const t = baseTabs(), h = D && D.myHome;
-  if (!h) return t;
-  const hidden = new Set((h.hiddenTabs || []).filter(k => k !== "today" && k !== "me")), order = h.tabs || [];
-  const pos = k => { const i = order.indexOf(k); return i < 0 ? 1000 + t.findIndex(x => x[0] === k) : i; };
-  return t.filter(([k]) => !hidden.has(k)).sort((a, b) => pos(a[0]) - pos(b[0]));
+const NAV_LABELS={today:'오늘',notices:'공지·소통',schedule:'일정',projects:'프로젝트',contest:'대회·자격증',company:'진로',materials:'자료실',learner:'도제훈련',roster:'교사 관리'};
+function rootOf(k){
+
+ if(['notices','anon','requests'].includes(k))return 'notices';
+ if(['schedule','school'].includes(k))return 'schedule';
+ if(['projects','board','purchases','equipment'].includes(k))return 'projects';
+ if(['contest','cert'].includes(k))return 'contest';
+ if(['company','portfolio','intro'].includes(k))return 'company';
+ if(['materials','photos','tools'].includes(k))return 'materials';
+ if(k==='learner'||isLearnerTab(k))return 'learner';
+ if(['roster','register'].includes(k)||k==='me'&&T())return 'roster';
+ return k;
 }
 function baseTabs(){
-  let t;
-  if (T()) t = [["today","오늘"],["notices","공지"],["learner","학습근로자"],["schedule","일정"],["purchases","구매요청"],["anon","익명게시판"],["portfolio","포트폴리오"],["roster","명단"],["me","설정"]];
-  else if (isLearner()) t = [["today","오늘"],["notices","공지"],["learner","학습근로자"],["schedule","일정"],["purchases","구매요청"],["anon","익명게시판"],["portfolio","포트폴리오"]].concat([["me","내 정보"]]);
-  else t = [["today","오늘"],["notices","공지"],["schedule","일정"],["anon","익명게시판"],["purchases","구매요청"],["portfolio","포트폴리오"],["me","내 정보"]];
-  t.splice(t.findIndex(([k])=>k==="portfolio"),0,["projects","프로젝트"],["contest","대회"],["cert","자격증"],["company","기업정보"],["photos","사진첩"]);
-  const si = t.findIndex(x => x[0] === "schedule"); t.splice(si < 0 ? 1 : si + 1, 0, ["school", "시간표·급식"]);
-  t.splice(t.findIndex(([k])=>k==="purchases")+1,0,["equipment","실습기자재"]);
-  return t;
+ const keys=['today','notices','schedule','projects','contest','company','materials'];
+ if(T()||isLearner())keys.push('learner');if(T())keys.push('roster');
+ return keys.map(k=>[k,NAV_LABELS[k]]);
 }
-function go(k){
-  if (isGuest() && !GUEST_TABS.includes(k)) { gate("로그인하면 이 메뉴를 볼 수 있습니다."); return; }
-  if (k === 'requests') k = 'anon';
-  if (k === 'board') { projSub = 'board'; k = 'projects'; }
-  if (k === 'attendance' && !T() && !isLearner()) { schedMode = 'attendance'; k = 'schedule'; }
-  if (k === 'learner') k = learnerTab;
-  if (isLearnerTab(k) && tabsFor().some(([key]) => key === 'learner')) {
-    learnerTab = k; lsSet('dj.learnerTab', k);
-    if (k === 'attendance') prepareAttendanceScope('train');
-  }
-  tab = k; lsSet("dj.tab", k); reqOpen = null; anonOpen = null; render(); scrollTo({top:0}); }
-$("#tabs").addEventListener("click", e => { const b = e.target.closest("[data-tab]"); if (b) { boardOpen = null; go(b.dataset.tab); } });
-document.querySelector("#shell .bar-top").addEventListener("click", e => { if (e.target.closest("[data-home]")) { boardOpen = null; go("today"); } });
-document.querySelector("#shell .bar-top").addEventListener("keydown", e => { if (e.target.closest("[data-home]") && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); boardOpen = null; go("today"); } });
+function tabsFor(){
+ if(isGuest())return baseTabs();
+ const t=baseTabs(),h=D&&D.myHome;if(!h)return t;
+ const current=new Set(t.map(x=>x[0]));
+ const hidden=new Set((h.hiddenTabs||[]).filter(k=>current.has(k)&&k!=='today'));
+ const order=[...new Set((h.tabs||[]).map(rootOf))],pos=k=>order.includes(k)?order.indexOf(k):100+t.findIndex(x=>x[0]===k);
+ return t.filter(([k])=>!hidden.has(k)).sort((a,b)=>pos(a[0])-pos(b[0]));
+}
+function routeAllowed(k){if(isGuest())return GUEST_TABS.includes(k);if(k==='me')return !isViewer();return baseTabs().some(([r])=>r===rootOf(k));}
+let navHistory=[],navCaptured=false,navScroll=null,navAnchor='';
+function navState(){return {tab,projSub,boardOpen,boardFilter,boardQuery,noticeOpen,noticeFilter,noticeQuery,companySub,companySelected,certSelected,certView,schedMode,calSel,calMonth:+calMonth,matQ,matCategory,matSort,anonOpen,anonFilter,learnerTab,scroll:scrollY};}
+function pushNav(v=navState()){navHistory.push(v);if(navHistory.length>30)navHistory.shift();}
+function backNav(){const v=navHistory.pop();if(!v)return;({tab,projSub,boardOpen,boardFilter,boardQuery,noticeOpen,noticeFilter,noticeQuery,companySub,companySelected,certSelected,certView,schedMode,calSel,matQ,matCategory,matSort,anonOpen,anonFilter,learnerTab}=v);calMonth=new Date(v.calMonth);navScroll=v.scroll;navAnchor='';lsSet('dj.tab',tab);render();}
+function selectedRoute(){if(tab==='projects')return projSub||'overview';if(tab==='schedule')return schedMode==='aft'?'after':schedMode==='attendance'?'afterattendance':'schedule';return tab;}
+function hubOptions(){return hubOptionsAll().filter(([k])=>!(isViewer()&&k==='me'));}
+function hubOptionsAll(){
+ const root=rootOf(tab);
+ if(isGuest())return ({notices:[['notices','공지']],schedule:[['schedule','달력'],['after','방과후'],['school','시간표·급식']],projects:[['board','결과물 공유']],contest:[['contest','대회'],['cert','자격증']],company:[['company','기업 안내']],materials:[['materials','공통 자료'],['tools','무료 도구']]}[root]||[]);
+ if(root==='notices')return [['notices','공지'],['anon','익명게시판']];
+ if(root==='schedule')return [['schedule','달력'],['after','방과후 시간표'],['afterattendance',T()?'방과후 출결':'내 방과후 출결'],['school','시간표·급식']];
+ if(root==='projects')return [['team',T()?'프로젝트 관리':'우리 팀'],['board','결과물 공유'],['purchases','구매요청'],['equipment','기자재 사용']];
+ if(root==='contest')return [['contest','대회'],['cert','자격증']];
+ if(root==='company')return [['company','기업 안내'],['portfolio','포트폴리오']];
+ if(root==='materials')return [['materials','공통 자료'],['photos','사진첩'],['tools','무료 도구']];
+ if(root==='learner')return LEARNER_TABS;
+ if(root==='roster')return [['roster','학생 명단'],['register','통합 출석부'],['me','연동·계정 설정']];
+ return [];
+}
+function navRoute(k){
+ navHistory=[];
+ if(k==='team'||k==='board'){projSub=k;boardOpen=null;if(k==='board'){boardQuery='';boardFilter='프로젝트';}return go('projects');}
+ if(k==='after'||k==='afterattendance'){schedMode=k==='after'?'aft':'attendance';return go('schedule');}
+ if(k==='schedule')schedMode='cal';
+ if(k==='board'){boardQuery='';boardFilter='프로젝트';}
+ if(k==='company'){companySelected='';companySub='info';}
+ if(k==='contest')boardOpen=null;
+ if(k==='cert'){boardOpen=null;certSelected='';certView='schedule';}
+ if(k==='notices'){noticeOpen=null;noticeQuery='';noticeFilter='all';}
+ go(k);
+}
+function navigationBar(){
+ if(tab==='today'&&!navHistory.length)return '';
+ const root=rootOf(tab),active=selectedRoute(),current=tab==='intro'?'portfolio':active;
+ return '<div class="nav-context" aria-label="현재 위치">'+(navHistory.length?'<button class="btn sm ghost" data-nav-back>‹ 이전 화면</button>':'')+'<span>'+esc(NAV_LABELS[root]||'내 정보')+'</span><span aria-hidden="true">›</span><strong>'+esc(tab==='intro'?'포트폴리오 · 자기소개서':(hubOptions().find(([k])=>k===current)||[])[1]||(tab==='me'?'내 정보':'대표 화면'))+'</strong></div>'
+ +'<nav class="hub-nav" aria-label="'+esc(NAV_LABELS[root]||'내 정보')+' 하위 메뉴">'+hubOptions().map(([k,l])=>'<button class="chipbtn" data-nav-route="'+k+'" '+(k==='after'?'data-schedmode="aft"':k==='afterattendance'?'data-schedmode="attendance"':k==='schedule'?'data-schedmode="cal"':isLearnerTab(k)?'data-learner-tab="'+k+'"':k==='team'||k==='board'?'data-projsub="'+k+'"':k==='register'?'data-go="register"':'')+' aria-pressed="'+(current===k)+'">'+esc(l)+'</button>').join('')+'</nav>';
+}
+function finishNav(){
+ if(navScroll!==null){const y=navScroll;navScroll=null;requestAnimationFrame(()=>scrollTo(0,y));}
+ if(navAnchor&&tab==='school'){requestAnimationFrame(()=>{const el=document.getElementById(navAnchor);if(el){const bar=document.querySelector('.bar').getBoundingClientRect().height;scrollTo(0,scrollY+el.getBoundingClientRect().top-bar-12);}});}
+}
+function go(k,options={}){
+ if(k==='requests')k='anon';if(k==='board'){projSub='board';k='projects';}
+ if(options.top){
+  navHistory=[];boardOpen=null;noticeOpen=null;
+  if(k==='notices'){noticeQuery='';noticeFilter='all';}
+  if(k==='materials'){matQ='';matCategory='all';}
+  if(k==='projects')projSub='overview';
+  if(k==='company'){companySub='info';companySelected='';}
+  if(k==='contest'){certSelected='';certView='schedule';}
+  if(k==='schedule')schedMode='cal';
+  if(k==='learner')learnerTab='training';
+ }
+ if(k==='projects'&&isGuest())projSub='board';
+ if(k==='projects'&&projSub==='tools')k='tools';if(k==='projects'&&projSub==='materials')k='materials';
+ if(k==='attendance'&&!T()&&!isLearner()){schedMode='attendance';k='schedule';}
+ if(k==='learner')k=learnerTab;
+ if(!routeAllowed(k)){gate('로그인하면 이 메뉴를 볼 수 있습니다.');return;}
+ if(!options.top&&!navCaptured&&D&&k!==tab&&rootOf(k)!==rootOf(tab))pushNav();
+ if(isLearnerTab(k)){learnerTab=k;lsSet('dj.learnerTab',k);if(k==='attendance')prepareAttendanceScope('train');}
+ tab=k;navAnchor='';lsSet('dj.tab',k);reqOpen=null;anonOpen=null;render();scrollTo({top:0});
+}
+$('#main').addEventListener('click',e=>{
+ const b=e.target.closest('button');if(!b)return;const x=b.dataset;
+ if(x.navBack!==undefined){e.stopImmediatePropagation();return backNav();}
+ if(x.navRoute){e.stopImmediatePropagation();return navRoute(x.navRoute);}
+ if(x.portfolioView){e.stopImmediatePropagation();navHistory=[];return go(x.portfolioView);}
+ if(x.schoolSection){e.stopImmediatePropagation();go('school');navAnchor=x.schoolSection;return finishNav();}
+ if(x.certList!==undefined){e.stopImmediatePropagation();certSelected='';certView='schedule';boardOpen=null;return render();}
+ if((x.boardBack!==undefined||x.companyBack!==undefined||x.noticeBack!==undefined)&&navHistory.length){e.stopImmediatePropagation();return backNav();}
+ if(x.boardOpen||x.companyOpen||x.certSelect||x.noticeOpen||x.noticeRelated||x.contestPost||x.certInfo){pushNav();navCaptured=true;queueMicrotask(()=>{navCaptured=false;});}
+},true);
+$('#profileTop').onclick=()=>{navHistory=[];go('me');};
+window.addEventListener('wheel',()=>{navAnchor='';},{passive:true});window.addEventListener('touchmove',()=>{navAnchor='';},{passive:true});
+$("#tabs").addEventListener("click", e => { const b = e.target.closest("[data-tab]"); if (b) { boardOpen = null; go(b.dataset.tab,{top:true}); } });
+document.querySelector("#shell .bar-top").addEventListener("click", e => { if (e.target.closest("[data-home]")) { boardOpen = null; go("today",{top:true}); } });
+document.querySelector("#shell .bar-top").addEventListener("keydown", e => { if (e.target.closest("[data-home]") && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); boardOpen = null; go("today",{top:true}); } });
 
 /* ---------- 통합 검색: 전체 데이터 직렬화·개인정보·인증정보 저장 금지 ---------- */
 const searchDialog=$("#globalSearch"),searchInput=$("#searchInput");
@@ -557,12 +715,14 @@ function globalSearchEntries(){
   const rows=[],put=(kind,title,detail,route,id,extra="")=>{if(title)rows.push({kind,title:String(title),detail:String(detail||""),route,id,words:searchNorm(title+" "+detail+" "+extra)});};
   const aliases={today:"홈 메인",notices:"알림 전달 공지사항",schedule:"캘린더 달력 개인일정",school:"시간표 급식 점심 반",purchases:"BOM 부품 구매 신청",anon:"익명게시판 건의 질문 요청",projects:"공유 게시판 팀 관리",contest:"경진대회 공모전 접수",cert:"기능사 시험 자격증",company:"기업 직무체험 취업",photos:"사진 앨범 갤러리",portfolio:"노션 활동 기록",roster:"학생 명단 추가 수정",me:"설정 내 정보"};
   tabsFor().forEach(([route,title])=>put("메뉴",title,"메뉴 바로가기",route,"",aliases[route]));
+  [['school','시간표·급식','일정'],['anon','익명게시판','공지·소통'],['purchases','구매요청','프로젝트'],['equipment','실습기자재','프로젝트'],['cert','자격증','대회·자격증'],['portfolio','포트폴리오','진로'],['intro','자기소개서','진로 → 포트폴리오'],['photos','사진첩','자료실'],['me',T()?'연동·계정 설정':'내 정보','설정']].filter(([route])=>routeAllowed(route)).forEach(([route,title,detail])=>put('메뉴',title,detail,route,'',aliases[route]||''));
+  if(T())put('메뉴','학생 명단','교사 관리 → 학생 명단','roster','');
   if(tabsFor().some(([k])=>k==="learner"))LEARNER_TABS.forEach(([route,title])=>put("메뉴",title,"학습근로자",route,""));
   put("메뉴","방과후 출결","일정 → 방과후 출결","after", "", "방과후 출석부 출석");
-  put("메뉴","자료실","프로젝트 → 자료실","materials","","구글 드라이브 Drive 업로드 다운로드");
-  put("메뉴","공유 게시판","프로젝트 → 공유 게시판","board","");
+  put("메뉴","자료실","자료실 → 공통 자료","materials","","구글 드라이브 Drive 업로드 다운로드");
+  put("메뉴","공유 게시판","프로젝트 → 결과물 공유","board","");
   if(T()||(D.projects||[]).length)put("메뉴","우리 팀","프로젝트 → 팀 관리","team","");
-  put("메뉴","무료 도구","프로젝트 → 무료 도구","tools","","한컴오피스 마소 마이크로소프트 오피스 제미나이 Gemini Microsoft 365");
+  put("메뉴","무료 도구","자료실 → 무료 도구","tools","","한컴오피스 마소 마이크로소프트 오피스 제미나이 Gemini Microsoft 365");
   (D.notices||[]).forEach(x=>put("공지",x.title,x.category,"notice",x.id,x.body));
   allEvents().forEach(x=>{if(/^\d{4}-\d{2}-\d{2}$/.test(x.date||""))put("일정",x.title,x.date+(x.time?" · "+x.time:""),"event",x.date);});
   (D.boardPosts||[]).forEach(x=>put(x.category||"게시글",x.title||x.subject,x.subject,"post",x.id,x.body));
@@ -586,14 +746,14 @@ function visitSearchResult(x){
   clearGlobalSearch();if(!D||!x)return;noticeOpen=null;boardOpen=null;
   if(x.route==="notice"){noticeOpen=x.id;go("notices");}
   else if(x.route==="event"){calSel=x.id;calMonth=parse(x.id);calMonth.setDate(1);schedMode="cal";go("schedule");}
-  else if(x.route==="post"){projSub="board";boardOpen=x.id;go("projects");}
+  else if(x.route==="post"){const p=(D.boardPosts||[]).find(p=>p.id===x.id);projSub="board";boardOpen=x.id;go(p?.category==='대회'?'contest':p?.category==='자격증'?'cert':'projects');}
   else if(x.route==="anonPost"){go("anon");anonOpen=x.id;render();}
   else if(x.route==="project")openTodayTeam(x.id);
   else if(x.route==="material"){matQ=x.id;matCategory="all";go("materials");}
   else if(x.route==="certItem"){certSelected=x.id;certView="schedule";go("cert");}
   else if(x.route==="companyItem"){companySub="info";companySelected=x.id;go("company");}
   else if(x.route==="after"){schedMode="attendance";go("schedule");}
-  else if(x.route==="tools"||x.route==="team"){projSub=x.route;go("projects");}
+  else if(x.route==="tools")go('tools');else if(x.route==="team"){projSub='team';go('projects');}
   else go(x.route);
 }
 $("#searchTop").onclick=openGlobalSearch;
@@ -610,8 +770,8 @@ const targetChip = t => !t || t === "all" ? `<span class="chip">전체</span>` :
 const groupChip = g => `<span class="chip ${g}">${esc(GROUP[g] || g)}</span>`;
 function afterCalendarEvents(){
   const out=[],common=new Map();
-  D.afterschool.forEach(a=>{const g=GRADE_GROUP[a.grade];if(!T()&&(!D.me.afterschool||g!==myGroup()))return;
-    const e={id:"aft"+a.date+a.grade+a.title,title:a.info?a.title:"방과후 "+a.grade+"학년 · "+a.title,kind:"AFT",src:"sheet",date:a.date,time:a.info?"":a.start+"–"+a.end,target:g,srcLabel:"방과후 일정표 · "+a.grade+"학년"};
+  D.afterschool.forEach(a=>{const g=GRADE_GROUP[a.grade];if(!T()&&!isGuest()&&(!D.me.afterschool||g!==myGroup()))return;
+    const e={id:"aft"+a.date+a.grade+a.title,title:a.info?a.title:"방과후 "+a.grade+"학년 · "+a.title,shortTitle:a.info?a.title:"방("+a.grade+") "+a.title,kind:"AFT",src:"sheet",date:a.date,time:a.info?"":a.start+"–"+a.end,target:g,srcLabel:"방과후 일정표 · "+a.grade+"학년"};
     if(!a.info){out.push(e);return;}
     const key=JSON.stringify([a.date,String(a.title||"").replace(/\s+/g,"")]);const prior=common.get(key);
     if(prior){if(!prior.targets.includes(g))prior.targets.push(g);if(!prior.grades.includes(a.grade))prior.grades.push(a.grade);prior.srcLabel="방과후 일정표 · "+prior.grades.slice().sort((a,b)=>a-b).join("·")+"학년";}
@@ -728,7 +888,7 @@ async function calBulkDlg(){
   if(!D.appUrl){toast("캘린더 연결 주소가 설정되지 않았습니다");return;}
   if(!D.icsToken)D.icsToken=await call("icsToken",{});
   const webcal=(D.appUrl+"?ics="+D.icsToken).replace(/^https:/,"webcal:");
-  openDlg("내 캘린더에 전체 추가",`<p>공휴일을 제외한 공지·학교·방과후·훈련·대회·자격증·학생 개인일정을 한 번에 구독합니다.</p><p class="ev-s">지난 1개월부터 앞으로 1년의 일정이 들어옵니다. 날짜 미정 일정은 제외됩니다. 같은 구독을 유지하면 일정 수정·삭제가 반영되며 중복해서 추가할 필요가 없습니다.</p><div class="row"><a class="btn pri" href="${esc(GURL+"r?cid="+encodeURIComponent(webcal))}" target="_blank" rel="noopener">구글 캘린더에 전체 추가</a><a class="btn" href="${esc(webcal)}">아이폰 캘린더에 전체 추가</a></div><p class="ev-s">열린 캘린더에서 구독 추가를 승인하세요. 구글 계정의 별도 구독 캘린더로 표시되며 갱신에는 시간이 걸릴 수 있습니다. 이미 개별 저장한 일정은 자동으로 지워지지 않습니다.</p>`,"닫기",()=>{});
+  openDlg("전체 일정 구독",`<p>공휴일을 제외한 공지·학교·방과후·훈련·대회·자격증·학생 개인일정을 한 번에 구독합니다.</p><p class="ev-s">지난 1개월부터 앞으로 1년의 일정이 들어옵니다. 날짜 미정 일정은 제외됩니다. 같은 구독을 유지하면 일정 수정·삭제가 반영되며 중복해서 추가할 필요가 없습니다.</p><div class="row"><a class="btn pri" href="${esc(GURL+"r?cid="+encodeURIComponent(webcal))}" target="_blank" rel="noopener">구글 캘린더로 구독</a><a class="btn" href="${esc(webcal)}">아이폰 캘린더로 구독</a></div><p class="ev-s">열린 캘린더에서 구독 추가를 승인하세요. 구글 계정의 별도 구독 캘린더로 표시되며 갱신에는 시간이 걸릴 수 있습니다. 이미 개별 저장한 일정은 자동으로 지워지지 않습니다.</p>`,"닫기",()=>{});
  }catch(e){toast(e.message);}
 }
 function calSubSection(compact=false){
@@ -819,7 +979,7 @@ function todayTeamNews(){
 function openTodayTeam(id){
  projSub="team";boardOpen=null;go("projects");
  const panel=[...document.querySelectorAll("[data-team-panel]")].find(el=>el.dataset.teamPanel===id);
- if(panel)panel.scrollIntoView({block:"start"});
+ if(panel){const bar=document.querySelector(".bar").getBoundingClientRect().height;requestAnimationFrame(()=>scrollTo(0,scrollY+panel.getBoundingClientRect().top-bar-12));}
 }
 $("#main").addEventListener("change",e=>{if(e.target.id!=="todayTeamProject")return;todayTeamChoice=e.target.value;const section=e.target.closest('[data-today-panel="team"]');section.querySelector("[data-today-drive]").dataset.todayDrive=todayTeamChoice;section.querySelector("[data-today-drive]").disabled=!!todayDriveNews.get(todayTeamChoice)?.pending;section.querySelector("#todayDriveNews").innerHTML=todayDriveBox(todayTeamChoice);});
 $("#main").addEventListener("click",async e=>{
@@ -860,16 +1020,15 @@ $('#main').addEventListener('click',e=>{const b=e.target.closest('button');if(!b
 });
 
 /* 프로젝트 게시판: 프로젝트·자격증 내용과 자료 공유 */
-let projSub=null,boardOpen=null,boardFilter='all',boardQuery='',boardDraftFiles=[];
-function boardList(){const q=boardQuery.trim().toLowerCase();return [...(D.boardPosts||[])].filter(p=>(boardFilter==='all'||p.category===boardFilter)&&[p.title,p.subject,p.body].join(' ').toLowerCase().includes(q)).sort((a,b)=>String(b.updated).localeCompare(String(a.updated)));}
+let projSub=null,boardOpen=null,boardFilter='프로젝트',boardQuery='',boardDraftFiles=[];
+function boardList(){const q=boardQuery.trim().toLowerCase();return [...(D.boardPosts||[])].filter(p=>(p.category===boardFilter)&&[p.title,p.subject,p.body].join(' ').toLowerCase().includes(q)).sort((a,b)=>String(b.updated).localeCompare(String(a.updated)));}
 function boardFilesHtml(files){return (files||[]).map(f=>'<div class="row" style="margin-top:8px"><span style="flex:1;overflow-wrap:anywhere">'+esc(f.name)+' <small class="muted">'+fmtSize(f.size)+'</small></span><button class="btn sm" data-file="'+esc(f.id)+'">받기</button>'+documentPreviewButton(f,'file')+'</div>').join('');}
 /* 프로젝트: 공유 게시판(전체 공개)과 우리 팀(구성원 전용 과제·자료함)을 한 메뉴로 */
-function projHubTabs(){ const hasTeam=T()||(D.projects&&D.projects.length>0); return [['board','공유 게시판']].concat(hasTeam?[['team',T()?'프로젝트 관리':'우리 팀']]:[]).concat([['materials','자료실'],['tools','무료 도구']]); }
-function projHubBar(){ const cur=tab==='materials'?'materials':projSub; return '<div class="row" style="margin-bottom:12px" aria-label="프로젝트 보기">'+projHubTabs().map(([k,l])=>'<button class="chipbtn" data-projsub="'+k+'" aria-pressed="'+(cur===k)+'">'+l+'</button>').join('')+'</div>'; }
-function vMaterialsSub(){ return projHubBar()+educationToolsShortcut()+vMaterials(); }
-function rosterBar(){ return T()?'<div class="row" style="margin-bottom:12px" aria-label="명단 보기">'+[['roster','명단 · PIN'],['register','출석부']].map(([k,l])=>'<button class="chipbtn" data-go="'+k+'" aria-pressed="'+(tab===k)+'">'+l+'</button>').join('')+'</div>':''; }
-function vRosterSub(){ return rosterBar()+vRoster(); }
-function vRegisterSub(){ return rosterBar()+vRegister(); }
+function projHubBar(){return '';}
+function vMaterialsSub(){return vMaterials();}
+function rosterBar(){return '';}
+function vRosterSub(){return vRoster();}
+function vRegisterSub(){return vRegister();}
 function vContestTop(){ return boardOpen ? vBoard() : vContests(); }
 /* 자격증: 종목별 일정·자료실·준비 게시글 */
 let certSelected='',certView='schedule';
@@ -892,7 +1051,7 @@ function vCertTop(){
   const posts=(D.boardPosts||[]).filter(p=>p.category==='자격증'&&p.subject===c.name);
   body=extraHead(c.name+' 준비 게시글','질문, 준비 방법과 학습 자료를 함께 나눕니다.','<button class="btn pri" data-cert-post-new="'+esc(c.id)+'">+ 글쓰기</button>')+'<section class="panel">'+(posts.length?posts.map(p=>'<button class="listbtn" data-board-open="'+esc(p.id)+'"><h3>'+esc(p.title)+'</h3><p>'+esc(p.body.slice(0,100))+'</p></button>').join(''):emptyBox('아직 준비 게시글이 없습니다'))+'</section>';
  }else body=extraHead(c.name+' 시험 일정','공식 시험 기간을 표시합니다. 달력에는 기간 중 첫 주말에 한 번만 표시하며, 개인별 시험일은 수험표를 확인하세요.',T()?'<button class="btn pri" data-cert-event-new="'+esc(c.id)+'">+ 일정 등록</button>':'')+'<section class="panel pad">'+certScheduleHtml((D.certSchedule||[]).filter(e=>e.cert===c.id).sort((a,b)=>a.date.localeCompare(b.date)))+'</section>';
- return top+picker+nav+body+relatedNotices("cert:"+c.id,c.name);
+ return top+'<button class="btn sm ghost" data-cert-list>‹ 자격증 목록</button>'+picker+nav+body+relatedNotices("cert:"+c.id,c.name);
 }
 function certScheduleHtml(items,withName=false){
  if(!items.length)return emptyBox('등록된 일정이 없습니다','공식 공고를 확인한 뒤 일정을 등록해 주세요.');
@@ -941,28 +1100,30 @@ function vEducationTools(){
 }
 
 function vProjectHub(){
+ if(isGuest())return vBoard()+noticeCategorySection("프로젝트·설계");
  const hasTeam=T()||(D.projects&&D.projects.length>0);
- if(!['team','board','tools'].includes(projSub))projSub='board';
- if(projSub==='team'&&!hasTeam)projSub='board';
+ if(!['overview','team','board'].includes(projSub))projSub='overview';
+ if(projSub==='overview')return extraHead('프로젝트','팀 과제와 결과물 공유, 구매요청·기자재 사용을 한곳에서 이용합니다.')+'<section class="panel pad"><p>위 메뉴에서 필요한 작업을 선택하세요.</p><p><b>'+ (T()?'프로젝트 관리':'우리 팀')+'</b> · 팀 과제와 팀 자료실</p><p><b>결과물 공유</b> · 전체 학생에게 공개할 프로젝트 글</p><p><b>구매요청</b> · 필요한 부품과 구매 처리 현황</p><p><b>기자재 사용</b> · 사용 등록과 반납</p></section>';
  const tabs=[['board','공유 게시판']].concat(hasTeam?[['team',T()?'프로젝트 관리':'우리 팀']]:[]);
- return projHubBar(tabs)+(projSub==='tools'?vEducationTools():projSub==='team'?vProjects():vBoard()+noticeCategorySection('프로젝트·설계'));
+ return projSub==='team'?vProjects():vBoard()+noticeCategorySection('프로젝트·설계');
 }
 function vBoard(lock){
  const posts=D.boardPosts||[],comments=D.boardComments||[];
  if(boardOpen){const p=posts.find(p=>p.id===boardOpen);if(!p){boardOpen=null;return vBoard();}const cs=comments.filter(c=>c.post===p.id).sort((a,b)=>String(a.at).localeCompare(String(b.at)));
- return '<div class="sec-h"><button class="btn ghost" data-board-back>‹ 목록</button>'+(T()||p.mine?'<div class="row"><button class="btn" data-board-edit="'+esc(p.id)+'">수정</button><button class="btn ghost danger" data-board-delete="'+esc(p.id)+'">삭제</button></div>':'')+'</div><section class="panel pad"><div class="row"><span class="chip">'+esc(p.category)+'</span><span class="chip">'+esc(p.status)+'</span><span class="meta">전체 공유</span></div><h2>'+esc(p.title)+'</h2><p class="ev-s">'+esc(p.subject||'')+(p.date?' · 관련일 '+esc(fmtMD(p.date)):'')+' · '+esc(p.author)+' · '+esc(p.updated)+'</p>'+contestBoardDetails(p)+(p.category==='대회'?relatedNotices('contest:'+p.id,p.subject||p.title):'')+'<div class="body board-body">'+esc(p.body)+'</div><div class="row" style="margin-top:12px">'+extraLink(p.link)+'</div>'+(p.files.length?'<h3>공유 자료</h3>'+boardFilesHtml(p.files):'')+'</section><section class="panel"><div class="pad"><h3>댓글 · '+cs.length+'</h3></div>'+cs.map(c=>'<div class="msg"><b>'+esc(c.author)+'</b> <span class="ev-s">'+esc(c.at)+'</span><p>'+esc(c.body)+'</p>'+(T()||c.mine?'<button class="btn sm ghost danger" data-board-comment-delete="'+esc(c.id)+'">댓글 삭제</button>':'')+'</div>').join('')+'<form id="boardCommentForm" class="pad"><label class="fld"><span>질문·의견</span><textarea id="boardCommentText" required maxlength="1500"></textarea></label><button class="btn pri" type="submit">댓글 달기</button></form></section>';
+ return '<div class="sec-h"><button class="btn ghost" data-board-back>‹ 목록으로</button>'+(T()||p.mine?'<div class="row"><button class="btn" data-board-edit="'+esc(p.id)+'">수정</button><button class="btn ghost danger" data-board-delete="'+esc(p.id)+'">삭제</button></div>':'')+'</div><section class="panel pad"><div class="row"><span class="chip">'+esc(p.category)+'</span><span class="chip">'+esc(p.status)+'</span><span class="meta">전체 공유</span></div><h2>'+esc(p.title)+'</h2><p class="ev-s">'+esc(p.subject||'')+(p.date?' · 관련일 '+esc(fmtMD(p.date)):'')+' · '+esc(p.author)+' · '+esc(p.updated)+'</p>'+contestBoardDetails(p)+(p.category==='대회'?relatedNotices('contest:'+p.id,p.subject||p.title):'')+'<div class="body board-body">'+esc(p.body)+'</div><div class="row" style="margin-top:12px">'+extraLink(p.link)+'</div>'+(p.files.length?'<h3>공유 자료</h3>'+boardFilesHtml(p.files):'')+'</section><section class="panel"><div class="pad"><h3>댓글 · '+cs.length+'</h3></div>'+cs.map(c=>'<div class="msg"><b>'+esc(c.author)+'</b> <span class="ev-s">'+esc(c.at)+'</span><p>'+esc(c.body)+'</p>'+(T()||c.mine?'<button class="btn sm ghost danger" data-board-comment-delete="'+esc(c.id)+'">댓글 삭제</button>':'')+'</div>').join('')+'<form id="boardCommentForm" class="pad"><label class="fld"><span>질문·의견</span><textarea id="boardCommentText" required maxlength="1500"></textarea></label><button class="btn pri" type="submit">댓글 달기</button></form></section>';
  }
- const prevFilter=boardFilter;if(lock)boardFilter=lock;const list=boardList();boardFilter=prevFilter;return (lock?extraHead('자격증','자격증 시험 일정, 준비 자료, 합격 후기를 함께 나눕니다. 시험일을 넣으면 달력에도 표시됩니다.','<button class="btn pri" data-cert-new>+ 자격증 글쓰기</button>'):extraHead('공유 게시판','프로젝트 결과물, 자격증 준비 자료, 대회 정보와 일정을 함께 공유합니다.','<button class="btn pri" data-board-new>+ 글쓰기</button>'))+'<section class="panel pad">'+(lock?'':'<div class="row" aria-label="게시판 구분">'+[['all','전체'],['프로젝트','프로젝트'],['자격증','자격증'],['대회','대회']].map(([k,l])=>'<button class="chipbtn" data-board-filter="'+k+'" aria-pressed="'+(boardFilter===k)+'">'+l+'</button>').join('')+'</div>')+'<label class="fld" style="margin-top:12px"><span>검색</span><input type="search" id="boardQuery" value="'+esc(boardQuery)+'" placeholder="제목·프로젝트명·자격증명·대회명·내용 검색"></label><p class="ev-s">이 게시판의 새 글과 첨부는 전체 학생에게 공유됩니다. 개인 활동 기록은 포트폴리오에 남겨 주세요.</p></section><section class="panel">'+(list.length?list.map(p=>'<button class="listbtn" data-board-open="'+esc(p.id)+'"><div><div class="row"><span class="chip">'+esc(p.category)+'</span><span class="chip">'+esc(p.status)+'</span></div><h3>'+esc(p.title)+'</h3><div class="ev-s">'+esc(p.subject||'')+(p.date?' · '+esc(fmtMD(p.date)):'')+'</div><p>'+esc(p.body.slice(0,100))+(p.body.length>100?'…':'')+'</p><div class="ev-s">'+esc(p.author)+' · '+esc(p.updated)+' · 첨부 '+p.files.length+'개 · 댓글 '+comments.filter(c=>c.post===p.id).length+'</div></div></button>').join(''):emptyBox(posts.length?'검색 결과가 없습니다':'아직 공유한 글이 없습니다','글쓰기로 프로젝트·자격증·대회 정보를 올려 주세요.'))+'</section>';
+ const prevFilter=boardFilter;boardFilter=lock||'프로젝트';const list=boardList();boardFilter=prevFilter;return (lock?extraHead('자격증','자격증 시험 일정, 준비 자료, 합격 후기를 함께 나눕니다. 시험일을 넣으면 달력에도 표시됩니다.','<button class="btn pri" data-cert-new>+ 자격증 글쓰기</button>'):extraHead('결과물 공유','프로젝트 결과물과 제작 자료를 전체 학생에게 공유합니다. 대회와 자격증은 해당 메뉴에서 확인하세요.','<button class="btn pri" data-board-new>+ 글쓰기</button>'))+'<section class="panel pad">'+(lock?'':'<div class="row" aria-label="게시판 구분">'+[['프로젝트','프로젝트 결과물']].map(([k,l])=>'<button class="chipbtn" data-board-filter="'+k+'" aria-pressed="'+(boardFilter===k)+'">'+l+'</button>').join('')+'</div>')+'<label class="fld" style="margin-top:12px"><span>검색</span><input type="search" id="boardQuery" value="'+esc(boardQuery)+'" placeholder="제목·프로젝트명·자격증명·대회명·내용 검색"></label><p class="ev-s">이 게시판의 새 글과 첨부는 전체 학생에게 공유됩니다. 개인 활동 기록은 포트폴리오에 남겨 주세요.</p></section><section class="panel">'+(list.length?list.map(p=>'<button class="listbtn" data-board-open="'+esc(p.id)+'"><div><div class="row"><span class="chip">'+esc(p.category)+'</span><span class="chip">'+esc(p.status)+'</span></div><h3>'+esc(p.title)+'</h3><div class="ev-s">'+esc(p.subject||'')+(p.date?' · '+esc(fmtMD(p.date)):'')+'</div><p>'+esc(p.body.slice(0,100))+(p.body.length>100?'…':'')+'</p><div class="ev-s">'+esc(p.author)+' · '+esc(p.updated)+' · 첨부 '+p.files.length+'개 · 댓글 '+comments.filter(c=>c.post===p.id).length+'</div></div></button>').join(''):emptyBox(posts.length?'검색 결과가 없습니다':'아직 공유한 글이 없습니다','글쓰기로 프로젝트·자격증·대회 정보를 올려 주세요.'))+'</section>';
 }
 function boardDlg(p={}){
+ p={...p,category:p.category||(tab==='cert'?'자격증':tab==='contest'?'대회':'프로젝트')};
  const kept=(p.files||[]).map(f=>'<label class="check"><input type="checkbox" name="keepBoardFile" value="'+esc(f.id)+'" checked> '+esc(f.name)+' 유지</label>').join('');
- openDlg(p.id?'프로젝트 게시글 수정':'프로젝트·자격증·대회 글쓰기','<div class="fgrid">'+sel('글 구분','category',[['프로젝트','프로젝트'],['자격증','자격증'],['대회','대회']],p.category||'프로젝트')+sel('진행 상태','status',['준비','진행 중','완료','자료 공유'].map(s=>[s,s]),p.status||'자료 공유')+'</div>'+field('프로젝트명·자격증명·대회명','subject',p.subject||'','text','maxlength="100"')+field('제목','title',p.title||'','text','required maxlength="150"')+area('프로젝트 내용·자료 설명','body',p.body||'',6000).replace('<textarea ','<textarea required ')+field('관련일·대회 개최일 (선택)','date',p.date||'','date')+contestBoardFields(p)+field('관련 링크 (선택)','link',p.link||'','url')+filePicker(5,'프로젝트게시판 Drive 폴더')+kept+'<p class="ev-s">전체 학생에게 공유하는 글입니다. 새 파일은 Drive의 프로젝트게시판 폴더에 저장됩니다.</p>','저장',async fd=>{try{const uploads=await readDraftUploads();const keepFiles=[...form.querySelectorAll('input[name="keepBoardFile"]:checked')].map(e=>e.value);const r=await callRaw('saveBoard',{id:p.id,...fd,keepFiles,uploads},null,true);boardOpen=r.data;if(r.load)setData(r.load);else await reload();toast('게시글을 공유했습니다');return true;}catch(e){toast(e.message);return false;}});
+ openDlg(p.id?p.category+' 게시글 수정':p.category+' 글쓰기','<div class="fgrid">'+sel('글 구분','category',[[p.category,p.category]],p.category)+sel('진행 상태','status',['준비','진행 중','완료','자료 공유'].map(s=>[s,s]),p.status||'자료 공유')+'</div>'+field('프로젝트명·자격증명·대회명','subject',p.subject||'','text','maxlength="100"')+field('제목','title',p.title||'','text','required maxlength="150"')+area('프로젝트 내용·자료 설명','body',p.body||'',6000).replace('<textarea ','<textarea required ')+field('관련일·대회 개최일 (선택)','date',p.date||'','date')+contestBoardFields(p)+field('관련 링크 (선택)','link',p.link||'','url')+filePicker(5,'프로젝트게시판 Drive 폴더')+kept+'<p class="ev-s">전체 학생에게 공유하는 글입니다. 새 파일은 Drive의 프로젝트게시판 폴더에 저장됩니다.</p>','저장',async fd=>{try{const uploads=await readDraftUploads();const keepFiles=[...form.querySelectorAll('input[name="keepBoardFile"]:checked')].map(e=>e.value);const r=await callRaw('saveBoard',{id:p.id,...fd,keepFiles,uploads},null,true);boardOpen=r.data;if(r.load)setData(r.load);else await reload();toast('게시글을 공유했습니다');return true;}catch(e){toast(e.message);return false;}});
  form.querySelector('[name="category"]').onchange=e=>{form.querySelector('#contestFields').hidden=e.target.value!=='대회';};
  bindFilePicker();
 }
 async function readBoardUploads(){if(boardDraftFiles.length>5)throw new Error('한 번에 최대 5개 파일을 선택해 주세요');for(const f of boardDraftFiles){if(!f.size||f.size>MAX_MB*1024*1024)throw new Error(f.name+': 파일당 '+sizeLimitText()+' 이하만 올릴 수 있습니다');}const uploads=[];for(const f of boardDraftFiles)uploads.push(await toUpload(f));return uploads;}
 function bindBoardComment(){const f=$('#boardCommentForm');if(!f)return;f.onsubmit=async e=>{e.preventDefault();const text=$('#boardCommentText').value,button=f.querySelector('button');button.disabled=true;const ok=await act('boardComment',{post:boardOpen,body:text},'댓글을 올렸습니다');if(!ok)button.disabled=false;};}
-$('#main').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const x=b.dataset;if(x.freq)return folderReqDlg(x.freq,x.freqLabel||'폴더');if(x.freqOk){b.disabled=true;return act('decideFolderAccess',{id:x.freqOk,approve:true},'공유했습니다');}if(x.freqNo){if(!arm(b,'fq'+x.freqNo))return;return act('decideFolderAccess',{id:x.freqNo,approve:false},'거절했습니다');}if(x.contestPost){go('contest');boardOpen=x.contestPost;return render();}if(x.contestNew!==undefined)return boardDlg({category:'대회',status:'준비'});if(x.goContests!==undefined){boardOpen=null;return go('contest');}if(x.contestCalendar){const p=(D.boardPosts||[]).find(p=>p.id===x.contestCalendar),date=p&&(p.date||p.applyEnd||p.applyStart);if(date){calSel=date;calMonth=parse(date);calMonth.setDate(1);}schedMode='cal';return go('schedule');}if(x.projsub){boardOpen=null;if(x.projsub==='materials')return go('materials');projSub=x.projsub;return go('projects');}if(x.certNew!==undefined)return boardDlg({category:'자격증',status:'준비'});if(x.projShare){const p=D.projects.find(q=>q.id===x.projShare);if(p)return boardDlg({category:'프로젝트',status:'진행 중',subject:p.team+' · '+p.product});return;}if(x.boardNew!==undefined)return boardDlg();if(x.boardOpen){boardOpen=x.boardOpen;return render();}if(x.boardBack!==undefined){boardOpen=null;return render();}if(x.boardFilter){boardFilter=x.boardFilter;return render();}if(x.boardEdit)return boardDlg((D.boardPosts||[]).find(p=>p.id===x.boardEdit));if(x.boardDelete){if(!arm(b,x.boardDelete))return;return act('deleteBoard',{id:x.boardDelete},'게시글을 목록에서 삭제했습니다');}if(x.boardCommentDelete){if(!arm(b,x.boardCommentDelete))return;return act('deleteBoardComment',{id:x.boardCommentDelete},'댓글을 삭제했습니다');}});
+$('#main').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const x=b.dataset;if(x.freq)return folderReqDlg(x.freq,x.freqLabel||'폴더');if(x.freqOk){b.disabled=true;return act('decideFolderAccess',{id:x.freqOk,approve:true},'공유했습니다');}if(x.freqNo){if(!arm(b,'fq'+x.freqNo))return;return act('decideFolderAccess',{id:x.freqNo,approve:false},'거절했습니다');}if(x.contestPost){go('contest');boardOpen=x.contestPost;return render();}if(x.contestNew!==undefined)return boardDlg({category:'대회',status:'준비'});if(x.goContests!==undefined){boardOpen=null;return go('contest');}if(x.contestCalendar){const p=(D.boardPosts||[]).find(p=>p.id===x.contestCalendar),date=p&&(p.date||p.applyEnd||p.applyStart);if(date){calSel=date;calMonth=parse(date);calMonth.setDate(1);}schedMode='cal';return go('schedule');}if(x.projsub){boardOpen=null;if(x.projsub==='materials'||x.projsub==='tools')return go(x.projsub);projSub=x.projsub;return go('projects');}if(x.certNew!==undefined)return boardDlg({category:'자격증',status:'준비'});if(x.projShare){const p=D.projects.find(q=>q.id===x.projShare);if(p)return boardDlg({category:'프로젝트',status:'진행 중',subject:p.team+' · '+p.product});return;}if(x.boardNew!==undefined)return boardDlg();if(x.boardOpen){boardOpen=x.boardOpen;return render();}if(x.boardBack!==undefined){boardOpen=null;return render();}if(x.boardFilter){boardFilter=x.boardFilter;return render();}if(x.boardEdit)return boardDlg((D.boardPosts||[]).find(p=>p.id===x.boardEdit));if(x.boardDelete){if(!arm(b,x.boardDelete))return;return act('deleteBoard',{id:x.boardDelete},'게시글을 목록에서 삭제했습니다');}if(x.boardCommentDelete){if(!arm(b,x.boardCommentDelete))return;return act('deleteBoardComment',{id:x.boardCommentDelete},'댓글을 삭제했습니다');}});
 $('#main').addEventListener('input',e=>{if(e.target.id==='boardQuery'){boardQuery=e.target.value;const pos=e.target.selectionStart;render();const q=$('#boardQuery');if(q){q.focus();q.setSelectionRange(pos,pos);}}});
 
 /* ---------- 오늘 ---------- */
@@ -992,11 +1153,11 @@ function vToday(){
   const todays = sortEv(visibleEvents.filter(e => e.date <= TODAY && (e.endDate || e.date) >= TODAY));
   const soon = sortEv(visibleEvents.filter(e => e.date > TODAY && e.date <= addDays(TODAY, 14)));
   const notices = D.notices.filter(n=>!n.due||n.due>=TODAY).sort((a,b)=>String(b.at).localeCompare(String(a.at))).slice(0, 3);
-  const sub = isGuest() ? "로그인 없이 보는 중 · 전체 공개 공지·급식·학교 일정만 보입니다." : T() ? "오늘 일정과 최근 공지입니다." : `${esc(D.me.name)} · ${esc(GROUP[myGroup()] || "")}에 해당하는 일정과 공지만 보여 줍니다.`;
-  let h = `<div class="sec-h"><div><h2>${fmtMD(TODAY)} 오늘</h2><p>${sub}</p></div><div class="row">${isGuest()?'<button class="btn sm pri" data-login>로그인</button>':""}${canMyHome()?'<button class="btn sm" data-myhome-edit>화면 꾸미기</button>':""}<button class="btn sm" data-projsub="tools">무료 도구</button><button class="btn sm ghost" data-reload>새로고침</button></div></div>`;
+  const sub = isGuest() ? "로그인 없이 보는 중 · 공지·일정·방과후·공유글·대회·자격증·기업 안내·자료를 볼 수 있습니다." : T() ? "오늘 일정과 최근 공지입니다." : `${esc(D.me.name)} · ${esc(GROUP[myGroup()] || "")}에 해당하는 일정과 공지만 보여 줍니다.`;
+  let h = `<div class="sec-h"><div><h2>${fmtMD(TODAY)} 오늘</h2><p>${sub}</p></div><div class="row">${isGuest()?'<button class="btn sm pri" data-login>로그인</button>':""}${!isGuest()&&!T()?'<button class="btn sm pri" data-intro-entry>자기소개서 파일 제출</button>':""}${canMyHome()?'<button class="btn sm" data-myhome-edit>화면 꾸미기</button>':""}<button class="btn sm" data-projsub="tools">무료 도구</button><button class="btn sm ghost" data-reload>새로고침</button></div></div>`;
   const cards={
     todo:()=>todayTodo(),
-    notices:()=>`<section class="panel"><div class="pad row" style="padding-bottom:0"><span class="label">최근 공지</span><span class="spacer"></span>${isGuest()?"":'<button class="btn sm ghost" data-go="notices">전체 보기</button>'}</div>${notices.length ? notices.map(todayNoticeRow).join("") : emptyBox("아직 공지가 없습니다")}</section>`,
+    notices:()=>`<section class="panel"><div class="pad row" style="padding-bottom:0"><span class="label">최근 공지</span><span class="spacer"></span><button class="btn sm ghost" data-go="notices">전체 보기</button></div>${notices.length ? notices.map(todayNoticeRow).join("") : emptyBox("아직 공지가 없습니다")}</section>`,
     meal:()=>todayMeal(),
     focus:()=>D.homeOnly?"":'<div class="today-focus" aria-label="오늘 확인할 일">'+todayActions()+todayResults()+todayTeamNews()+'</div>',
     events:()=>`<div class="grid2"><section class="panel"><div class="pad" style="padding-bottom:4px"><span class="label">오늘 일정</span></div>${todays.length ? todays.map(evRow).join("") : emptyBox("오늘 잡힌 일정이 없습니다")}</section>
@@ -1008,7 +1169,7 @@ function vToday(){
   if (D.tabsMissing && D.tabsMissing.length && T()) h += `<div class="banner">시트에서 ‘${esc(D.tabsMissing.join("’, ‘"))}’ 탭을 찾지 못했습니다. Code.gs 위쪽의 탭 이름을 확인하세요.</div>`;
   if (T()&&!D.homeOnly){
     const rq = D.requests.filter(r => r.unreadTeacher).length, nopin = D.roster.filter(r => !r.pin).length;
-    if (nopin && !D.loginDisabled) h += `<div class="banner row"><span>PIN이 없는 학생 ${nopin}명은 아직 들어올 수 없습니다.</span><span class="spacer"></span><button class="btn sm" data-go="roster">명단</button></div>`;
+    if (nopin && !D.loginDisabled && !D.studentLoginRequired) h += `<div class="banner row"><span>PIN이 없는 학생 ${nopin}명은 아직 들어올 수 없습니다.</span><span class="spacer"></span><button class="btn sm" data-go="roster">명단</button></div>`;
     const c = g => D.roster.filter(r => r.group === g).length;
     h += `<div class="stats"><div class="stat"><div class="v">${c("learner")}</div><div class="k">학습근로자</div></div>
       <div class="stat"><div class="v">${c("pre2")}<span class="muted" style="font-size:14px"> / ${c("pre1")}</span></div><div class="k">예비 2학년 / 1학년</div></div>
@@ -1027,12 +1188,13 @@ const NOTICE_CATEGORIES=['일반 안내','프로젝트·설계','행사·견학'
 let noticeFilter='all',noticeQuery='',noticeOpen=null;
 const noticeImages=new Map(),noticeImagesPending=new Map();let noticeObserver=null;
 const noticeRelationAvailable=n=>n.relation&&(n.relation.startsWith('cert:')||(n.relation.startsWith('project:')&&(D.projects||[]).some(p=>'project:'+p.id===n.relation))||(n.relation.startsWith('contest:')&&(D.boardPosts||[]).some(p=>'contest:'+p.id===n.relation)));
+function introNoticeBody(n){return (n.links||[]).some(link=>/#intro$/.test(link))?'양식을 내려받아 작성한 파일을 제출하세요. 제출 목록에서 로그인한 학생과 선생님이 HTML로 확인할 수 있습니다.':n.body;}
 function noticeExtras(n){
  const files=n.files||[],images=files.filter(f=>/^image\/(png|jpeg|gif|webp|heic)$/.test(f.mime));
  return '<div class="row" style="margin:8px 0"><span class="chip">'+esc(n.category||'일반 안내')+'</span>'+(n.subject?'<span class="ev-s">'+esc(n.subject)+'</span>':'')+(noticeRelationAvailable(n)?'<button class="btn sm ghost" data-notice-related="'+esc(n.id)+'">'+esc(n.relationLabel)+'에서 보기</button>':n.relationLabel?'<span class="ev-s">'+esc(n.relationLabel)+'</span>':'')+'</div>'
  +(n.eventDate?'<div class="row" style="margin:8px 0"><span class="ev-s">일정 '+esc(n.eventDate)+(n.eventEnd&&n.eventEnd!==n.eventDate?' ~ '+esc(n.eventEnd):'')+(n.place?' · '+esc(n.place):'')+'</span><button class="btn sm" data-notice-calendar="'+esc(n.id)+'">달력 보기</button></div>':'')
  +(images.length?'<div class="notice-gallery">'+images.map(f=>'<button type="button" class="notice-photo" data-notice-photo="'+esc(f.id)+'" aria-label="'+esc(f.name)+' 크게 보기"><img data-notice-img="'+esc(f.id)+'" alt="'+esc(f.name)+'" hidden><span class="ev-s" data-notice-img-status>사진 불러오는 중…</span></button>').join('')+'</div>':'')
- +((n.links||[]).length?'<div class="row" style="margin:10px 0">'+n.links.map((link,i)=>'<a class="btn sm" href="'+esc(safeUrl(link))+'" target="_blank" rel="noopener noreferrer">관련 링크 '+(i+1)+' ↗</a>').join('')+'</div>':'')
+ +((n.links||[]).length?'<div class="row" style="margin:10px 0">'+n.links.map((link,i)=>/#intro$/.test(link)?'<button class="btn pri" data-intro-entry>자기소개서 파일 제출</button>':'<a class="btn sm" href="'+esc(safeUrl(link))+'" target="_blank" rel="noopener noreferrer">관련 링크 '+(i+1)+' ↗</a>').join('')+'</div>':'')
  +(files.length?'<div class="notice-attachments">'+files.map(f=>'<div class="row"><span style="flex:1;min-width:0;overflow-wrap:anywhere">'+esc(f.name)+' <span class="ev-s">'+fmtSize(f.size)+'</span></span><button class="btn sm" data-notice-file="'+esc(f.id)+'">원본 받기</button>' + documentPreviewButton(f,'notice') + '</div>').join('')+'</div>':'');
 }
 function relatedNotices(relation,label){
@@ -1062,7 +1224,7 @@ function noticeDlg(n={}){
  openDlg(n.id?'공지·전달 자료 수정':'공지·전달 자료 올리기',
  '<p class="ev-s">카톡 내용을 아래에 붙여넣고, 사진은 Ctrl+V 또는 끌어놓기로 추가하세요. 일정은 날짜를 확인해 직접 입력합니다.</p>'
  +'<div class="fgrid">'+sel('분류','category',NOTICE_CATEGORIES.map(s=>[s,s]),n.category||'일반 안내')+targetSel(n.target)+'</div>'
- +field('제목','title',n.title||'','text','required maxlength="120" id="f-title"')+area('전달 내용·안내','body',n.body||'',5000).replace('<textarea ','<textarea id="f-body" placeholder="카톡에서 복사한 내용을 붙여넣으세요" ')
+ +field('제목','title',n.title||'','text','required maxlength="120" id="f-title"')+area('전달 내용·안내','body',introNoticeBody(n)||'',5000).replace('<textarea ','<textarea id="f-body" placeholder="카톡에서 복사한 내용을 붙여넣으세요" ')
  +'<div class="fgrid">'+sel('관련 프로젝트·자격증·대회','relation',noticeRelatedOptions(n),n.relation||'')+field('주제 (선택)','subject',n.subject||'','text','maxlength="100" placeholder="예: 스마트팜, 실기 준비, 박람회"')+'</div>'
  +area('관련 링크 (한 줄에 하나, 최대 8개)','linksText',(n.links||[]).join('\n'),8000)+'<button type="button" class="btn sm ghost" data-notice-extract-links>본문에서 링크 가져오기</button>'
  +'<details '+(n.eventDate?'open':'')+'><summary>일정 달력에도 표시하기</summary><p class="ev-s">행사·시험·제출일 등 날짜가 확실한 경우 입력하세요. 같은 공지가 달력에 연결되며 중복 글은 만들지 않습니다.</p><div class="fgrid">'+field('일정 시작일','eventDate',n.eventDate||'','date')+field('일정 종료일 (여러 날)','eventEnd',n.eventEnd||'','date')+'</div>'+field('장소','place',n.place||'','text','maxlength="150"')+'</details>'
@@ -1080,7 +1242,7 @@ $('#main').addEventListener('click',async e=>{
  if(x.noticePhoto){try{const src=await noticePhotoData(x.noticePhoto,true);openDlg('사진 크게 보기','<img class="notice-full-photo" src="'+src+'" alt="공지 사진"><button type="button" class="btn" data-notice-original="'+esc(x.noticePhoto)+'">원본 받기</button>','닫기',()=>true);}catch(err){toast(err.message);}return;}
  if(x.noticeNewRelated){const r=x.noticeNewRelated;return noticeDlg({relation:r,category:r.startsWith('cert:')?'자격증·시험':r.startsWith('project:')?'프로젝트·설계':'일반 안내'});}
  if(x.noticeCalendar){const n=D.notices.find(n=>n.id===x.noticeCalendar);if(n&&n.eventDate){calSel=n.eventDate;calMonth=parse(n.eventDate);calMonth.setDate(1);schedMode='cal';go('schedule');}return;}
- if(x.noticeRelated){const n=D.notices.find(n=>n.id===x.noticeRelated);if(!n)return;const r=n.relation;if(r.startsWith('cert:')){certSelected=r.slice(5);certView='schedule';boardOpen=null;return go('cert');}if(r.startsWith('project:')){projSub='team';return go('projects');}if(r.startsWith('contest:')){boardOpen=r.slice(8);return go('contest');}}
+ if(x.noticeRelated){const n=D.notices.find(n=>n.id===x.noticeRelated);if(!n)return;const r=n.relation;if(r.startsWith('cert:')){certSelected=r.slice(5);certView='schedule';boardOpen=null;return go('cert');}if(r.startsWith('project:'))return openTodayTeam(r.slice(8));if(r.startsWith('contest:')){boardOpen=r.slice(8);return go('contest');}}
 });
 $('#main').addEventListener('input',e=>{if(e.target.id!=='noticeQuery')return;noticeQuery=e.target.value;const pos=e.target.selectionStart;render();const input=$('#noticeQuery');if(input){input.focus();input.setSelectionRange(pos,pos);}});
 
@@ -1098,10 +1260,10 @@ function noticeCard(n){
       foot += `<div class="readers"><b>확인</b> ${seen.length ? seen.map(a => `${esc(a.name)} <span class="num">${esc(a.at.slice(5))}</span>`).join(" · ") : "없음"}<br><b>미확인</b> ${un.length ? esc(un.join(", ")) : "없음"}</div>`; }
   } else foot = isGuest() ? "" : D.myAcks.includes(n.id) ? `<span class="ack-ok">✓ 확인함</span>` : `<div><button class="btn sm pri" data-ack="${esc(n.id)}">확인했어요</button></div>`;
   return `<article class="notice"><div class="row">${n.pinned ? '<span class="chip pin">고정</span>' : ""}${targetChip(n.target)}<span class="meta">${esc(n.at)}${n.due ? ` · 기한 ${esc(fmtMD(n.due))}` : ""}</span></div>
-    <h3><button class="notice-title" data-notice-open="${esc(n.id)}">${esc(n.title)}</button></h3>${n.body ? `<div class="body">${esc(n.body)}</div>` : ""}${noticeExtras(n)}${foot}</article>`;
+    <h3><button class="notice-title" data-notice-open="${esc(n.id)}">${esc(n.title)}</button></h3>${n.body ? `<div class="body">${esc(introNoticeBody(n))}</div>` : ""}${noticeExtras(n)}${foot}</article>`;
 }
 function vNotices(){
- if(noticeOpen){const n=D.notices.find(n=>n.id===noticeOpen);if(n)return '<div class="row" style="margin-bottom:12px"><button class="btn ghost" data-notice-back>‹ 전체 공지</button></div><section class="panel">'+noticeCard(n)+'</section>';noticeOpen=null;}
+ if(noticeOpen){const n=D.notices.find(n=>n.id===noticeOpen);if(n)return '<div class="row" style="margin-bottom:12px"><button class="btn ghost" data-notice-back>‹ 공지 목록으로</button></div><section class="panel">'+noticeCard(n)+'</section>';noticeOpen=null;}
  const q=noticeQuery.trim().toLowerCase(),list=sortedNotices().filter(n=>(noticeFilter==='all'||(n.category||'일반 안내')===noticeFilter)&&(!q||[n.title,n.body,n.subject,n.relationLabel,...(n.files||[]).map(f=>f.name)].join(' ').toLowerCase().includes(q)));
  return extraHead('공지·전달 자료',T()?'카톡으로 받은 안내, 사진과 파일을 분류하고 관련 프로젝트·자격증·대회에 연결하세요.':'공지와 전달 자료를 확인하고 ‘확인했어요’를 눌러 주세요.',T()?'<button class="btn pri" data-new="notice">+ 공지·자료 올리기</button>':'')
  +'<section class="panel pad"><div class="row" aria-label="공지 분류">'+['all',...NOTICE_CATEGORIES].map(k=>'<button class="chipbtn" data-notice-filter="'+k+'" aria-pressed="'+(noticeFilter===k)+'">'+(k==='all'?'전체':k)+'</button>').join('')+'</div><label class="fld" style="margin-top:12px"><span>검색</span><input id="noticeQuery" type="search" placeholder="제목·내용·주제·첨부파일 검색" value="'+esc(noticeQuery)+'"></label></section><section class="panel">'+(list.length?list.map(noticeCard).join(''):emptyBox('해당 공지·자료가 없습니다'))+'</section>';
@@ -1110,9 +1272,8 @@ function vNotices(){
 /* ---------- 일정 ---------- */
 function schedHead(){
   return `<div class="schedule-head"><div><h2>일정</h2><p>${schedMode === "aft" ? "제목이 소괄호로 시작하는 방과후 수업만 표시합니다." : schedMode === 'attendance' ? "방과후 출결을 확인하고 기록합니다. 훈련 출결은 학습근로자 메뉴에 있습니다." : "학교·일반 일정, 방과후, 개인 일정을 한 달력에서 봅니다. 훈련시간은 학습근로자 메뉴에서 확인하세요."}</p>
-    ${schedMode === 'attendance' ? '' : `<div class="row"><button class="btn" data-cal-bulk>📅 내 캘린더에 전체 추가</button>${T() ? `<button class="btn" data-new="pevent">+ 학생 개인 일정</button><button class="btn pri" data-new="event">+ 일정 추가</button>` : `<button class="btn pri" data-new="pevent">+ 내 일정</button>`}</div>`}</div>${schedMode === "attendance" ? "" : calSubSection(true)}</div>
-    <div class="row">${[["cal","달력"],["aft","방과후 시간표"],["attendance",T()?"방과후 출결":"내 방과후 출결"]].map(([k,l]) => `<button class="chipbtn" data-schedmode="${k}" aria-pressed="${schedMode===k}">${l}</button>`).join("")}
-    ${T() && schedMode === "cal" ? `<span class="spacer"></span><label class="check" style="font-size:13.5px"><input type="checkbox" id="showPersonal" ${showPersonal ? "checked" : ""}> 학생 개인 일정도 표시</label>` : ""}</div>`;
+    ${isGuest()||schedMode === 'attendance' ? '' : `<div class="row">${T() ? `<button class="btn" data-new="pevent">+ 학생 개인 일정</button><button class="btn pri" data-new="event">+ 일정 추가</button>` : `<button class="btn pri" data-new="pevent">+ 내 일정</button>`}</div>`}</div>${isGuest()||schedMode === "attendance" ? "" : calSubSection(true)}</div>
+    <div class="row">${T() && schedMode === "cal" ? `<label class="check" style="font-size:13.5px"><input type="checkbox" id="showPersonal" ${showPersonal ? "checked" : ""}> 학생 개인 일정도 표시</label>` : ""}</div>`;
 }
 function isHolidayEvent(e){
  const label=/^(?:(?:대체)?공휴일|대체휴일|임시공휴일|휴일|휴업일|재량휴업일|개교기념일|설날(?:연휴)?|설연휴|추석(?:연휴)?|부처님오신날|석가탄신일|신정|새해첫날|삼일절|어린이날|현충일|광복절|개천절|한글날|성탄절|크리스마스)(?:\s*[（(][^）)]*[）)])?$/;
@@ -1142,7 +1303,7 @@ function vSchedule(){
     const d = new Date(start); d.setDate(start.getDate() + i);
     if (i >= 35 && d.getMonth() !== m) break;
     const s = ymd(d), evs = on(s);
-    cells += `<button class="cal-day ${d.getMonth()!==m?"out":""} ${s===TODAY?"today":""} ${s===calSel?"sel":""} ${isCalendarHoliday(s,evs)?"holiday":""}" data-day="${s}" aria-label="${s} 일정 ${evs.length}건"><span class="d">${d.getDate()}</span>${evs.slice(0,3).map(e => `<span class="cal-ev" style="background:var(${isHolidayEvent(e)?"--bad":kind(e.kind).v})">${esc(e.title)}</span>`).join("")}${evs.length>3?`<span class="cal-more">+${evs.length-3}</span>`:""}</button>`;
+    cells += `<button class="cal-day ${d.getMonth()!==m?"out":""} ${s===TODAY?"today":""} ${s===calSel?"sel":""} ${isCalendarHoliday(s,evs)?"holiday":""}" data-day="${s}" aria-label="${s} 일정 ${evs.length}건"><span class="d">${d.getDate()}</span>${evs.slice(0,3).map(e => `<span class="cal-ev" title="${esc(e.title)}" style="background:var(${isHolidayEvent(e)?"--bad":kind(e.kind).v})">${esc(e.shortTitle||e.title)}</span>`).join("")}${evs.length>3?`<span class="cal-more">+${evs.length-3}</span>`:""}</button>`;
   }
   const dayEvs = sortEv(on(calSel));
   return `${schedHead()}<div class="legend">${KINDS.filter(k=>!["OJT","OFF"].includes(k.k)).map(k => `<span><i class="kdot" style="background:var(${k.v})"></i>${esc(k.label)}</span>`).join("")}</div>
@@ -1152,9 +1313,9 @@ function vSchedule(){
 }
 function weekStart(s){ const d = parse(s); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return ymd(d); }
 function vAfter(){
-  if(!T()&&!D.me.afterschool)return schedHead()+`<section class="panel">${emptyBox('방과후 미참여','학교·일반 일정은 달력에서 확인하세요.')}</section>`;
+  if(!T()&&!isGuest()&&!D.me.afterschool)return schedHead()+`<section class="panel">${emptyBox('방과후 미참여','학교·일반 일정은 달력에서 확인하세요.')}</section>`;
   const ws = aftWeek || weekStart(TODAY), days = Array.from({length: 6}, (_, i) => addDays(ws, i));
-  const grades = T() ? [1,2,3] : [GROUP_GRADE[myGroup()]];
+  const grades = T()||isGuest() ? [1,2,3] : [GROUP_GRADE[myGroup()]];
   const items = D.afterschool.filter(a => a.date >= ws && a.date <= days[5]);
   const body = !D.afterschool.length ? `<section class="panel">${emptyBox("방과후 일정표를 읽지 못했습니다", T() ? "Code.gs의 TAB_AFTER 탭 이름을 확인하세요." : "")}</section>`
     : grades.map(g => {
@@ -1241,17 +1402,14 @@ function vTraining(){
 /* ---------- 기업정보 ---------- */
 /* 기업정보와 직무체험 준비 */
 let companySub='info',companySelected='';
-const INTRO_FIELDS={jobInterest:['관심 직무','기업에서 관심 있는 부서·직무나 기술 분야를 적어 주세요.'],headline:['나를 소개하는 한 문장','내 특징과 관심 직무를 한 문장으로 적어 주세요.'],motivation:['관심을 갖게 된 이유','이 직무에 관심을 갖게 된 실제 경험을 적어 주세요.'],strength:['나의 강점과 근거','강점을 보여 주는 행동, 상황, 결과를 적어 주세요.'],experience:['프로젝트 및 실습 경험','활동명, 나의 역할, 사용 도구, 어려움과 해결 과정, 결과를 구분해 적어 주세요.'],skills:['배운 기술과 자격증','직접 해 본 기술과 취득·준비 중인 자격증을 구분해 주세요.'],teamSafety:['협업 및 안전 태도','약속 준수, 협업, 문제 보고, 보호구 착용 등의 경험을 적어 주세요.'],goals:['직무체험에서 배우고 싶은 것','알아보고 싶은 업무와 기업에 묻고 싶은 질문을 적어 주세요.'],portfolio:['포트폴리오 링크','기업에 보여 줄 수 있는 노션·Drive 작업물 링크를 넣어 주세요.']};
-function companyTemplateButtons(){const r=D.companyResources||{};return '<section class="panel pad"><h3>기업 회신과 자기소개 양식</h3><div class="row">'+(T()&&r.companyTemplate?'<a class="btn sm" href="'+esc(safeUrl(r.companyTemplate))+'" target="_blank" rel="noopener">기업 회신 양식 열기</a><button class="btn sm" data-company-template="company">기업 빈 양식 받기</button>':'')+(r.introTemplate?'<button class="btn sm" data-company-template="intro">자기소개 빈 양식 받기</button>':'')+'</div><p class="ev-s">'+(T()?'기업에는 회신 양식의 기업별 사본을 전달하고 받은 내용을 관리 시트에 입력합니다.':'빈 양식을 내려받거나 아래에서 자기소개를 작성해 담당교사에게 제출하세요.')+'</p></section>';}
+const INTRO_FIELDS={jobInterest:['관심 직무','기업에서 관심 있는 부서·직무나 기술 분야를 적어 주세요.'],headline:['나를 소개하는 한 문장','내 특징과 관심 직무를 한 문장으로 적어 주세요.'],motivation:['관심을 갖게 된 이유','이 직무에 관심을 갖게 된 실제 경험을 적어 주세요.'],strength:['나의 강점과 근거','강점을 보여 주는 행동, 상황, 결과를 적어 주세요.'],experience:['프로젝트 및 실습 경험','활동명, 나의 역할, 사용 도구, 어려움과 해결 과정, 결과를 구분해 적어 주세요.'],skills:['배운 기술과 자격증','직접 해 본 기술과 취득·준비 중인 자격증을 구분해 주세요.'],teamSafety:['협업 및 안전 태도','약속 준수, 협업, 문제 보고, 보호구 착용 등의 경험을 적어 주세요.'],goals:['직무체험에서 배우고 싶은 것','알아보고 싶은 업무와 기업에 묻고 싶은 질문을 적어 주세요.'],portfolio:['포트폴리오 링크','기업에 보여 줄 수 있는 노션·Drive 작업물 링크를 넣어 주세요.'],schoolGrade:['학교·학과·학년','예: 경기항공고 로봇자동화과 2학년'],course:['참여 예정 과정','담당교사에게 안내받은 과정명. 아직 모르겠으면 미정'],skillIndependent:['혼자 가능한 도구·작업','직접 해 본 것만 적으세요. 없으면 없음'],skillGuided:['시범 후 가능한 도구·작업','예: 교사 시범 후 기본 PLC 입출력 배선'],skillNew:['아직 경험 없는 도구·작업','처음이라 기업에서 배우고 싶은 작업'],commute:['통근 방법·시간과 기숙사','예: 버스 약 40분, 기숙사 불필요. 상세 주소는 쓰지 마세요.'],availability:['참여 가능한 일정','가능한 날짜·시간, 학교와 조정할 사항. 미정이면 미정']};
 function vCompany(){
- const r=D.companyResources||{},bar='<div class="row" style="margin-bottom:12px">'+[['info','기업 안내'],['intro',T()?'자기소개 검토':'내 직무체험 자기소개']].map(([k,l])=>'<button class="chipbtn" data-company-sub="'+k+'" aria-pressed="'+(companySub===k)+'">'+l+'</button>').join('')+'</div>';
- const head=extraHead('기업정보','학생 안내는 구글 시트, 자료실은 기업별 구글 드라이브로 연결됩니다.',T()?'<div class="row"><button class="btn" data-company-setup>시트·양식 연결</button>'+(r.sheetUrl?'<a class="btn" href="'+esc(r.sheetUrl)+'" target="_blank" rel="noopener">관리 시트 열기</a>':'')+'<button class="btn pri" data-co-new>+ 기업</button></div>':'');
- if(companySub==='intro')return head+bar+companyTemplateButtons()+vExperienceIntros();
+ const r=D.companyResources||{};
+ const head=extraHead('기업 안내','기업의 직무·근무 여건과 체험 정보를 확인합니다.',T()?'<div class="row"><button class="btn" data-company-setup>시트 연결</button>'+(r.sheetUrl?'<a class="btn" href="'+esc(r.sheetUrl)+'" target="_blank" rel="noopener">관리 시트 열기 ↗</a>':'')+'<button class="btn pri" data-co-new>+ 기업</button></div>':'');
  const c=(D.companyInfo||[]).find(c=>c.id===companySelected);
- let h=head+bar+(D.companySourceError?'<div class="banner">기업정보 시트를 읽지 못했습니다: '+esc(D.companySourceError)+'</div>':'')+companyTemplateButtons();
+ let h=head+(D.companySourceError?'<div class="banner">기업정보 시트를 읽지 못했습니다: '+esc(D.companySourceError)+'</div>':'');
  if(T()&&r.sheetUrl)h+='<div class="row" style="margin-bottom:12px"><button class="btn sm" data-company-seed>기존 기업 목록 가져오기</button><button class="btn sm ghost" data-company-refresh>시트 새로 읽기</button><span class="ev-s">관리 시트의 학생공개 1인 내용만 학생에게 표시됩니다.</span></div>';
  if(c)return h+vCompanyDetail(c);
- h+='<section class="panel pad row"><div style="flex:1"><b>기업 참여·훈련 안내</b><p class="ev-s">참여 절차와 운영 방식, 훈련 일정과 신청 서류</p></div><a class="btn" href="https:\/\/gahs-apprenticeship-guide.workspace-583703.chatgpt.site/" target="_blank" rel="noopener">안내 페이지 열기</a></section>';
  const list=(D.companyInfo||[]).slice().sort((a,b)=>(b.learners-a.learners)||a.name.localeCompare(b.name,'ko'));
  return h+(list.length?'<div class="grid2">'+list.map(c=>'<section class="panel pad"><div class="row">'+(c.industry?'<span class="chip">'+esc(c.industry)+'</span>':'')+(c.learners?'<span class="chip ok">학습근로자 '+c.learners+'명</span>':'')+(T()&&!c.open?'<span class="chip bad">학생 비공개</span>':'')+'</div><h3>'+esc(c.name)+'</h3><p class="ev-s">'+esc(c.address||'근무지 안내 준비 중')+'</p><div class="body">'+esc((c.intro||c.jobs||'').slice(0,200))+'</div><button class="btn pri" data-company-open="'+esc(c.id)+'">기업 자세히 보기</button></section>').join('')+'</div>':emptyBox('등록된 기업이 없습니다','기업 회신을 받아 관리 시트에 입력해 주세요.'));
 }
@@ -1266,12 +1424,81 @@ function vCompanyDetail(c){
  +'<section class="panel pad"><h3>기업 공지·일정</h3>'+(events.length?events.map(e=>'<article style="padding:10px 0"><b>'+esc(e.title)+'</b><p class="ev-s">'+esc(e.date)+(e.endDate?' ~ '+esc(e.endDate):'')+' '+esc(e.place||'')+'</p><div class="body">'+esc(e.note||'')+'</div><button class="btn sm" data-company-event="'+esc(e.id)+'">달력 보기</button>'+extraLink(e.link)+'</article>').join(''):emptyBox('등록된 기업 일정이 없습니다'))+'</section>'
  +'<h3>기업 자료실</h3>'+(c.folderUrl?(T()?'':folderReqBox('company:'+c.id,c.name+' 자료실'))+driveBrowser('company:'+c.id):'<section class="panel pad"><p>학생 안내용 Drive 폴더를 연결해 주세요.</p>'+(T()?'<button class="btn" data-company-folder="'+esc(c.id)+'">기업 자료실 만들기</button>':'')+'</section>');
 }
-function companySetupDlg(){const r=D.companyResources||{};openDlg('기업정보 시트와 양식 연결','<p class="ev-s">관리 시트는 편집 권한, 두 빈 양식은 읽기 권한으로 알림판 실행 계정 '+esc(r.appAccount||'')+'에 공유해 주세요. 기업 자료실에 파일을 올리려면 해당 Drive 폴더에는 편집 권한이 필요합니다.</p>'+field('기업정보 관리 시트','sheetUrl',r.sheetUrl||'','url')+field('기업 회신 빈 양식 시트','companyTemplate',r.companyTemplate||'','url')+field('학생 자기소개 빈 양식 시트','introTemplate',r.introTemplate||'','url'),'연결',fd=>act('saveCompanyResources',fd,'기업정보 시트와 양식을 연결했습니다'));}
-function vExperienceIntros(){const list=D.experienceIntros||[];return extraHead(T()?'학생 자기소개 검토':'내 직무체험 자기소개',T()?'학생이 제출한 자기소개를 확인하고 보완 의견을 남깁니다.':'강점의 근거와 실습 경험을 작성하세요. 초안은 본인만, 제출본은 담당교사와 본인이 확인합니다.',T()?'':'<button class="btn pri" data-intro-new>+ 자기소개 작성</button>')+(list.length?list.map(i=>'<section class="panel pad"><div class="row"><span class="chip">'+esc(i.status)+'</span><b>'+esc(T()?i.name:'나의 자기소개')+'</b><span class="ev-s">'+esc(i.companyName)+' · '+esc(i.updated)+'</span></div><h3>'+esc((i.answers||{}).headline||'작성 중인 자기소개')+'</h3><details><summary>작성 내용 보기</summary>'+companyLines(Object.entries(INTRO_FIELDS).map(([k,[l]])=>[l,(i.answers||{})[k]]))+'</details>'+(i.feedback?'<p class="banner">담당교사 의견: '+esc(i.feedback)+'</p>':'')+'<button class="btn" '+(T()?'data-intro-review':'data-intro-edit')+'="'+esc(i.id)+'">'+(T()?'검토·의견 남기기':'작성·수정')+'</button></section>').join(''):emptyBox(T()?'아직 제출된 자기소개가 없습니다':'저장한 자기소개가 없습니다'));
+function companySetupDlg(){const r=D.companyResources||{};openDlg('기업정보 시트 연결','<p class="ev-s">관리 시트를 알림판 실행 계정 '+esc(r.appAccount||'')+'에 편집 권한으로 공유해 주세요. 기업 자료실에 파일을 올리려면 해당 Drive 폴더에도 편집 권한이 필요합니다.</p>'+field('기업정보 관리 시트','sheetUrl',r.sheetUrl||'','url'),'연결',fd=>act('saveCompanyResources',{...fd,companyTemplate:r.companyTemplate||'',introTemplate:r.introTemplate||''},'기업정보 시트를 연결했습니다'));}
+let introQuery='',introState='all';
+function introHandouts(){const docs=(D.materials||[]).filter(m=>m.category==='직무체험 준비'&&/사전소개서|사전 소개서/.test(m.title));return docs.length?'<div class="row">'+docs.map(m=>'<button class="btn sm" data-file="'+esc(m.file)+'">'+esc(m.title)+'</button>').join(''):'';}
+function introEntryGroups(list){const map=new Map();list.forEach(i=>{const k=i.introGroup||i.id;if(!map.has(k))map.set(k,[]);map.get(k).push(i);});return [...map.values()].map(items=>{items.sort((a,b)=>(b.version||1)-(a.version||1));const latest=items.find(i=>i.isLatest!==false)||items[0];return {latest,history:items.filter(i=>i!==latest)};});}
+function introEntryCard(i,previous=false){return '<section class="panel pad" data-intro-record="'+esc(i.id)+'"><div class="row"><span class="chip '+(previous?'':'ok')+'">'+(previous?'이전 제출본':'최신 제출본')+' · '+(i.version||1)+'차</span><span class="chip">'+esc(i.status)+'</span><b>'+esc(T()?i.name:'나의 자기소개')+(i.grade?' · '+esc(i.grade):'')+'</b><span class="ev-s">'+esc(i.company?i.companyName:'기업 미정')+' · '+esc(i.submittedAt||i.updated)+'</span></div><h3>'+esc((i.answers||{}).headline||(i.file?'파일로 제출한 자기소개서':'작성 중인 자기소개'))+'</h3><details><summary>작성 내용 보기</summary>'+companyLines(Object.entries(INTRO_FIELDS).map(([k,[l]])=>[l,(i.answers||{})[k]]))+'</details>'+(i.feedback?'<p class="banner">학생 보완 의견: '+esc(i.feedback)+'</p>':'')+(i.teacherNote?'<p>기업 전달용 교사 의견: '+esc(i.teacherNote)+'</p>':'')+'<div class="row"><button class="btn" '+(T()?'data-intro-review':'data-intro-upload')+'="'+esc(i.id)+'">'+(T()?'검토·의견 남기기':'파일 다시 제출')+'</button>'+(T()&&i.status==='확인'&&(i.answers||{}).headline?'<button class="btn" data-intro-print="'+esc(i.id)+'">기업 전달본 인쇄/PDF</button>':'')+(T()&&/\.docx$/i.test(i.fileName||'')?'<button class="btn pri" data-intro-document="'+esc(i.id)+'">Word를 HTML로 보기</button>':'')+(i.file?'<p>'+extraFile(i.file)+'</p>':'')+'</div></section>';}
+function vExperienceIntros(){const list=D.experienceIntros||[],q=introQuery.trim().toLowerCase(),groups=introEntryGroups(list),latest=groups.map(g=>g.latest),shown=groups.filter(g=>{const i=g.latest;return (introState==='all'||i.status===introState)&&[i.name,i.companyName,(i.answers||{}).jobInterest].join(' ').toLowerCase().includes(q);});
+ let h=extraHead(T()?'기업 제출용 자기소개서 관리':'기업 제출용 자기소개서','양식을 받아 작성한 파일을 제출하세요. 제출 목록은 학생도 볼 수 있고, 제출한 자기소개서는 로그인한 학생과 선생님이 HTML로 볼 수 있습니다.',T()&&!D.introAuthRequired?'<button class="btn" data-intro-management>취합 시트 열기</button>':'');
+ h+='<section class="panel pad"><button class="btn" data-intro-list>제출 목록 보기</button></section>';
+ if(D.introAuthRequired)return h+'<section class="panel pad"><p>로그인 없이 이름과 학년을 입력하고 제출하세요. 제출한 자기소개서는 로그인한 학생과 선생님이 HTML로 볼 수 있습니다.</p><div class="row"><button class="btn pri" data-intro-entry>파일 제출</button><button class="btn" data-intro-template>양식 받기 (Word)</button><button class="btn" data-intro-guide>작성 가이드·예시</button><button class="btn ghost" data-intro-teacher-login>선생님 확인</button></div></section>';
+ if(!T()||isViewer())h+='<section class="panel pad"><div class="row"><button class="btn" data-intro-template>양식 받기 (Word)</button><button class="btn" data-intro-guide>작성 가이드·예시</button>'+(isViewer()?'<button class="btn" data-intro-entry>파일 제출</button>':'<button class="btn" data-intro-upload>파일 제출</button>')+'</div></section>';
+ if(T()){const names=new Set(list.map(i=>i.name)),missing=(D.roster||[]).filter(r=>['pre1','pre2'].includes(r.group)&&!names.has(r.name));h+='<section class="panel pad"><div class="row"><span class="chip">제출 '+latest.length+'명 · 기록 '+list.length+'건</span><span class="chip">최신본 확인 '+latest.filter(i=>i.status==='확인').length+'건</span><span class="chip">미제출 예비학생 '+missing.length+'명</span><button class="btn sm" data-intro-print-all>확인본 모아 인쇄/PDF</button></div><details><summary>미제출 학생 확인</summary><p>'+esc(missing.map(r=>r.name).join(' · ')||'없음')+'</p></details><p class="ev-s">취합 시트는 교사 전용입니다. 기업에는 필요한 학생의 확인본만 전달하고, 제공 범위와 필요한 안내·동의를 먼저 확인하세요. 학생 보완 의견은 기업 전달본에서 제외합니다.</p><div class="fgrid"><label class="fld"><span>이름·기업·희망 직무 검색</span><input id="introQuery" value="'+esc(introQuery)+'"></label>'+sel('상태','introState',[['all','전체'],['제출','제출'],['보완요청','보완요청'],['확인','확인']],introState)+'</div></section>';}
+ return h+(shown.length?shown.map(g=>'<section data-intro-group="'+esc(g.latest.id)+'">'+introEntryCard(g.latest)+(g.history.length?'<details class="panel pad" data-intro-history><summary>이전 제출 이력 '+g.history.length+'건</summary><p class="ev-s">이전 파일과 검토 기록을 보관합니다. 기본 대표본은 위의 최신 제출본입니다.</p>'+g.history.map(i=>introEntryCard(i,true)).join('')+'</details>':'')+'</section>').join(''):emptyBox(T()?'조건에 맞는 제출본이 없습니다':'저장한 자기소개가 없습니다'));
 }
-function experienceIntroDlg(i={}){const a=i.answers||{};openDlg('기업직무체험 자기소개',sel('관심 기업','company',[['','관심 분야 작성·기업 미정'],...(D.companyInfo||[]).map(c=>[c.id,c.name])],i.company||'')+Object.entries(INTRO_FIELDS).map(([k,[l,hint]])=>k==='portfolio'?field(l,k,a[k]||'','url'):area(l,k,a[k]||'',k==='headline'?150:2500).replace('<textarea ','<textarea placeholder="'+esc(hint)+'" ')).join('')+sel('저장 상태','status',[['초안','초안 저장'],['제출','담당교사에게 제출']],!i.id||i.status==='초안'?'초안':'제출')+'<label class="check"><input type="checkbox" name="confirm"> 본인의 실제 경험으로 작성한 내용을 확인했습니다.</label>','저장',fd=>{const answers={};Object.keys(INTRO_FIELDS).forEach(k=>answers[k]=fd[k]);return act('saveExperienceIntro',{id:i.id,company:fd.company,status:fd.status,confirm:fd.confirm,answers},'자기소개를 저장했습니다');});}
-async function companyTemplateDownload(kind){try{const f=await call('companyTemplateFile',{kind});const bytes=Uint8Array.from(atob(f.base64),c=>c.charCodeAt(0)),url=URL.createObjectURL(new Blob([bytes],{type:f.mime})),a=document.createElement('a');a.href=url;a.download=f.name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);}catch(e){toast(e.message);}}
-$('#main').addEventListener('click',async e=>{const b=e.target.closest('button');if(!b)return;const x=b.dataset;if(x.companySub){companySub=x.companySub;return render();}if(x.companyOpen){companySub='info';companySelected=x.companyOpen;return go('company');}if(x.companyBack!==undefined){companySelected='';return render();}if(x.companySetup!==undefined)return companySetupDlg();if(x.companySeed!==undefined)return act('seedCompanySource',{},'기존 기업 목록을 가져왔습니다');if(x.companyRefresh!==undefined)return act('refreshCompanyInfo',{},'기업정보 시트를 새로 읽었습니다');if(x.companyFolder){drvStale();return act('createCompanyFolder',{id:x.companyFolder},'기업 자료실을 만들었습니다');}if(x.companyTemplate)return companyTemplateDownload(x.companyTemplate);if(x.companyEvent){const ev=(D.companyEvents||[]).find(e=>e.id===x.companyEvent);if(ev){calSel=ev.date;calMonth=parse(ev.date);calMonth.setDate(1);schedMode='cal';go('schedule');}return;}if(x.introNew!==undefined)return experienceIntroDlg();if(x.introEdit)return experienceIntroDlg((D.experienceIntros||[]).find(i=>i.id===x.introEdit));if(x.introReview){const i=(D.experienceIntros||[]).find(i=>i.id===x.introReview);if(i)return openDlg(i.name+' 자기소개 검토',sel('검토 결과','status',[['확인','확인'],['보완요청','보완요청']],i.status==='보완요청'?'보완요청':'확인')+area('담당교사 의견','feedback',i.feedback||'',2000),'저장',fd=>act('reviewExperienceIntro',{id:i.id,...fd},'검토 의견을 저장했습니다'));}});
+function introLogin(teacher=false){introDeepPending=true;lsSet('dj.mode',teacher?'teacher':'student');gate(teacher?'제출본을 확인하려면 선생님으로 로그인하세요.':'학생 이름과 PIN으로 들어오면 파일을 제출할 수 있습니다.');}
+async function openIntroEntry(){if(isGuest()||isViewer()||D.loginDisabled||D.introAuthRequired)return publicIntroEntry();await hydrateFullData();go('intro');}
+
+async function introDocumentDlg(id){
+ openDlg('자기소개서 HTML 보기','<p data-intro-document-status role="status">자기소개서를 읽는 중…</p><div data-intro-document-content></div>','닫기',()=>true);dlg.classList.add('intro-word-preview');const box=form.querySelector('[data-intro-document-content]'),status=form.querySelector('[data-intro-document-status]'),entry=(D.experienceIntros||[]).find(i=>i.id===id);let url;if(T()&&entry&&entry.file){const original=document.createElement('button');original.type='button';original.className='btn';original.textContent='원본 받기';original.onclick=()=>downloadExtra(entry.file);form.querySelector('.dlg-act').prepend(original);}
+ const cleanup=()=>{dlg.classList.remove('intro-word-preview');if(url)URL.revokeObjectURL(url);};dlg.addEventListener('close',cleanup,{once:true});
+ try{const r=await call('introDocument',{id});if(!box.isConnected||!dlg.open)return;const frame=document.createElement('iframe');frame.title=r.name+' HTML 보기';frame.setAttribute('sandbox','');frame.setAttribute('referrerpolicy','no-referrer');const a=document.createElement('a');a.className='btn';a.textContent='HTML 저장';form.querySelector('.dlg-act').prepend(a);const showDoc=(html,label)=>{frame.srcdoc=html;if(url)URL.revokeObjectURL(url);url=URL.createObjectURL(new Blob([html],{type:'text/html;charset=utf-8'}));a.href=url;a.download=r.name.replace(/\.docx$/i,'')+(label?'_'+label:'')+'.html';};if(r.card&&r.wordHtml){const sw=document.createElement('div');sw.className='row';sw.setAttribute('role','group');sw.setAttribute('aria-label','보기 방식');sw.innerHTML='<button type="button" class="btn sm pri" data-intro-view="card" aria-pressed="true">소개서 카드</button><button type="button" class="btn sm" data-intro-view="word" aria-pressed="false">Word 모양</button>';box.appendChild(sw);sw.onclick=e=>{const b=e.target.closest('[data-intro-view]');if(!b)return;const card=b.dataset.introView==='card';sw.querySelectorAll('button').forEach(x=>{const on=x===b;x.classList.toggle('pri',on);x.setAttribute('aria-pressed',on);});showDoc(card?r.html:r.wordHtml,card?'카드':'Word');};}box.appendChild(frame);showDoc(r.html,r.card?'카드':'');status.textContent=r.name+(r.card?' · 제출한 Word를 소개서 카드로 정리했습니다.':' · 제출한 자기소개서 HTML 보기입니다.');}catch(e){if(status.isConnected)status.textContent=e.message;}
+}
+function introSubmissionListBox(){return '<section class="panel pad"><h3>제출 목록</h3><p class="ev-s">로그인한 학생과 선생님은 이전 온라인 작성본과 Word 제출본을 HTML로 볼 수 있습니다.</p><div data-intro-submission-list role="status">목록을 불러오는 중…</div></section>';}
+function introSharedVersion(entry,previous=false){return '<div data-intro-version="'+esc(entry.id)+'"><b>'+(previous?'이전 제출본':'최신 제출본')+' · '+entry.version+'차</b><div class="ev-s">'+esc(entry.fileName)+(entry.submittedAt?' · '+esc(entry.submittedAt):'')+'</div>'+(entry.documents||[]).map(d=>'<button class="btn sm" type="button" data-intro-shared="'+esc(d.id)+'">'+esc(d.label)+'</button>').join('')+'</div>';}
+async function loadIntroSubmissionList(){const box=form.querySelector('[data-intro-submission-list]');if(!box)return;try{const list=await call('introSubmissionList',{},D&&!D.introAuthRequired?cred:{});if(!box.isConnected)return;box.innerHTML=list.length?'<p>제출 '+list.length+'명</p><div class="tablewrap"><table><thead><tr><th>이름</th><th>학년</th><th>제출 여부</th></tr></thead><tbody>'+list.map(i=>'<tr><td>'+esc(i.name)+'</td><td>'+esc(i.grade)+'</td><td>'+esc(i.status)+(i.latest?introSharedVersion(i.latest):'')+((i.history||[]).length?'<details data-intro-list-history><summary>이전 제출 이력 '+i.history.length+'건</summary>'+i.history.map(d=>introSharedVersion(d,true)).join('')+'</details>':'')+'</td></tr>').join('')+'</tbody></table></div>':'아직 제출한 학생이 없습니다.';}catch(e){if(box.isConnected)box.textContent='목록을 불러오지 못했습니다. 닫고 다시 열어 주세요.';}}
+$('#dlgForm').addEventListener('click',e=>{const b=e.target.closest('[data-intro-shared]');if(!b)return;const id=b.dataset.introShared;dlg.addEventListener('close',()=>introDocumentDlg(id),{once:true});dlg.close();});
+function introSubmissionListDlg(){openDlg('자기소개서 제출 목록',introSubmissionListBox(),'닫기',()=>true);loadIntroSubmissionList();}
+function publicIntroEntry(){
+ if(D&&isGuest()&&D.studentLoginRequired&&!D.viewer){openDlg('자기소개서 파일 제출','<p>파일 제출과 학생 제출본 HTML 보기는 학생 이름으로 로그인한 뒤 이용해 주세요.</p><button class="btn pri" id="introGuestLogin" type="button">학생 로그인</button>','닫기',()=>true);$('#introGuestLogin').onclick=()=>{dlg.close();introLogin();};return;}
+ openDlg('기업 제출용 자기소개서','<p>양식을 받아 작성한 파일을 제출해 주세요. 로그인 없이 제출할 수 있습니다.</p><div class="row"><button type="button" class="btn" id="publicIntroTemplate">양식 받기 (Word)</button><button type="button" class="btn" id="publicIntroGuide">작성 가이드·예시</button><button type="button" class="btn pri" id="publicIntroFile">파일 제출</button></div><p class="ev-s">제출한 자기소개서는 로그인한 학생과 선생님이 HTML로 볼 수 있습니다. 다시 제출하면 최신본이 대표로 표시되고 이전본은 제출 이력에 보관됩니다.</p>'+introSubmissionListBox(),'닫기',()=>true);
+ $('#publicIntroTemplate').onclick=introTemplateDownload;$('#publicIntroGuide').onclick=()=>{dlg.addEventListener('close',()=>setTimeout(introGuideDlg),{once:true});dlg.close();};$('#publicIntroFile').onclick=()=>{dlg.addEventListener('close',()=>setTimeout(publicIntroDlg),{once:true});dlg.close();};loadIntroSubmissionList();
+}
+function publicIntroDlg(){
+ const submissionKey=newUid();let sent=false,dirty=false;
+ const bound=!!(D&&D.me&&D.me.studentId),identity=bound?'<p>제출자: '+esc(D.me.name)+' · '+esc(D.me.klass)+'</p>':field('이름','publicName','','text','required maxlength="40" autocomplete="name"')+sel('학년','publicGrade',[['','선택'],['1','1학년'],['2','2학년'],['3','3학년']],'');
+ openDlg('자기소개서 파일 제출',identity+'<p>문서·PDF·엑셀·사진 한 개, 8MB 이하</p>'+filePicker(1).replace('파일당 '+MAX_MB+'MB','파일당 8MB')+'<p class="ev-s">제출 목록에 이름·학년·제출 여부가 표시됩니다. 제출한 자기소개서는 로그인한 학생과 선생님이 HTML로 볼 수 있습니다.</p><p id="publicIntroState" role="status"></p>','제출',async()=>{
+ try{const f=draftFiles[0];if(!f)throw Error('파일을 선택해 주세요');if(f.size>8*1024*1024)throw Error('파일을 8MB 이하로 줄여 주세요');await call('submitPublicIntro',{name:bound?D.me.name:form.elements.publicName.value,grade:bound?D.me.studentId[0]:form.elements.publicGrade.value,submissionKey,confirm:true,mode:'file',upload:{name:f.name,base64:await blobB64(f)}},bound?cred:{});sent=true;toast('파일을 제출했습니다. 선생님이 확인합니다.');if(bound&&/\.docx$/i.test(f.name))dlg.addEventListener('close',()=>setTimeout(()=>introDocumentDlg('introPublic'+submissionKey)),{once:true});return true;}catch(e){$('#publicIntroState').textContent=e.message+' 입력한 내용과 선택한 파일은 그대로 있습니다. 다시 제출해 주세요.';return false;}
+ });
+ const change=()=>{dirty=true;},unload=e=>{if(dirty&&!sent&&dlg.open){e.preventDefault();e.returnValue='';}};form.addEventListener('input',change);window.addEventListener('beforeunload',unload);dlg.addEventListener('close',()=>{form.removeEventListener('input',change);window.removeEventListener('beforeunload',unload);},{once:true});
+}
+function introUploadDlg(){return publicIntroDlg();}
+const INTRO_GUIDE_RULES=[['첫 문장은 \'이런 일을 해 본 사람\'','성격 형용사 대신 내가 한 행동으로 소개합니다.','저는 성실하고 책임감 있는 학생입니다.','스마트팜 급수 장치를 만들며 납땜 불량을 찾아 고치는 법을 익힌 2학년입니다.'],['숫자를 하나 이상','몇 개, 몇 시간, 몇 번, 얼마나 줄었는지가 있으면 글이 믿을 만해집니다.','센서 문제를 열심히 해결했습니다.','배선 12곳을 다시 납땜해 오작동을 주 3회에서 0회로 줄였습니다.'],['경험은 4줄: 상황 → 내가 한 일 → 결과 → 배운 점','팀 작업이면 \'우리\'가 아니라 \'내가\' 맡은 부분을 씁니다.','우리 팀은 로봇팔을 만들어 대회에 나갔습니다.','로봇팔 대회에서 저는 그리퍼 서보 배선과 전원 분배를 맡아 과열 문제를 해결했습니다.'],['그 회사에 맞추기','알림판 \'기업정보\'에서 그 회사 제품이나 공정을 하나 찾아 내 경험과 연결합니다.','좋은 회사라서 지원했습니다.','SMT 라인의 자동 검사 장비가 불량을 어떻게 찾는지 직접 보고 싶습니다.'],['태도는 사례로 증명','기업은 시간 지키기, 안전 장비, 정리정돈, 보고를 실제로 봅니다. 한 가지를 사례로 씁니다.','시간 약속을 잘 지킵니다.','OJT 기간 출근 시간 10분 전 도착을 한 번도 놓치지 않았습니다.'],['작품 사진 한 장, 마지막은 질문 하나','만든 것을 찍은 사진 1장이 글 열 줄보다 낫습니다. 끝에는 직무체험 때 묻고 싶은 구체적인 질문을 씁니다. 관심이 진짜라는 신호가 됩니다.','','']];
+function introGuideHtml(){
+ return '<div class="ig"><header class="ig-top"><span class="ig-tag">로봇자동화과 · 예비도제 기업 직무체험</span><h3>기업이 30초 안에 읽는 자기소개서</h3><p class="ig-lead">기업 담당자는 첫 문장, 숫자, 사진을 먼저 봅니다. 아래 예시처럼 쓰면 Word 양식 한 장으로도 눈에 띄는 소개서가 됩니다. 항목마다 2~4문장, A4 1쪽이면 충분합니다.</p><span class="ig-ex">예시 학생 · 실제 학생 정보 아님</span></header>'
+ +'<article class="ig-sheet" aria-label="잘 쓴 소개서 예시"><div class="ig-sh"><span class="nm">한빛나</span><div class="ig-meta"><span>2학년 · 예비도제</span><span>동아리 Future Maker</span><span>관심 기업: (예시) 스마트라인</span></div><span class="ig-rev">EXAMPLE · WORD</span></div>'
+ +'<p class="ig-headline">아두이노로 스마트팜 급수 장치를 만들며 납땜 불량을 스스로 찾아 고치는 법을 익힌 학생입니다.</p>'
+ +'<div class="ig-chips" aria-label="기술과 자격증"><span>납땜·배선</span><span>아두이노 C</span><span>멀티미터 측정</span><span>3D 프린터</span><span>전자기기기능사 준비 중</span></div>'
+ +'<div class="ig-grid"><section><span class="ig-lb">대표 프로젝트</span><div class="ig-photo"><canvas width="640" height="360" data-ig-photo aria-label="작품 사진 자리(예시 그림)"></canvas></div><h5>텃밭 자동 급수 장치</h5><ul class="ig-steps">'
+ +'<li><b>상황</b><span>토양 습도 센서가 자주 잘못된 값을 보내 물이 넘쳤습니다.</span></li><li><b>내가 한 일</b><span>배선을 하나씩 측정해 냉납 12곳을 찾고 다시 납땜했습니다.</span></li><li><b>결과</b><span>오작동이 주 <span class="ig-num">3회</span>에서 <span class="ig-num">0회</span>로 줄었습니다.</span></li><li><b>배운 점</b><span>눈으로 보지 말고 측정값으로 확인하는 습관이 생겼습니다.</span></li></ul></section>'
+ +'<section><span class="ig-lb">지원 이유</span><p class="ig-p">회사 소개 영상에서 SMT 라인의 자동 검사 장비를 보고, 제가 손으로 하던 불량 찾기를 기계가 어떻게 하는지 직접 보고 싶어졌습니다.</p><span class="ig-lb">나의 장점과 근거</span><p class="ig-ev">실습이 끝나면 공구 정리 체크리스트를 확인하고 사진으로 남겼습니다. 한 학기 동안 공구 분실이 한 번도 없었습니다.</p><span class="ig-lb">직무체험에서 배우고 싶은 것</span><p class="ig-p">불량 판정 기준을 사람이 어떻게 정하는지, 검사 데이터를 어떻게 기록하는지 배우고 싶습니다.</p></section></div>'
+ +'<p class="ig-ask"><span class="ig-lb">기업에 묻고 싶은 질문</span><b>검사 장비가 불량이라고 판정한 부품은 사람이 다시 확인하나요?</b></p></article>'
+ +'<section class="ig-guide" aria-label="작성법"><div><span class="ig-tag">따라 쓰는 방법</span><h4>지루하지 않게 쓰는 6가지</h4><p class="ig-lead">위 예시가 어떻게 만들어졌는지 하나씩 보고, 내 경험으로 바꿔 써 보세요.</p></div>'
+ +INTRO_GUIDE_RULES.map((r,i)=>'<div class="ig-rule"><span class="n">'+(i+1)+'</span><div><h5>'+esc(r[0])+'</h5><p>'+esc(r[1])+'</p>'+(r[2]?'<div class="ig-pair"><div class="ig-weak">'+esc(r[2])+'</div><div class="ig-strong">'+esc(r[3])+'</div></div>':'')+'</div></div>').join('')
+ +'<div class="ig-avoid"><h5>빼야 할 것</h5><ul><li>어린 시절부터의 일대기, 장래희망 나열</li><li>인터넷 예문 복사(담당자는 바로 알아봅니다)</li><li>"열심히 하겠습니다"로만 끝나는 마무리</li><li>주민등록번호, 상세 주소, 전화번호</li></ul></div>'
+ +'<div class="ig-try"><h5>이렇게 따라 해 보세요</h5><ol><li>Word 양식을 받습니다.</li><li>첫 줄에 "○○을 하며 ○○을 익힌 학생입니다"를 내 경험으로 씁니다.</li><li>대표 프로젝트 하나를 상황 → 내가 한 일 → 결과(숫자) → 배운 점 4줄로 씁니다.</li><li>기업정보에서 그 회사 제품·공정을 찾아 지원 이유에 연결합니다.</li><li>작품 사진 1장을 넣고, 마지막에 묻고 싶은 질문을 하나 씁니다.</li><li>파일 제출로 올립니다.</li></ol></div></section></div>';}
+function introGuidePhoto(c){if(!c||!c.getContext)return;const x=c.getContext('2d'),cs=getComputedStyle(c.closest('.ig')),v=(n,d)=>cs.getPropertyValue(n).trim()||d,mask=v('--ig-mask','#1d6b4f'),soft=v('--ig-soft','#e3efe8'),copper=v('--ig-copper','#b5652b'),ink=v('--ig-ink','#18201b');
+ x.fillStyle=soft;x.fillRect(0,0,640,360);x.strokeStyle=mask;x.lineWidth=3;x.globalAlpha=.55;
+ for(let i=0;i<9;i++){const y=40+i*34,d=i%2?24:-24;x.beginPath();x.moveTo(30,y);x.lineTo(240,y);x.lineTo(270,y+d);x.lineTo(610,y+d);x.stroke();}
+ x.globalAlpha=.85;x.fillStyle=ink;x.fillRect(250,120,140,110);x.globalAlpha=1;x.fillStyle=copper;
+ for(let p=0;p<7;p++){x.fillRect(258+p*19,110,8,10);x.fillRect(258+p*19,230,8,10);}
+ for(let k=0;k<14;k++){x.beginPath();x.arc(60+k*40,320,7,0,Math.PI*2);x.fill();}
+ x.fillStyle=mask;x.font='600 18px "IBM Plex Sans KR", sans-serif';x.fillText('작품 사진 자리 (내 작품 사진 1장)',30,30);}
+function introGuideDlg(){if(!document.querySelector('link[data-ig-font]')){const l=document.createElement('link');l.rel='stylesheet';l.dataset.igFont='1';l.href='https:\/\/fonts.googleapis.com/css2?family=Gothic+A1:wght@700;800&display=swap';document.head.appendChild(l);}
+ openDlg('자기소개서 작성 가이드',introGuideHtml(),'닫기',()=>true);dlg.classList.add('intro-guide');introGuidePhoto(dlg.querySelector('[data-ig-photo]'));dlg.addEventListener('close',()=>dlg.classList.remove('intro-guide'),{once:true});}
+async function introTemplateDownload(){try{const f=await call('introTemplate'),url=URL.createObjectURL(new Blob([Uint8Array.from(atob(f.base64),c=>c.charCodeAt(0))],{type:f.mime})),a=document.createElement('a');a.href=url;a.download=f.name;a.click();setTimeout(()=>URL.revokeObjectURL(url),30000);}catch(e){toast(e.message);}}
+function printIntroPages(items){
+ if(!T())return;items=items.filter(i=>i.status==='확인'&&(i.answers||{}).headline);if(!items.length)return toast('교사가 확인한 제출본이 없습니다.');
+ const w=window.open('','_blank');if(!w)return toast('인쇄 창을 열 수 없습니다. 팝업 허용 후 다시 눌러 주세요.');
+ const sections=[['희망 직무와 지원 동기',['jobInterest','motivation']],['실습 경험과 나의 역할',['experience']],['공구·장비 수행 수준',['skillIndependent','skillGuided','skillNew']],['강점과 일하는 태도',['strength','teamSafety']],['기술·자격·활동',['skills']],['직무체험 목표와 질문',['goals']],['통근과 참여 여건',['commute','availability']]];
+ const pages=items.map(i=>{const a=i.answers||{};return '<article><h1>예비도제학생 사전 소개서</h1><p><b>'+esc(i.name)+'</b> · '+esc(a.schoolGrade||'학교·학과·학년 미입력')+' · '+esc(a.course||'참여 과정 미정')+'</p><p>희망 기업 '+esc(i.company?i.companyName:'기업 미정')+' · '+esc(a.headline||'')+'</p>'+sections.map(([title,keys])=>'<h2>'+title+'</h2><p>'+keys.filter(k=>a[k]).map(k=>esc((keys.length>1?INTRO_FIELDS[k][0]+': ':'')+a[k])).join('<br>')+'</p>').join('')+(a.portfolio?'<p>포트폴리오 '+esc(a.portfolio)+'</p>':'')+'<h2>학교 담당자 의견</h2><p>'+esc(i.teacherNote||'')+'</p><footer>연락은 학교 담당자를 통해 진행합니다. 확인일 '+esc(i.updated)+'</footer></article>';}).join('');
+ w.document.write('<!doctype html><html lang="ko"><meta charset="utf-8"><title>예비도제학생 사전 소개서</title><style>@page{size:A4;margin:14mm 17mm}body{font:10pt "Malgun Gothic",sans-serif;color:#000}article{break-after:page}article:last-child{break-after:auto}h1{font-size:18pt;margin:0 0 8mm}h2{font-size:10.5pt;margin:4mm 0 1mm}p{white-space:pre-wrap;overflow-wrap:anywhere;margin:1.5mm 0;line-height:1.4}footer{font-size:8pt;margin-top:5mm}</style><body>'+pages+'</body></html>');w.document.close();w.opener=null;w.focus();setTimeout(()=>w.print(),250);
+}
+$('#main').addEventListener('input',e=>{if(e.target.id!=='introQuery')return;introQuery=e.target.value;const pos=e.target.selectionStart;render();const el=$('#introQuery');el.focus();el.setSelectionRange(pos,pos);});
+$('#main').addEventListener('change',e=>{if(e.target.name==='introState'){introState=e.target.value;render();}});
+$('#main').addEventListener('click',async e=>{const b=e.target.closest('button');if(!b)return;const x=b.dataset;if(x.introManagement!==undefined){b.disabled=true;try{const r=await call('introManagement');openDlg('교사 전용 취합 시트','<p>제출본 '+r.submitted+'건 · 확인본 '+r.confirmed+'건을 동기화했습니다. 학생이 제출·재제출하거나 교사가 검토하면 자동 갱신됩니다.</p><p>이 시트는 취합용 자동 보기입니다. 내용 수정은 알림판에서 진행하고, 기업에는 필요한 학생의 확인본만 인쇄/PDF로 전달하세요.</p><a class="btn" href="'+esc(r.url)+'" target="_blank" rel="noopener">제출관리 시트 열기</a>','닫기',()=>true);}catch(err){toast(err.message);}finally{b.disabled=false;}return;}if(x.introPrint)return printIntroPages((D.experienceIntros||[]).filter(i=>i.id===x.introPrint));if(x.introPrintAll!==undefined)return printIntroPages((D.experienceIntros||[]).filter(i=>i.isLatest!==false).filter(i=>(introState==='all'||i.status===introState)&&[i.name,i.companyName,(i.answers||{}).jobInterest].join(' ').toLowerCase().includes(introQuery.toLowerCase())));});
+$('#main').addEventListener('click',async e=>{const b=e.target.closest('button');if(!b)return;const x=b.dataset;if(x.introDocument)return introDocumentDlg(x.introDocument);if(x.introList!==undefined)return introSubmissionListDlg();if(x.introEntry!==undefined)return openIntroEntry();if(x.introStudentLogin!==undefined)return introLogin();if(x.introTeacherLogin!==undefined)return introLogin(true);if(x.introTemplate!==undefined)return introTemplateDownload();if(x.introGuide!==undefined)return introGuideDlg();if(x.introUpload!==undefined)return introUploadDlg();if(x.companySub){companySub=x.companySub;return x.companySub==='intro'?go('intro'):go('company');}if(x.companyOpen){companySub='info';companySelected=x.companyOpen;return go('company');}if(x.companyBack!==undefined){companySelected='';return render();}if(x.companySetup!==undefined)return companySetupDlg();if(x.companySeed!==undefined)return act('seedCompanySource',{},'기존 기업 목록을 가져왔습니다');if(x.companyRefresh!==undefined)return act('refreshCompanyInfo',{},'기업정보 시트를 새로 읽었습니다');if(x.companyFolder){drvStale();return act('createCompanyFolder',{id:x.companyFolder},'기업 자료실을 만들었습니다');}if(x.companyEvent){const ev=(D.companyEvents||[]).find(e=>e.id===x.companyEvent);if(ev){calSel=ev.date;calMonth=parse(ev.date);calMonth.setDate(1);schedMode='cal';go('schedule');}return;}if(x.introReview){const i=(D.experienceIntros||[]).find(i=>i.id===x.introReview);if(i)return openDlg(i.name+' 자기소개 검토',sel('검토 결과','status',[['확인','확인'],['보완요청','보완요청']],i.status==='보완요청'?'보완요청':'확인')+area('학생 보완 의견 기업전달 제외','feedback',i.feedback||'',2000)+area('기업 전달용 학교 담당자 의견','teacherNote',i.teacherNote||'',700),'저장',fd=>act('reviewExperienceIntro',{id:i.id,...fd},'검토 의견을 저장했습니다'));}});
 
 function companyDlg(c = {}){
   openDlg(c.id ? "훈련 기업 수정" : "훈련 기업 등록", field("기업명", "name", c.name || "", "text", 'required maxlength="80"') + field("주소", "address", c.address || "", "text", 'maxlength="200"') +
@@ -1435,7 +1662,7 @@ function bookModel(){
 function vRegisterOriginal(){
   if (!T()) return vAttendance(isLearner()?'train':'after');
   const {days,students,records}=bookModel(), lessons=[...new Set(['방과후','OJT','OFF-JT','일반 출결',...(D.attendance||[]).map(a=>a.lesson),bookLesson])];
-  return extraHead('월별 출석부','학생별 출결을 날짜별로 확인하고 칸을 눌러 기록하세요. ‘—’는 미기록이며, 미참여는 결석이 아닙니다.','<button class="btn" data-book-export>출석부 CSV</button>')+
+  return extraHead('통합 출석부','학생별 출결을 날짜별로 확인하고 칸을 눌러 기록하세요. ‘—’는 미기록이며, 미참여는 결석이 아닙니다.','<button class="btn" data-book-export>출석부 CSV</button>')+
     '<section class="panel pad"><div class="fgrid">'+field('월','bookMonth',bookMonth,'month','id="bookMonth"')+sel('학생 구분','bookGroup',[['all','전체 학생'],...Object.entries(GROUP)],bookGroup).replace('name="bookGroup"','id="bookGroup"')+sel('방과후 참여','bookParticipation',[['all','참여·미참여 모두'],['join','참여 학생'],['skip','미참여 학생']],bookParticipation).replace('name="bookParticipation"','id="bookParticipation"')+sel('수업','bookLesson',lessons.map(l=>[l,l]),bookLesson).replace('name="bookLesson"','id="bookLesson"')+'</div></section>'+
     '<section class="panel tbl-wrap">'+(students.length?'<table><thead><tr><th>이름</th><th>학년반</th><th>방과후</th>'+days.map(d=>'<th class="num">'+Number(d.slice(-2))+'일</th>').join('')+BOOK_STATUSES.map(s=>'<th>'+s+'</th>').join('')+'</tr></thead><tbody>'+students.map(r=>{
       const totals=Object.fromEntries(BOOK_STATUSES.map(s=>[s,0]));
@@ -1475,7 +1702,7 @@ $('#main').addEventListener('click',e=>{
 /* ---------- 설정 / 내 정보 ---------- */
 function vMeOriginal(){
   return `<div class="sec-h"><div><h2>${T() ? "설정" : "내 정보"}</h2></div></div><section class="panel">
-    <div class="pad" style="display:flex;flex-direction:column;gap:6px">${T() ? `<b>선생님으로 들어와 있습니다</b>` : `<b>${esc(D.me.name)}</b><span class="ev-s">${esc(GROUP[myGroup()] || "")}${D.me.klass ? ` · ${esc(D.me.klass)}` : ""}</span>`}</div>
+    <div class="pad" style="display:flex;flex-direction:column;gap:6px">${T() ? `<b>${esc(D.me.name)} · ${A()?"최고관리자":"교사"}</b>` : `<b>${esc(D.me.name)}</b><span class="ev-s">${esc(GROUP[myGroup()] || "")}${D.me.klass ? ` · ${esc(D.me.klass)}` : ""}</span>`}</div>
     <div class="pad row" style="border-top:1px solid var(--line)"><span>홈 화면에 추가하면 앱처럼 바로 열 수 있습니다. 안드로이드: 크롬 ⋮ → 홈 화면에 추가 · 아이폰: 사파리 공유 □↑ → 홈 화면에 추가</span></div>
     ${D.loginDisabled ? "" : `<div class="pad row" style="border-top:1px solid var(--line)"><span class="spacer"></span><button class="btn" data-logout>나가기</button></div>`}</section>`;
 }
@@ -1614,7 +1841,8 @@ function vUnits(){
 }
 function unitDlg(u={}){openDlg(u.id?'능력단위 수정':'능력단위 등록',field('능력단위 코드','code',u.code||'')+field('단위명','title',u.title||'','text','required maxlength="150"')+`<div class="fgrid">${targetSel(u.target)}${field('기준 시간','hours',u.hours||0,'number','min="0" max="2000" step="0.5"')}</div>`+area('설명','note',u.note||'')+`<label class="check"><input type="checkbox" name="active" ${u.active!==false?'checked':''}> 사용</label>`,'저장',fd=>act('saveUnit',{id:u.id,...fd},'능력단위를 저장했습니다'));}
 function progressDlg(unit,name){const p=D.progress.find(x=>x.unit===unit&&x.name===name)||{};openDlg(name+' · 이수 기록',sel('상태','status',['미시작','진행중','이수','보완필요'].map(x=>[x,x]),p.status||'미시작')+`<div class="fgrid">${field('실제 이수시간','hours',p.hours||0,'number','min="0" max="2000" step="0.5"')}${field('평가일','date',p.date||TODAY,'date')}</div>`+field('평가결과 (예: 우수·보통·미흡 또는 점수)','grade',p.grade||'','text','maxlength="30"')+area('피드백','feedback',p.feedback||''),'저장',fd=>act('saveProgress',{unit,name,...fd},'이수 결과를 저장했습니다'));}
-function vPortfolio(){return extraHead(T()?'학생 포트폴리오':'내 포트폴리오','노션 포트폴리오와 실습 기록·결과물을 모읍니다.','<button class="btn pri" data-extra-new="portfolio">+ 기록 제출</button>')+notionPortfolioBox()+`<section class="panel">${D.portfolio.length?[...D.portfolio].sort((a,b)=>(b.date+b.at).localeCompare(a.date+a.at)).map(p=>`<article class="notice"><div class="row"><span class="chip">${esc(p.status||'제출')}</span><span class="meta">${esc(p.date)}${T()?' · '+esc(p.name):''}</span></div><h3>${esc(p.title)}</h3><div class="ev-s">${esc(D.units.find(u=>u.id===p.unit)?.title||'능력단위 선택 안 함')}</div><div class="body">${esc(p.body)}</div><div class="row">${extraLink(p.link)}${extraFile(p.file)}<button class="btn sm" data-pf-edit="${esc(p.id)}">수정</button>${T()?`<button class="btn sm pri" data-pf-review="${esc(p.id)}">확인·피드백</button>`:''}${extraDelete('portfolio',p.id)}</div>${p.feedback?`<div class="fb"><b>선생님 피드백</b><br>${esc(p.feedback)}</div>`:''}</article>`).join(''):emptyBox('아직 제출한 기록이 없습니다')}</section>`;}
+function vCareerPortfolio(){return '<nav class="row" aria-label="포트폴리오 보기"><button class="chipbtn" data-portfolio-view="portfolio" aria-pressed="'+(tab==='portfolio')+'">활동 기록·노션</button><button class="chipbtn" data-portfolio-view="intro" aria-pressed="'+(tab==='intro')+'">자기소개서</button></nav>'+(tab==='intro'?vExperienceIntros():vPortfolioRecords());}
+function vPortfolioRecords(){return extraHead(T()?'학생 포트폴리오':'내 포트폴리오','노션 포트폴리오와 실습 기록·결과물을 모읍니다.','<button class="btn pri" data-extra-new="portfolio">+ 기록 제출</button>')+notionPortfolioBox()+`<section class="panel">${D.portfolio.length?[...D.portfolio].sort((a,b)=>(b.date+b.at).localeCompare(a.date+a.at)).map(p=>`<article class="notice"><div class="row"><span class="chip">${esc(p.status||'제출')}</span><span class="meta">${esc(p.date)}${T()?' · '+esc(p.name):''}</span></div><h3>${esc(p.title)}</h3><div class="ev-s">${esc(D.units.find(u=>u.id===p.unit)?.title||'능력단위 선택 안 함')}</div><div class="body">${esc(p.body)}</div><div class="row">${extraLink(p.link)}${extraFile(p.file)}<button class="btn sm" data-pf-edit="${esc(p.id)}">수정</button>${T()?`<button class="btn sm pri" data-pf-review="${esc(p.id)}">확인·피드백</button>`:''}${extraDelete('portfolio',p.id)}</div>${p.feedback?`<div class="fb"><b>선생님 피드백</b><br>${esc(p.feedback)}</div>`:''}</article>`).join(''):emptyBox('아직 제출한 기록이 없습니다')}</section>`;}
 function portfolioDlg(p={}){openDlg(p.id?'포트폴리오 수정':'포트폴리오 제출',T()&&!p.id?sel('학생','name',studentChoices(),D.roster[0]?.name||''):'','저장',()=>{});form.querySelector('.dlg-act').insertAdjacentHTML('beforebegin',`<div class="fgrid">${field('기록 날짜','date',p.date||TODAY,'date','required')}${sel('능력단위','unit',unitChoices(),p.unit||'')}</div>`+field('제목','title',p.title||'','text','required maxlength="150"')+area('활동·배운 점·결과','body',p.body||'',6000)+field('결과물 링크','link',p.link||'')+fileInput());bindFilePicker();onSubmit=fd=>actUpload('savePortfolio',{id:p.id,...fd},'포트폴리오를 제출했습니다');}
 function reviewDlg(p){openDlg(p.name+' · 확인 및 피드백',sel('확인 상태','status',[['확인','확인'],['보완요청','보완요청']],p.status==='보완요청'?'보완요청':'확인')+area('피드백','feedback',p.feedback||''),'저장',fd=>act('reviewPortfolio',{id:p.id,...fd},'피드백을 저장했습니다'));}
 function vProjects(){return extraHead(T()?'프로젝트 관리':'우리 팀','팀 과제와 자료함은 구성원과 선생님만 확인하고 수정합니다. 결과물을 모두에게 보여 주려면 ‘게시판에 공유’를 누르세요.',T()?'<button class="btn pri" data-extra-new="project">+ 프로젝트</button>':'')+`<div class="grid2">${D.projects.length?D.projects.map(p=>{const tasks=D.tasks.filter(t=>t.project===p.id),done=tasks.filter(t=>t.done).length;return `<section class="panel" data-team-panel="${esc(p.id)}"><div class="team-h"><div class="row"><span class="chip">${esc(p.status)}</span><span class="ev-s">마감 ${esc(p.due||'미정')}</span></div><h3>${esc(p.team)} · ${esc(p.product)}</h3><div class="ev-s">${esc(p.members.join(' · '))}</div><div style="white-space:pre-wrap;overflow-wrap:anywhere">${esc(p.goal)}</div><div class="row">${extraLink(p.link)}<button class="btn sm ghost" data-proj-share="${esc(p.id)}">게시판에 공유</button>${T()?`<button class="btn sm" data-project-edit="${esc(p.id)}">수정</button>${extraDelete('projects',p.id)}`:''}<button class="btn sm pri" data-task-new="${esc(p.id)}">+ 과제</button></div><span class="ev-s">완료 ${done}/${tasks.length}</span></div>${relatedNotices("project:"+p.id,p.product)}${projectFilesBox(p)}${tasks.length?tasks.map(t=>`<div class="notice"><div class="row"><span class="chip ${t.done?'ok':''}">${t.done?'완료':'진행'}</span><b>${esc(t.title)}</b></div><div class="ev-s">담당 ${esc(t.assignee||'팀 전체')} · 마감 ${esc(t.due||'미정')}</div><div class="body">${esc(t.note)}</div><div class="row"><button class="btn sm" data-task-edit="${esc(t.id)}">과제 수정·완료</button>${extraDelete('tasks',t.id)}</div></div>`).join(''):emptyBox('등록한 과제가 없습니다')}</section>`;}).join(''):emptyBox('참여 중인 프로젝트가 없습니다')}</div>`;}
@@ -1717,13 +1945,14 @@ let documentPreviewUrl=null,documentPreviewTicket=0;
 async function previewDocument(root,id){
  const ticket=++documentPreviewTicket;
  openDlg('문서 바로보기','<p data-document-status>문서를 불러오는 중…</p><div data-document-content></div>','닫기',()=>true);
+ dlg.classList.add('document-preview');
  const content=form.querySelector('[data-document-content]'),status=form.querySelector('[data-document-status]');
  try{
   const parts=[];let off=0,r;
   do{r=await call(root==='notice'?'noticeDownload':root==='file'?'downloadFile':root==='material-file'?'driveMaterialFile':'driveDownload',{root,id,offset:off});if(ticket!==documentPreviewTicket||!content.isConnected||!dlg.open)return;const b=Uint8Array.from(atob(r.base64||''),c=>c.charCodeAt(0));parts.push(b);off+=b.length;if(!b.length&&!r.done)throw Error('문서를 읽지 못했습니다');}while(!r.done&&off<r.size);
   const kind=documentPreviewKind(r);if(!['pdf','image','text'].includes(kind))throw Error('바로보기를 지원하지 않는 형식입니다. 원본 받기를 이용해 주세요.');
   if(kind==='text'){const pre=document.createElement('pre');pre.style.cssText='white-space:pre-wrap;overflow-wrap:anywhere;max-height:65vh;overflow:auto';pre.textContent=await new Blob(parts).text();if(ticket!==documentPreviewTicket)return;content.appendChild(pre);}
-  else{const mime=kind==='pdf'?'application/pdf':r.mime;documentPreviewUrl=URL.createObjectURL(new Blob(parts,{type:mime}));const view=document.createElement(kind==='pdf'?'object':'img');if(kind==='pdf'){view.data=documentPreviewUrl;view.type='application/pdf';const a=document.createElement('a');a.href=documentPreviewUrl;a.target='_blank';a.rel='noopener';a.textContent='문서 새 창에서 보기';view.appendChild(a);}else view.src=documentPreviewUrl;view.title=r.name;view.setAttribute('data-document-view',kind);view.style.cssText=kind==='pdf'?'width:100%;height:65vh;border:0':'max-width:100%;max-height:65vh;object-fit:contain';if(kind==='image')view.alt=r.name;content.appendChild(view);}
+  else{const mime=kind==='pdf'?'application/pdf':r.mime;documentPreviewUrl=URL.createObjectURL(new Blob(parts,{type:mime}));const view=document.createElement(kind==='pdf'?'object':'img');if(kind==='pdf'){view.data=documentPreviewUrl;view.type='application/pdf';const a=document.createElement('a');a.href=documentPreviewUrl;a.target='_blank';a.rel='noopener';a.className='btn';a.textContent='새 탭에서 크게 보기 ↗';form.querySelector('.dlg-act').prepend(a);view.appendChild(a.cloneNode(true));}else view.src=documentPreviewUrl;view.title=r.name;view.setAttribute('data-document-view',kind);if(kind==='image'){view.style.cssText='max-width:100%;max-height:100%;object-fit:contain';view.alt=r.name;}content.appendChild(view);}
   status.textContent=r.name;
  }catch(e){if(ticket===documentPreviewTicket&&status.isConnected)status.textContent=e.message;}
 }
@@ -1807,6 +2036,7 @@ $('#main').addEventListener('drop',e=>{const zone=e.target.closest('[data-photo-
 /* ---------- Drive 폴더 접근 신청 ---------- */
 const FREQ_CHIP = { "대기": "pre", "완료": "ok", "거절": "bad", "실패": "bad" };
 function folderReqBox(target,label){
+ if(isGuest())return "";
  if(target==='materials'&&!(D.folderReady||{}).materials)return '';
  const mine=(D.folderRequests||[]).filter(r=>r.target===target);
  return '<section class="panel pad"><div class="row"><div style="flex:1;min-width:200px"><b>내 구글 계정으로 '+esc(label)+' 폴더 열기</b><div class="ev-s">학교·개인 구글 계정 이메일로 신청하면 선생님 승인 후 구글 드라이브 ‘공유 문서함’에서 바로 열 수 있습니다.</div></div><button class="btn pri" data-freq="'+esc(target)+'" data-freq-label="'+esc(label)+'">접근 신청</button></div>'+freqList(mine,false)+'</section>';
@@ -1823,10 +2053,10 @@ function folderReqAdmin(){
 function folderReqDlg(target,label){
  openDlg(label+' · 폴더 접근 신청',field('내 구글 계정 이메일','email',(D.contact||{}).email||'','email','required placeholder="예: 이름@gmail.com 또는 학교 계정"')+field('메모 (선택)','note','','text','maxlength="200"')+'<p class="ev-s">이 이메일로 구글 드라이브에 로그인해야 폴더가 보입니다. 선생님이 승인하면 ‘공유 문서함’에 나타납니다.</p>','신청',fd=>act('requestFolderAccess',{target,...fd},'신청했습니다. 선생님이 승인하면 공유됩니다'));
 }
-function vMaterials(){return extraHead('자료실','구글 드라이브·노션·선생님이 올린 학습 자료입니다.',T()?'<div class="row"><button class="btn" data-materials-connect>Drive 연결 설정</button><button class="btn pri" data-extra-new="material">+ 자료</button></div>':'')+(T()?folderReqAdmin():folderReqBox('materials','자료실'))+resourceLinkStatus()+materialControls()+((D.folderReady||{}).materials?driveBrowser('materials'):driveDropBox()+driveBox())+notionBox()+`<section class="panel"><div class="pad" style="padding-bottom:4px"><span class="label">선생님이 올린 자료</span></div>${D.materials.length?sortedMaterials(D.materials.filter(m=>materialMatches(m.title,m.body,m.category||"일반")),"title","at").map(m=>`<article class="notice"><div class="row">${targetChip(m.target)}<span class="chip">${esc(m.category||'일반')}</span><span class="meta">${esc(m.at)}</span></div><h3>${esc(m.title)}</h3><div class="body">${esc(m.body)}</div><div class="row">${extraLink(m.link)}${extraFile(m.file)}${T()?`<button class="btn sm" data-material-edit="${esc(m.id)}">수정</button>${extraDelete('materials',m.id)}`:''}</div></article>`).join(''):emptyBox('등록된 자료가 없습니다')}</section>`;}
+function vMaterials(){return extraHead('공통 자료실','구글 드라이브·노션·선생님이 올린 학습 자료입니다.',T()?'<div class="row"><button class="btn" data-materials-connect>Drive 연결 설정</button><button class="btn pri" data-extra-new="material">+ 자료</button></div>':'')+(T()?folderReqAdmin():folderReqBox('materials','자료실'))+resourceLinkStatus()+materialControls()+((D.folderReady||{}).materials?driveBrowser('materials'):driveDropBox()+driveBox())+notionBox()+`<section class="panel"><div class="pad" style="padding-bottom:4px"><span class="label">선생님이 올린 자료</span></div>${D.materials.length?sortedMaterials(D.materials.filter(m=>materialMatches(m.title,m.body,m.category||"일반")),"title","at").map(m=>`<article class="notice"><div class="row">${targetChip(m.target)}<span class="chip">${esc(m.category||'일반')}</span><span class="meta">${esc(m.at)}</span></div><h3>${esc(m.title)}</h3><div class="body">${esc(m.body)}</div><div class="row">${extraLink(m.link)}${extraFile(m.file)}${T()?`<button class="btn sm" data-material-edit="${esc(m.id)}">수정</button>${extraDelete('materials',m.id)}`:''}</div></article>`).join(''):emptyBox('등록된 자료가 없습니다')}</section>`;}
 function materialDlg(m={}){openDlg(m.id?'자료 수정':'자료 등록',field('제목','title',m.title||'','text','required maxlength="150"')+`<div class="fgrid">${targetSel(m.target)}${field('분류','category',m.category||'학습자료')}</div>`+area('설명','body',m.body||'',5000)+field('자료 링크','link',m.link||'')+'<p class="ev-s">첨부파일은 연결된 Google Drive 자료실의 대상별 폴더에 저장됩니다.</p>'+fileInput(),'저장',fd=>actUpload('saveMaterial',{id:m.id,...fd},'자료를 저장했습니다'));}
 /* ---------- 메뉴 아이콘·짧은 이름, 화면 꾸미기(이 기기에만 저장) ---------- */
-const TAB_LOOK = { equipment:["🧰","기자재"], photos:["📷","사진첩"], today:["🏠","오늘"], notices:["📢","공지"], learner:["🏭","근로자"], training:["🏭","근로자"], schedule:["📅","일정"], school:["🍱","시간표"], purchases:["🛒","구매"], anon:["💬","익명게시판"], projects:["🧩","프로젝트"], contest:["🏆","대회"], cert:["📜","자격증"], company:["🏢","기업"], portfolio:["🎒","포폴"], roster:["👥","명단"], me:["⚙️","설정"] };
+const TAB_LOOK = { equipment:["🧰","기자재"], photos:["📷","사진첩"], today:["🏠","오늘"], notices:["📢","공지·소통"], learner:["🏭","도제훈련"], training:["🏭","근로자"], schedule:["📅","일정"], school:["🍱","시간표"],materials:["📁","자료실"], purchases:["🛒","구매"], anon:["💬","익명게시판"], projects:["🧩","프로젝트"], contest:["🏆","대회·자격증"], cert:["📜","자격증"], company:["🏢","진로"], portfolio:["🎒","포폴"], roster:["👥","교사 관리"], me:["⚙️","설정"] };
 const LOOK_ACCENTS = [["#d4561c","주황"],["#2f6fd6","파랑"],["#1f8a5b","초록"],["#7a4bd0","보라"],["#d6457f","분홍"],["#149c96","민트"],["#b8860b","노랑"],["#1f3a52","남색"]];
 const LOOK_BGS = [["","기본"],["#fbf6ee","크림"],["#eef5fc","하늘"],["#f0f7ec","연두"],["#f6f0fb","라벤더"],["#fdf0f3","벚꽃"],["dark","어둡게"]];
 const LOOK_EMOJI = ["도","🐱","🐶","🐰","🦊","🐻","🐼","🐨","🐧","🐥","🐸","🦄","🐳","🤖","🚀","⭐","🌈","🍀","🔧","⚡"];
@@ -1850,12 +2080,13 @@ function lookSection(){
   <div class="look-row"><button class="chipbtn" data-look-icons aria-pressed="${v.icons === true}">메뉴 아이콘 ${v.icons === true ? "켬" : "끔"}</button><button class="chipbtn" data-look-size aria-pressed="${v.size === "big"}">큰 글씨 ${v.size === "big" ? "켬" : "끔"}</button><button class="btn sm ghost" data-look-reset>처음 모양으로</button></div></section>`;
 }
 function vMe(){
-  let h=lookSection()+vMeOriginal()+calSubSection();
-  if(!T()){const c=D.contact;return h+`<section class="panel pad"><h3>이메일 알림</h3><p class="ev-s">메일 앱에서 알림을 켜면 휴대폰에서 확인할 수 있습니다. 수신은 선택 사항입니다.</p><div class="ev-s">현재: ${c.enabled?'수신':'수신 안 함'} ${esc(c.email)}</div><button class="btn" data-contact>이메일·수신 설정</button></section>`;}
+  let h=vMeOriginal()+calSubSection();const styleSettings='<details class="panel pad"><summary>화면 꾸미기</summary>'+lookSection()+'</details>';
+  if(!T()){h+=studentAccountPanel();const c=D.contact;return h+`<section class="panel pad"><h3>이메일 알림</h3><p class="ev-s">메일 앱에서 알림을 켜면 휴대폰에서 확인할 수 있습니다. 수신은 선택 사항입니다.</p><div class="ev-s">현재: ${c.enabled?'수신':'수신 안 함'} ${esc(c.email)}</div><button class="btn" data-contact>이메일·수신 설정</button></section>`+styleSettings;}
+  h+=staffAccountPanel();if(A())h+='<section class="panel pad"><h3>접속 설정</h3><p>현재: '+(D.publicAccess?'누구나 자유 접속':'로그인 필수')+'</p><button class="btn" data-public-access>'+(D.publicAccess?'로그인 필수로 잠그기':'누구나 자유 접속 허용')+'</button><p class="ev-s">자유 접속에서는 공개 안내를 볼 수 있습니다. 학생 제출본·파일 제출·교사 업무는 로그인이 필요합니다.</p></section>';if(A())h+='<section class="panel pad"><h3>학생 로그인 계정</h3><p>1~3학년 3반 학생의 이름·학번을 등록합니다. 다른 학생의 업무 기록은 삭제하지 않습니다.</p><button class="btn" data-import-class3>3반 학생 계정 등록</button></section>';
   const s=D.settings;
-  h+=`<section class="panel pad"><h3>연동 설정 (드라이브·캘린더·노션·시간표·이메일)</h3><p class="ev-s">설정을 저장한 다음 동기화·발송을 실행하세요. 자동 실행을 켜면 약 10분 간격으로 처리합니다.</p><div class="ev-s">구글 드라이브: ${s.driveRootUrl?`<a href="${esc(s.driveRootUrl)}" target="_blank" rel="noopener">자료 폴더 열기 ↗</a>${s.driveCustom?'':' (자동 생성)'}`:'첫 파일을 올리면 자동으로 만들어집니다'}<br>캘린더: ${esc(s.calendarId||'미설정')}<br>이메일 알림: ${s.mailEnabled?'사용':'꺼짐'} · 자동 실행: ${s.auto?'사용':'꺼짐'}<br>최근 자동 실행: ${esc(s.lastRun||'없음')}${s.lastError?'<br>실행 오류: '+esc(s.lastError):''}</div><div class="row" style="margin-top:12px"><button class="btn" data-extra-settings>연동 설정 열기</button><button class="btn" data-calendar-create ${s.calendarId?'disabled':''}>전용 캘린더 만들기</button><button class="btn" data-calendar-sync>캘린더 동기화</button><button class="btn" data-mail-send>알림 메일 발송</button><button class="btn" data-auto>${s.auto?'자동 실행 끄기':'자동 실행 켜기'}</button><button class="btn" data-check>첫 실행 점검</button></div></section>`;
+  if(A())h+=`<section class="panel pad"><h3>연동 설정 (드라이브·캘린더·노션·시간표·이메일)</h3><p class="ev-s">설정을 저장한 다음 동기화·발송을 실행하세요. 자동 실행을 켜면 약 10분 간격으로 처리합니다.</p><div class="ev-s">구글 드라이브: ${s.driveRootUrl?`<a href="${esc(s.driveRootUrl)}" target="_blank" rel="noopener">자료 폴더 열기 ↗</a>${s.driveCustom?'':' (자동 생성)'}`:'첫 파일을 올리면 자동으로 만들어집니다'}<br>캘린더: ${esc(s.calendarId||'미설정')}<br>이메일 알림: ${s.mailEnabled?'사용':'꺼짐'} · 자동 실행: ${s.auto?'사용':'꺼짐'}<br>최근 자동 실행: ${esc(s.lastRun||'없음')}${s.lastError?'<br>실행 오류: '+esc(s.lastError):''}</div><div class="row" style="margin-top:12px"><button class="btn" data-extra-settings>연동 설정 열기</button><button class="btn" data-calendar-create ${s.calendarId?'disabled':''}>전용 캘린더 만들기</button><button class="btn" data-calendar-sync>캘린더 동기화</button><button class="btn" data-mail-send>알림 메일 발송</button><button class="btn" data-auto>${s.auto?'자동 실행 끄기':'자동 실행 켜기'}</button><button class="btn" data-check>첫 실행 점검</button></div></section>`;
   h+=`<section class="panel"><div class="pad"><h3>학생 이메일 수신 설정</h3></div>${D.roster.map(r=>{const c=D.contacts.find(c=>c.name===r.name);return `<div class="att"><div class="who"><b>${esc(r.name)}</b><small>${esc(c?.email||'미등록')} · ${c?.enabled?'수신':'수신 안 함'}</small></div><button class="btn sm" data-contact="${esc(r.name)}">수정</button></div>`;}).join('')}</section>`;
-  h+=`<section class="panel pad"><details><summary>최근 이메일 발송 기록</summary>${D.mailLog.length?`<div class="tbl-wrap"><table><thead><tr><th>시각</th><th>수신자</th><th>종류</th><th>결과</th></tr></thead><tbody>${[...D.mailLog].reverse().map(x=>`<tr><td>${esc(x.at)}</td><td>${esc(x.name)}</td><td>${esc(x.kind)}</td><td>${esc(x.result)}</td></tr>`).join('')}</tbody></table></div>`:emptyBox('발송 기록이 없습니다')}</details></section>`;return h;
+  h+=`<section class="panel pad"><details><summary>최근 이메일 발송 기록</summary>${D.mailLog.length?`<div class="tbl-wrap"><table><thead><tr><th>시각</th><th>수신자</th><th>종류</th><th>결과</th></tr></thead><tbody>${[...D.mailLog].reverse().map(x=>`<tr><td>${esc(x.at)}</td><td>${esc(x.name)}</td><td>${esc(x.kind)}</td><td>${esc(x.result)}</td></tr>`).join('')}</tbody></table></div>`:emptyBox('발송 기록이 없습니다')}</details></section>`;return h+styleSettings;
 }
 function contactDlg(name){const c=T()?D.contacts.find(c=>c.name===name)||{}:D.contact;openDlg((name||D.me.name)+' · 이메일 알림',field('이메일','email',c.email||'','email')+`<label class="check"><input type="checkbox" name="enabled" ${c.enabled?'checked':''}> 알림 메일 수신</label>`,'저장',fd=>act('saveContact',{name,...fd},'수신 설정을 저장했습니다'));}
 /* ---------- 시간표·급식 (나이스 · 컴시간알리미) ---------- */
@@ -1870,11 +2101,11 @@ function todayMeal(){
   mealsInto(D.meals);
   const a = (mealStore.get(TODAY) || []).filter(m => /중식|석식|조식/.test(m.kind || "급식"));
   if (!a.length) return "";
-  return `<section class="panel"><div class="pad"><div class="row"><span class="label">오늘 급식</span><span class="spacer"></span><button class="btn sm ghost" data-go="school">이번 주 보기</button></div>${a.map(m => mealCard(m, true)).join("")}</div></section>`;
+  return `<section class="panel"><div class="pad"><div class="row"><span class="label">오늘 급식</span><span class="spacer"></span><button class="btn sm ghost" data-school-section="mealResult">이번 주 급식 보기</button></div>${a.map(m => mealCard(m, true)).join("")}</div></section>`;
 }
 function schoolLinks(){ const s = D.school || {}; return `<div class="row">${s.comciUrl ? `<a class="btn sm" href="${esc(s.comciUrl)}" target="_blank" rel="noopener">컴시간알리미 열기</a>` : ""}${s.mealUrl ? `<a class="btn sm" href="${esc(s.mealUrl)}" target="_blank" rel="noopener">학교 홈페이지 식단</a>` : ""}</div>`; }
 function needFetch(key, fn){ if (ttCache.has(key)) return; ttCache.set(key, { loading: true }); setTimeout(async () => { let r; try { r = await fn(); } catch (e) { r = { error: e.message }; } ttCache.set(key, r || {}); if (tab === "school") refreshSchoolResults(); }, 0); }
-function refreshSchoolResults(){if(tab!=="school")return;const box=document.createElement("div");box.innerHTML=vSchool();["ttLabel","ttResult","mealResult"].forEach(id=>{const old=document.getElementById(id),fresh=box.querySelector("#"+id);if(old&&fresh)old.replaceWith(fresh);});}
+function refreshSchoolResults(){if(tab!=="school")return;const box=document.createElement("div");box.innerHTML=vSchool();["ttLabel","ttResult","mealResult"].forEach(id=>{const old=document.getElementById(id),fresh=box.querySelector("#"+id);if(old&&fresh)old.replaceWith(fresh);});finishNav();}
 function vSchool(){
   const mon = schoolMon(), fri = addDays(mon, 4), days = [0,1,2,3,4].map(i => addDays(mon, i));
   let h = extraHead("시간표·급식", "시간표는 컴시간알리미에서 실시간(5분 간격)으로, 급식은 나이스(학교 홈페이지 식단과 같은 자료)에서 가져옵니다.", schoolLinks());
@@ -1945,25 +2176,26 @@ $('#main').addEventListener('click',async e=>{
 
 /* ---------- 그리기 ---------- */
 /* 메뉴에 없는 하위 화면: 자료실은 프로젝트 안, 출석부는 명단 안 */
-const SUB_ROUTES = { materials: "projects", register: "roster" };
+const SUB_ROUTES = {};
 function render(){
   if (!D) return;
   if (tab === 'requests') tab = 'anon';
   const tabs = tabsFor(), learnerOpen = tabs.some(([k]) => k === 'learner') && isLearnerTab(tab);
-  if (!tabs.some(t => t[0] === tab) && !learnerOpen && !(SUB_ROUTES[tab] && tabs.some(t => t[0] === SUB_ROUTES[tab]) && (tab !== "register" || T()))) tab = "today";
+  if (!routeAllowed(tab)) tab='today';
   if (learnerOpen) { learnerTab = tab; lsSet('dj.learnerTab', tab); }
-  const activeTab = learnerOpen ? 'learner' : (SUB_ROUTES[tab] || tab);
+  const activeTab=rootOf(tab);
   $("#tabs").innerHTML = tabs.map(([k,l]) => { const m = TAB_LOOK[k] || ["•", l]; return `<button class="tab" role="tab" data-tab="${k}" aria-selected="${k===activeTab}" title="${esc(l)}"><span class="ti" aria-hidden="true">${m[0]}</span><span class="tl-long">${esc(l)}</span><span class="tl-short">${esc(k === "me" ? (T() ? "설정" : "내 정보") : m[1])}</span></button>`; }).join("");
   $("#tabs").style.setProperty("--cols", Math.ceil(tabs.length / 2)); $("#tabs").classList.toggle("icons", look().icons === true);
-  const role = $("#role"); role.textContent = D.localTest ? "PC 테스트" : D.loginDisabled ? "로그인 없는 테스트" : isGuest() ? "둘러보기" : T() ? "교사" : (GROUP[myGroup()] || "학생"); role.classList.toggle("t", T());
-  $("#logoutTop").hidden = Boolean(D.loginDisabled); $("#logoutTop").textContent = isGuest() ? "로그인" : "나가기";
+  const role = $("#role"); role.textContent = D.localTest ? "PC 테스트" : D.loginDisabled ? "로그인 없는 테스트" : (isGuest()||isViewer()) ? "둘러보기" : T() ? "교사" : (GROUP[myGroup()] || "학생"); role.classList.toggle("t", T());
+  $("#profileTop").hidden=isGuest()||isViewer();$("#profileTop").textContent=T()?"설정":"내 정보";$("#logoutTop").hidden = Boolean(D.loginDisabled); $("#logoutTop").textContent = (isGuest()||isViewer()) ? "로그인" : "나가기";
   evStore.clear();
   const draft = $("#replyText") ? $("#replyText").value : null, anonDraft = $("#anonText") ? $("#anonText").value : null;
-  if(D.homeOnly&&!["today","school","equipment"].includes(tab)&&!(tab==="projects"&&projSub==="tools")){ $("#main").innerHTML=fullLoadNotice();if(!fullLoadError)hydrateFullData();return;}
-  $("#main").innerHTML = ({today:vToday, notices:vNotices, schedule:vSchedule, requests:vRequests, anon:vAnon, training:vTraining, purchases:()=>vPurchases()+noticeCategorySection("준비물·구매"), ojtcalendar:vOjtCalendar, roster:vRosterSub, register:vRegisterSub, attendance:vAttendance, units:vUnits, portfolio:vPortfolio, board:vProjectHub, projects:vProjectHub, materials:vMaterialsSub, photos:vPhotos, equipment:vEquipment, contest:vContestTop, cert:vCertTop, company:vCompany, school:vSchool, me:vMe}[tab] || vToday)();
-  if (learnerOpen) $("#main").insertAdjacentHTML("afterbegin", `<nav class="tabs" role="tablist" aria-label="학습근로자 하위 메뉴" style="margin:4px 0 16px">${LEARNER_TABS.map(([k,l]) => `<button class="tab" role="tab" data-learner-tab="${k}" aria-selected="${k===tab}">${esc(l)}</button>`).join('')}</nav>`);
+  if(D.homeOnly&&!["today","school","equipment","tools"].includes(tab)&&!(tab==='projects'&&projSub==='overview')){ $("#main").innerHTML=navigationBar()+fullLoadNotice();if(!fullLoadError)hydrateFullData();return;}
+  $("#main").innerHTML = navigationBar()+({today:vToday, notices:vNotices, schedule:vSchedule, requests:vRequests, anon:vAnon, training:vTraining, purchases:()=>vPurchases()+noticeCategorySection("준비물·구매"), ojtcalendar:vOjtCalendar, roster:vRosterSub, register:vRegisterSub, attendance:vAttendance, units:vUnits, portfolio:vCareerPortfolio,intro:vCareerPortfolio,tools:vEducationTools, board:vProjectHub, projects:vProjectHub, materials:vMaterialsSub, photos:vPhotos, equipment:vEquipment, contest:vContestTop, cert:vCertTop, company:vCompany, school:vSchool, me:vMe}[tab] || vToday)();
+
   if (D.loginDisabled) $("#main").insertAdjacentHTML("afterbegin", `<div class="banner" role="status">${D.localTest ? "PC 테스트 · 입력한 자료는 이 컴퓨터에만 저장됩니다. 실제 구글시트에는 반영되지 않습니다." : "로그인 없는 테스트 모드 · 주소를 아는 사람은 학생 기록 조회와 작성·관리를 할 수 있습니다."}</div>`);
-  bindBoardComment();
+  if(isGuest())document.querySelectorAll('[data-board-new],[data-cert-new],[data-contest-new],[data-cert-post-new],#boardCommentForm').forEach(e=>e.remove());
+  viewerStrip();bindBoardComment();finishNav();
   hydrateDrives(); hydrateNoticeImages();hydrateResourceLinks();hydratePhotos();hydratePurchaseLinks();hydrateEquipment();
   if (draft !== null && $("#replyText")) $("#replyText").value = draft;
   if (anonDraft !== null && $("#anonText")) $("#anonText").value = anonDraft;
@@ -2016,7 +2248,7 @@ $("#main").addEventListener("click", e => { const b = e.target.closest("[data-lo
   render(); });
 applyLook();
 form.addEventListener("click", e => { const b = e.target.closest("[data-unpick]"); if (b) { draftFiles.splice(Number(b.dataset.unpick), 1); renderDraftFiles(); } });
-dlg.addEventListener("close", () => { dlgDrop = null; documentPreviewTicket++;if(documentPreviewUrl){URL.revokeObjectURL(documentPreviewUrl);documentPreviewUrl=null;} });
+dlg.addEventListener("close", () => { dlg.classList.remove('document-preview');dlgDrop = null; documentPreviewTicket++;if(documentPreviewUrl){URL.revokeObjectURL(documentPreviewUrl);documentPreviewUrl=null;} });
 dlg.addEventListener("paste", e=>{if(!dlg.open||!dlgDrop)return;const files=Array.from(e.clipboardData&&e.clipboardData.files||[]);if(files.length){e.preventDefault();dlgDrop(files.map((f,i)=>f.type.startsWith('image/')?new File([f],'붙여넣기-'+Date.now()+'-'+i+'.'+(f.type.split('/')[1]||'png'),{type:f.type}):f));}});
 form.addEventListener("click",e=>{const b=e.target.closest('[data-notice-original]');if(b)drvDownload('notice',b.dataset.noticeOriginal);if(e.target.closest('[data-notice-extract-links]')){const text=form.querySelector('[name="body"]').value,box=form.querySelector('[name="linksText"]'),found=text.match(/https:[/][/][^\s<>"']+/g)||[];box.value=[...new Set([...box.value.split(/\r?\n/),...found].map(s=>s.trim().replace(/[.,，。)]+$/g,'')).filter(Boolean))].slice(0,8).join('\n');toast(found.length?'본문의 링크를 가져왔습니다':'본문에 https 링크가 없습니다');}});
 const hasFiles = e => e.dataTransfer && Array.from(e.dataTransfer.types || []).includes("Files");
@@ -2031,6 +2263,8 @@ document.addEventListener("drop", e => {
   toast("파일은 올리기 창을 연 다음 끌어다 놓아 주세요");
 });
 function openDlg(title, body, label, fn){
+  dlg.classList.remove('intro-word-preview');
+  dlg.classList.remove('document-preview');
   form.innerHTML = `<h3>${esc(title)}</h3>${body}<div class="dlg-act"><button class="btn" type="button" data-close>취소</button><button class="btn pri" type="submit" id="dlgOk">${esc(label)}</button></div>`;
   onSubmit = fn; dlgDrop = null; dlg.showModal(); bindFilePicker(); const f = form.querySelector("input:not([type=file]),textarea,select"); if (f) f.focus();
 }
@@ -2271,11 +2505,11 @@ form.addEventListener("click",e=>{if(!e.target.closest("[data-mh-reset]"))return
 
 /* ---------- 시작 ---------- */
 (async () => {
-  let saved = null; try { saved = JSON.parse(lsGet("dj.cred") || "null"); } catch {}
-  const quick = cachedHome(saved || {});
+  let saved = null; try { saved = JSON.parse(lsGet("dj.cred") || sessionStorage.getItem("dj.session") || "null"); } catch {}
+  const quick = lsGet("dj.login.required")==="true"?null:cachedHome(saved || {});
   if (quick) { cred = saved || {}; $("#gate").hidden = true; $("#shell").hidden = false; setData(Object.assign({}, quick, { fromCache: true })); }
   try { const data = await call("load", {deferLinks:true,homeOnly:true}, saved || {}); cred = saved || {}; $("#gate").hidden = true; $("#shell").hidden = false; if (D && !D.homeOnly && !D.fromCache) return; setData(data); }
-  catch (e) { if (quick && !/PIN|비밀번호|이름/.test(e.message)) { toast(e.message); return; } lsSet("dj.cred", null); lsSet(HOME_KEY, null); D = null; gate(e.message); }
+  catch (e) { if(location.hash==='#intro'&&!e.loginRequired&&!e.studentLoginRequired){introDeepPending=false;$("#startupScreen").hidden=true;publicIntroEntry();return;} if (quick && !/PIN|비밀번호|이름/.test(e.message)) { toast(e.message); return; } lsSet("dj.cred", null);try{sessionStorage.removeItem("dj.session");}catch{}lsSet(HOME_KEY, null); D = null; gate(e.message); }
 })();
 setInterval(() => { if (D && document.visibilityState === "visible" && !dlg.open) reload(); }, 120000);
 })();
