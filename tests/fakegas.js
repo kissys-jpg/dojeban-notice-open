@@ -30,7 +30,7 @@
   const cache = {}; window.__cache = cache;
   const C = { get: k => cache[k] ?? null, getAll: ks => { const o = {}; ks.forEach(k => { if (k in cache) o[k] = cache[k]; }); return o; }, put: (k, v) => { cache[k] = String(v); }, putAll: o => Object.assign(cache, o), remove: k => { delete cache[k]; }, removeAll: ks => ks.forEach(k => delete cache[k]) };
   window.CacheService = { getScriptCache: () => C };
-  const props = {}; window.__props = props;
+  const props = {STUDENT_LOGIN_REQUIRED:"false",PUBLIC_ACCESS_ENABLED:"false"}; window.__props = props;
   const P = { getProperty: k => props[k] ?? null, getProperties: () => ({ ...props }), setProperty: (k, v) => { props[k] = String(v); return P; }, setProperties: o => { Object.entries(o).forEach(([k, v]) => props[k] = String(v)); return P; }, deleteProperty: k => { delete props[k]; return P; } };
   window.PropertiesService = { getScriptProperties: () => P };
   window.LockService = { getScriptLock: () => ({ waitLock() {}, releaseLock() {} }) };
