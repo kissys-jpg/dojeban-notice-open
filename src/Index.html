@@ -605,13 +605,13 @@ function gate(msg){
     } catch (err) { gate(err.message); }
   };
 }
-function logout(msg){ if(cred&&cred.session)call("logoutSession",{token:cred.session}).catch(()=>{});try{sessionStorage.removeItem("dj.session");}catch{}fullLoadEpoch++;fullLoadPending=null;fullLoadError=""; clearGlobalSearch(); todayDriveNews.clear();todayNewsOwner="";resourceLinkEpoch++;resourceLinkPending=null; if (D && D.loginDisabled) return reload(); const guestOk = Boolean(D && D.guestView); cred = null; D = null; noticeImages.clear(); noticeImagesPending.clear(); lsSet("dj.cred", null); lsSet(HOME_KEY, null); if (guestOk && !msg) return enterGuest(); gate(msg); }
+function logout(msg){journalData=null;journalError="";journalActor="";rosterSelected.clear(); if(cred&&cred.session)call("logoutSession",{token:cred.session}).catch(()=>{});try{sessionStorage.removeItem("dj.session");}catch{}fullLoadEpoch++;fullLoadPending=null;fullLoadError=""; clearGlobalSearch(); todayDriveNews.clear();todayNewsOwner="";resourceLinkEpoch++;resourceLinkPending=null; if (D && D.loginDisabled) return reload(); const guestOk = Boolean(D && D.guestView); cred = null; D = null; noticeImages.clear(); noticeImagesPending.clear(); lsSet("dj.cred", null); lsSet(HOME_KEY, null); if (guestOk && !msg) return enterGuest(); gate(msg); }
 $("#logoutTop").onclick = () => (isGuest()||isViewer()) ? gate() : logout();
 /* 로그인 없이 둘러보기: 비어 있는 로그인 정보로 들어오면 서버가 '손님'으로 공개 자료만 보냅니다. */
 async function enterGuest(){ try { const data = await call("load", {deferLinks:true,homeOnly:true}, {}); if (!data.me || data.me.role !== "guest" && !data.loginDisabled) throw new Error("로그인해 주세요"); cred = {}; $("#gate").hidden = true; $("#shell").hidden = false; tab = "today"; setData(data); } catch (e) { gate(e.message); } }
 
 /* ---------- 탭 ---------- */
-const LEARNER_TABS = [['training','도제훈련'],['ojtcalendar','OJT 시간표'],['attendance','훈련 출결'],['units','능력단위']];
+const LEARNER_TABS = [['training','도제훈련'],['journal','학습일지'],['ojtcalendar','OJT 시간표'],['attendance','훈련 출결'],['units','능력단위']];
 let learnerTab = LEARNER_TABS.some(([k]) => k === lsGet('dj.learnerTab')) ? lsGet('dj.learnerTab') : 'training';
 function isLearnerTab(k){ return LEARNER_TABS.some(([key]) => key === k); }
 const NAV_LABELS={today:'오늘',notices:'공지·소통',schedule:'일정',projects:'프로젝트',contest:'대회·자격증',company:'진로',materials:'자료실',learner:'도제훈련',roster:'교사 관리'};
@@ -656,7 +656,7 @@ function hubOptionsAll(){
  if(root==='contest')return [['contest','대회'],['cert','자격증']];
  if(root==='company')return [['company','기업 안내'],['portfolio','포트폴리오']];
  if(root==='materials')return [['materials','공통 자료'],['photos','사진첩'],['tools','무료 도구']];
- if(root==='learner')return LEARNER_TABS;
+ if(root==='learner')return LEARNER_TABS.filter(([k])=>!isViewer()||k!=='journal');
  if(root==='roster')return [['roster','학생 명단'],['register','통합 출석부'],['me','연동·계정 설정']];
  return [];
 }
@@ -1406,7 +1406,7 @@ function vTraining(){
   return extraHead("도제 훈련 · 학습근로자", "학습근로자별 훈련 기업, OJT 요일, 훈련 출결, 능력단위 이수 현황입니다.", `<button class="btn pri" data-tr-event>+ 훈련 일정</button>`) +
     `<section class="panel"><div class="tbl-wrap"><table><thead><tr><th>이름</th><th>훈련 기업</th><th>OJT 요일</th><th>OJT 출석</th><th>OFF-JT 출석</th><th>능력단위</th><th></th></tr></thead><tbody>
       ${learners.length ? learners.map(r => { const a = (D.assigns || []).find(x => x.name === r.name) || {}, s = attSummary(r.name), u = unitSummary(r.name);
-        return `<tr><td><b>${esc(r.name)}</b><br><small class="muted">${esc(r.klass)}</small></td><td>${esc(coName(a.company) || "미배정")}</td><td>${esc(a.ojtDays || "-")}</td><td>${attLine(s.ojt)}</td><td>${attLine(s.off)}</td><td>${u.done}/${u.total}개<br><small class="muted">${u.hours}/${u.need}시간</small></td><td><button class="btn sm" data-as-edit="${esc(r.name)}">배정 수정</button></td></tr>`; }).join("")
+        return `<tr><td><b>${esc(r.name)}</b><br><small class="muted">${esc(r.klass)}</small></td><td>${esc(coName(a.company) || "미배정")}</td><td>${esc(a.ojtDays || "-")}</td><td>${attLine(s.ojt)}</td><td>${attLine(s.off)}</td><td>${u.done}/${u.total}개<br><small class="muted">${u.hours}/${u.need}시간</small></td><td><button class="btn sm" data-as-edit="${esc(r.name)}">배정 수정</button><button class="btn sm ghost" data-exclude-learner="${r.row}">학습근로자 제외</button></td></tr>`; }).join("")
         : `<tr><td colspan="7">${emptyBox("학습근로자가 없습니다", "명단에서 구분을 ‘학습근로자’로 등록하세요.")}</td></tr>`}</tbody></table></div></section>
     <section class="panel"><div class="pad row" style="padding-bottom:4px"><span class="label">앞으로 2주 훈련 일정 (OJT·OFF-JT·평가)</span></div>${evs.length ? evs.map(evRow).join("") : emptyBox("등록된 훈련 일정이 없습니다", "OJT 요일은 ‘배정 수정’에서 정하면 학습근로자 화면에 매주 자동으로 표시됩니다.")}</section>
     <section class="panel"><div class="pad row"><span class="label">훈련 기업</span><span class="spacer"></span><button class="btn sm pri" data-co-new>+ 기업</button></div>
@@ -1537,6 +1537,30 @@ function assignDlg(name){
 }
 
 
+/* ---------- 학습일지 자료 / HRD 작성 확인 ---------- */
+let journalData=null,journalBusy=false,journalError='',journalActor='';
+async function loadTrainingJournal(){if(journalBusy)return;const actor=journalActor;journalBusy=true;journalError='';try{const data=await call('trainingJournal',{});if(actor===journalActor)journalData=data;}catch(e){if(actor===journalActor)journalError=e.message;}finally{journalBusy=false;if(D&&tab==='journal')render();}}
+function vTrainingJournal(){
+ if(isViewer()||isGuest())return extraHead('학습일지','학습근로자로 로그인하면 참고자료와 본인 HRD 작성 확인 기록을 볼 수 있습니다.');
+ const actor=String(D.me.role)+'|'+D.me.name;if(journalActor!==actor){journalActor=actor;journalData=null;journalError='';}
+ if(!journalData&&!journalBusy&&!journalError)setTimeout(loadTrainingJournal,0);
+ const x=journalData||{entries:[],checks:[]},learners=(D.roster||[]).filter(r=>r.group==='learner');
+ let h=extraHead('학습일지','참고자료 확인 → HRD에서 직접 작성 → 작성 완료 표시. 아래 기록은 학생의 작성 확인이며 HRD 제출 여부를 자동 조회하지 않습니다.',T()?'<button class="btn pri" data-journal-new>+ 일지 자료 올리기</button>':'')+'<div class="row" style="margin-bottom:12px"><button class="btn" data-journal-refresh>새로고침</button><span class="chip">참고자료 '+x.entries.length+'건</span><span class="chip">HRD 작성 확인 '+x.checks.filter(c=>c.done&&x.entries.some(e=>e.id===c.journal)).length+'건</span></div>';
+ if(journalError)return h+emptyBox('학습일지를 불러오지 못했습니다',journalError);
+ if(!journalData)return h+emptyBox('학습일지 불러오는 중');
+ h+=x.entries.map(e=>{const mine=x.checks.find(c=>c.journal===e.id&&c.name===D.me.name),done=x.checks.filter(c=>c.journal===e.id&&c.done);return '<section class="panel pad"><div class="row"><span class="chip">'+esc(e.date)+'</span><span class="chip">'+esc(e.kind)+'</span></div><h3>'+esc(e.title)+'</h3><div class="board-body">'+esc(e.body)+'</div>'+extraLink(e.link)+boardFilesHtml(e.files)+(T()?'<div class="row"><button class="btn sm" data-journal-edit="'+esc(e.id)+'">수정</button><button class="btn sm" data-journal-hide="'+esc(e.id)+'">보관</button></div><details><summary>작성 확인 '+done.length+'명 / 현재 학습근로자 '+learners.length+'명</summary><p>'+esc(learners.map(r=>r.name+' · '+(done.some(c=>c.name===r.name)?'작성 확인':'미확인')).join(' / '))+'</p></details>':'<p class="ev-s">'+(mine&&mine.done?'HRD 작성 확인: '+esc(mine.at):'HRD에서 일지를 작성한 뒤 완료로 표시해 주세요.')+'</p><button class="btn '+(mine&&mine.done?'':'pri')+'" data-journal-check="'+esc(e.id)+'" data-done="'+(!(mine&&mine.done))+'">'+(mine&&mine.done?'작성 완료 표시 취소':'HRD 작성 완료 표시')+'</button>')+'</section>';}).join('')||emptyBox('등록된 학습일지 자료가 없습니다','선생님이 훈련일별 작성 안내와 참고파일을 올립니다.');
+ const history=x.checks.filter(c=>c.done).sort((a,b)=>b.at.localeCompare(a.at));
+ return h+'<section class="panel pad"><h3>누적 작성 확인 기록</h3><p class="ev-s">이전 자료를 보관하거나 학습근로자에서 제외해도 누적 기록은 보존합니다.</p>'+history.map(c=>{const e=x.entries.find(e=>e.id===c.journal);return '<p>'+esc((T()?c.name+' · ':'')+(e?e.date+' · '+e.title:'보관된 참고자료')+' · '+c.at)+'</p>';}).join('')+'</section>';
+}
+function trainingJournalDlg(e){e=e||{};openDlg(e.id?'학습일지 자료 수정':'학습일지 자료 올리기','<div class="fgrid">'+field('훈련일','date',e.date||TODAY,'date','required')+sel('훈련 구분','kind',[['OJT','OJT'],['OFF-JT','OFF-JT']],e.kind||'OJT')+'</div>'+field('제목','title',e.title||'','text','required maxlength="150"')+'<label class="fld"><span>학생이 HRD에 작성할 내용·참고 안내</span><textarea name="body" required maxlength="6000">'+esc(e.body||'')+'</textarea></label>'+field('참고 링크 (선택)','link',e.link||'','url')+(e.files&&e.files.length?'<p class="ev-s">기존 첨부 '+e.files.length+'개를 유지합니다.</p>':'')+filePicker(5),'저장',async fd=>{try{const uploads=await readDraftUploads();await call('saveTrainingJournal',{...fd,id:e.id,uploads});journalData=null;await loadTrainingJournal();toast('학습일지 자료를 저장했습니다');return true;}catch(err){toast(err.message);return false;}});}
+$('#main').addEventListener('click',async e=>{const b=e.target.closest('button');if(!b)return;const d=b.dataset;
+ if(d.journalNew!==undefined)return trainingJournalDlg();
+ if(d.journalEdit)return trainingJournalDlg(journalData.entries.find(x=>x.id===d.journalEdit));
+ if(d.journalRefresh!==undefined){journalData=null;return loadTrainingJournal();}
+ if(d.journalHide)return openDlg('학습일지 자료 보관','<p>자료를 목록에서 보관합니다. Drive 원본과 누적 작성 확인 기록은 남습니다.</p>','보관',async()=>{try{await call('deleteTrainingJournal',{id:d.journalHide});journalData=null;await loadTrainingJournal();return true;}catch(err){toast(err.message);return false;}});
+ if(d.journalCheck){b.disabled=true;try{await call('checkTrainingJournal',{id:d.journalCheck,done:d.done==='true'});journalData=null;await loadTrainingJournal();}catch(err){toast(err.message);b.disabled=false;}}
+});
+
 /* ---------- OJT 전용 달력 ---------- */
 let ojtMonth=parse(TODAY.slice(0,7)+'-01'),ojtSelected=TODAY,ojtStudent='all';
 function ojtCalendarEvents(from,days){
@@ -1657,17 +1681,22 @@ function vPurchases(){
 }
 
 /* ---------- 명단 (교사) ---------- */
+let rosterGroup='all';const rosterSelected=new Set();
 function vRoster(){
-  const o = {learner:0, pre2:1, pre1:2, general:3};
-  const list = [...D.roster].sort((a,b) => o[a.group] - o[b.group] || String(a.klass).localeCompare(String(b.klass)) || a.name.localeCompare(b.name, "ko"));
-  return `<div class="sec-h"><div><h2>명단 · PIN</h2><p>학생은 여기 이름과 PIN으로 들어옵니다. 방과후에 참여하지 않는 학생도 등록할 수 있습니다. 학생 구분과 방과후 참여 여부를 따로 정해 주세요.</p></div>
-    <div class="row"><button class="btn" data-makepins>빈 PIN 자동 생성</button><button class="btn pri" data-new="student">+ 학생 추가</button></div></div>
-    <section class="panel tbl-wrap">${list.length ? `<table><thead><tr><th>이름</th><th>구분</th><th>학년반</th><th>방과후</th><th>PIN</th><th></th></tr></thead><tbody>
-      ${list.map(r => `<tr><td><b>${esc(r.name)}</b></td><td>${groupChip(r.group)}</td><td>${esc(r.klass)}</td><td><span class="chip ${r.afterschool ? 'ok' : 'pre'}">${r.afterschool ? '참여' : '미참여'}</span></td><td class="num">${r.pin ? esc(r.pin) : '<span class="chip bad">없음</span>'}</td><td><div class="row" style="gap:4px;flex-wrap:nowrap"><button class="btn sm ghost" data-stprivate="${r.row}">개인정보</button><button class="btn sm ghost" data-editst="${r.row}">수정</button><button class="btn sm ghost" data-delst="${r.row}">삭제</button></div></td></tr>`).join("")}</tbody></table>`
-      : emptyBox("명단이 비어 있습니다", "‘학생 추가’로 넣거나 시트 ‘앱_명단’ 탭에 붙여넣은 뒤 ‘빈 PIN 자동 생성’을 누르세요.")}</section>
-    ${list.length ? `<div class="panel pad row"><div style="flex:1;min-width:200px"><b>학생에게 나눠 줄 목록</b><div class="ev-s">이름과 PIN을 복사해 개별로 전달하세요. 단체방에 올리지 마세요.</div></div><button class="btn" data-copypins>이름·PIN 복사</button></div>` : ""}`;
+ const o={learner:0,pre2:1,pre1:2,general:3},all=D.roster||[];
+ const list=all.filter(r=>rosterGroup==='all'||r.group===rosterGroup).sort((a,b)=>o[a.group]-o[b.group]||String(a.klass).localeCompare(String(b.klass))||a.name.localeCompare(b.name,'ko'));
+ if(isViewer()||isGuest())return extraHead('학생 명단','학생 구분과 방과후 참여 현황입니다.')+'<section class="panel pad">'+list.map(r=>'<p><b>'+esc(r.name)+'</b> · '+esc(GROUP[r.group])+' · '+esc(r.klass)+'</p>').join('')+'</section>';
+ for(const name of rosterSelected)if(!all.some(r=>r.name===name))rosterSelected.delete(name);
+ return '<div class="sec-h"><div><h2>학생 명단</h2><p>학년과 도제 참여 구분은 별개입니다. 학습근로자에서 제외하면 일반학생으로 남아 계속 로그인할 수 있습니다.</p></div><button class="btn pri" data-new="student">+ 학생 추가</button></div>'+
+ '<section class="panel pad"><div class="fgrid">'+sel('현재 구분','rosterGroup',[['all','전체 학생'],...Object.entries(GROUP)],rosterGroup).replace('name="rosterGroup"','id="rosterGroup"')+sel('선택 학생을 변경할 구분','rosterNewGroup',Object.entries(GROUP),'general').replace('name="rosterNewGroup"','id="rosterNewGroup"')+'</div><div class="row" style="margin-top:12px"><span class="chip">선택 '+rosterSelected.size+'명</span><button class="btn" data-roster-all>현재 목록 전체 선택</button><button class="btn" data-roster-clear>선택 해제</button><button class="btn pri" data-roster-group>선택 학생 구분 변경</button><button class="btn danger" data-roster-delete>선택 학생 명단 삭제</button></div><p class="ev-s">일반학생·예비학생으로 변경해도 계정과 과거 기록은 유지됩니다. 명단 삭제 시 로그인이 중지되며 훈련·출결·제출 기록은 보존됩니다.</p></section>'+
+ '<section class="panel tbl-wrap">'+(list.length?'<table><thead><tr><th>선택</th><th>이름</th><th>구분</th><th>학년반</th><th>방과후</th><th>관리</th></tr></thead><tbody>'+list.map(r=>'<tr><td><input type="checkbox" data-roster-check="'+esc(r.name)+'" aria-label="'+esc(r.name)+' 선택" '+(rosterSelected.has(r.name)?'checked':'')+'></td><td><b>'+esc(r.name)+'</b></td><td>'+groupChip(r.group)+'</td><td>'+esc(r.klass)+'</td><td>'+(r.afterschool?'참여':'미참여')+'</td><td><div class="row"><button class="btn sm ghost" data-stprivate="'+r.row+'">개인정보</button><button class="btn sm ghost" data-editst="'+r.row+'">수정</button>'+(r.group==='learner'?'<button class="btn sm" data-exclude-learner="'+r.row+'">학습근로자 제외</button>':'')+'<button class="btn sm ghost" data-delst="'+r.row+'">삭제</button></div></td></tr>').join('')+'</tbody></table>':emptyBox('해당 구분의 학생이 없습니다'))+'</section>'+(!D.studentLoginRequired?'<section class="panel pad row"><button class="btn" data-makepins>빈 PIN 자동 생성</button><button class="btn" data-copypins>이름·PIN 복사</button></section>':'');
 }
-
+function rosterManageDlg(students,mode,group){
+ if(!students.length)return toast('학생을 선택해 주세요');
+ const remove=mode==='delete',label=remove?'명단 삭제':(group==='general'?'일반학생으로 변경':GROUP[group]+'로 변경');
+ openDlg(label,'<p>'+students.length+'명을 '+esc(label)+'합니다.</p><p>'+esc(students.map(r=>r.name).join(' · '))+'</p><p class="ev-s">'+(remove?'선택한 학생의 로그인이 중지됩니다. 과거 훈련·출결·제출 기록과 Drive 파일은 보존합니다.':'학생 계정·학년반·방과후 참여·기존 훈련/제출 기록은 유지합니다.')+'</p>',remove?'명단 삭제':'구분 변경',async()=>{const ok=await act('manageStudents',{students:students.map(r=>({row:r.row,name:r.name})),mode,group,confirm:remove},'학생 명단을 변경했습니다');if(ok!==false)rosterSelected.clear();return ok;});
+}
+$('#main').addEventListener('change',e=>{if(e.target.id==='rosterGroup'){rosterGroup=e.target.value;rosterSelected.clear();render();}if(e.target.dataset.rosterCheck){const n=e.target.dataset.rosterCheck;e.target.checked?rosterSelected.add(n):rosterSelected.delete(n);render();}});
 
 /* ---------- 월별 출석부 ---------- */
 let bookMonth = TODAY.slice(0,7), bookGroup = 'all', bookParticipation = 'all', bookLesson = '방과후';
@@ -1845,7 +1874,7 @@ function vAttendanceOriginal(scope='train'){
   const train = scope === 'train';
   const history=D.attendance.filter(a=>train?!/^방과후/.test(a.lesson):/^방과후/.test(a.lesson)).sort((a,b)=>(b.date+b.at).localeCompare(a.date+a.at));
   if(!T())return extraHead('내 출결','선생님이 기록한 내 출결입니다.')+`<section class="panel">${history.length?history.map(a=>`<div class="att"><div class="who"><b>${esc(fmtMD(a.date))} · ${esc(a.lesson)}</b><small>${esc(a.note)}</small></div><span class="ev-s">${a.minutes==null?'시간 미입력':Number((a.minutes/60).toFixed(2))+'시간'}</span><span class="chip ${a.status==='결석'?'bad':a.status==='출석'?'ok':'pre'}">${esc(a.status)}</span></div>`).join(''):emptyBox('출결 기록이 없습니다')}</section>`;
-  const roster=D.roster.filter(r=>(train||r.afterschool)&&(attGroup==='all'||r.group===attGroup||(attGroup==='pre'&&(r.group==='pre1'||r.group==='pre2'))));
+  const roster=D.roster.filter(r=>(train?r.group==='learner':r.afterschool)&&(attGroup==='all'||r.group===attGroup||(attGroup==='pre'&&(r.group==='pre1'||r.group==='pre2'))));
   const row=r=>{const old=attDrafts.get(attKey(r.name))||D.attendance.find(a=>a.date===attDate&&a.lesson===attLesson&&a.name===r.name);return `<div class="att" data-att-name="${esc(r.name)}"><div class="who"><b>${esc(r.name)}</b><small>${esc(GROUP[r.group])} · ${esc(r.klass)}</small></div><div class="row"><select class="attStatus" aria-label="${esc(r.name)} 출결">${[['','미기록'],...['출석','지각','조퇴','결석','공결'].map(x=>[x,x])].map(([k,l])=>opt(k,old?.status||'',l)).join('')}</select><input type="number" class="attHours" value="${old?.hours??(old?.minutes==null?'':Number(old.minutes)/60)}" min="0" max="24" step="any" placeholder="실제 시간" aria-label="${esc(r.name)} 실제 시간"><input type="text" class="attNote" value="${esc(old?.note||'')}" maxlength="300" placeholder="메모" aria-label="${esc(r.name)} 출결 메모"></div></div>`;};
   return extraHead(train?'훈련 출결':'방과후 출결',train?'학습근로자의 OJT·OFF-JT 출결입니다. 수업명에 OJT 또는 OFF-JT를 고르세요.':'방과후 참여 학생만 표시합니다. 상태를 선택한 학생의 출결을 저장하며, 미참여 학생은 결석으로 처리하지 않습니다.')+(train?`<div class="row">${['OJT','OFF-JT'].map(l=>`<button class="chipbtn" data-att-lesson="${l}" aria-pressed="${attLesson===l}">${l}</button>`).join('')}</div>`:'')+`<section class="panel pad"><div class="fgrid">${field('날짜','attDate',attDate,'date','id="attDate"')}${sel('구분','attGroup',[['all','전체'],['pre','예비 전체'],...Object.entries(GROUP)],attGroup).replace('name="attGroup"','name="attGroup" id="attGroup"')}${field('수업명','attLesson',attLesson,'text','id="attLesson" maxlength="80"')}</div><div class="row" style="margin-top:12px"><button class="btn" data-att-all>표시 학생 모두 출석</button><button class="btn pri" data-att-save>출결 저장</button><button class="btn" data-att-export>전체 기록 CSV</button></div></section><section class="panel">${roster.length?roster.map(row).join(''):emptyBox('명단을 먼저 등록하세요')}</section>
     <section class="panel pad"><details><summary>기존 ‘출석부’ 원본 보기 (교사 전용)</summary><p class="ev-s">원본 열 배치를 확인하기 위한 읽기 화면입니다. 앱_출결과 자동으로 합치거나 원본을 수정하지 않습니다.</p>${!D.legacyAttendance?`<button class="btn" data-legacy-load>원본 불러오기</button>`:D.legacyAttendance.exists?`<div class="tbl-wrap"><table><tbody>${D.legacyAttendance.rows.map(r=>`<tr>${r.map(v=>`<td>${esc(v)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`:emptyBox('출석부 탭이 없습니다')}</details></section>`;
@@ -2103,10 +2132,29 @@ function vMe(){
   if(!T()){h+=studentAccountPanel();const c=D.contact;return h+`<section class="panel pad"><h3>이메일 알림</h3><p class="ev-s">메일 앱에서 알림을 켜면 휴대폰에서 확인할 수 있습니다. 수신은 선택 사항입니다.</p><div class="ev-s">현재: ${c.enabled?'수신':'수신 안 함'} ${esc(c.email)}</div><button class="btn" data-contact>이메일·수신 설정</button></section>`+styleSettings;}
   h+=staffAccountPanel();if(A())h+='<section class="panel pad"><h3>접속 설정</h3><p>현재: '+(D.publicAccess?'누구나 자유 접속':'로그인 필수')+'</p><button class="btn" data-public-access>'+(D.publicAccess?'로그인 필수로 잠그기':'누구나 자유 접속 허용')+'</button><p class="ev-s">자유 접속에서는 공개 안내를 볼 수 있습니다. 학생 제출본·파일 제출·교사 업무는 로그인이 필요합니다.</p></section>';if(A())h+='<section class="panel pad"><h3>학생 로그인 계정</h3><p>1~3학년 3반 학생의 이름·학번을 등록합니다. 다른 학생의 업무 기록은 삭제하지 않습니다.</p><button class="btn" data-import-class3>3반 학생 계정 등록</button></section>';
   const s=D.settings;
-  if(A())h+=`<section class="panel pad"><h3>연동 설정 (드라이브·캘린더·노션·시간표·이메일)</h3><p class="ev-s">설정을 저장한 다음 동기화·발송을 실행하세요. 자동 실행을 켜면 약 10분 간격으로 처리합니다.</p><div class="ev-s">구글 드라이브: ${s.driveRootUrl?`<a href="${esc(s.driveRootUrl)}" target="_blank" rel="noopener">자료 폴더 열기 ↗</a>${s.driveCustom?'':' (자동 생성)'}`:'첫 파일을 올리면 자동으로 만들어집니다'}<br>캘린더: ${esc(s.calendarId||'미설정')}<br>이메일 알림: ${s.mailEnabled?'사용':'꺼짐'} · 자동 실행: ${s.auto?'사용':'꺼짐'}<br>최근 자동 실행: ${esc(s.lastRun||'없음')}${s.lastError?'<br>실행 오류: '+esc(s.lastError):''}</div><div class="row" style="margin-top:12px"><button class="btn" data-extra-settings>연동 설정 열기</button><button class="btn" data-calendar-create ${s.calendarId?'disabled':''}>전용 캘린더 만들기</button><button class="btn" data-calendar-sync>캘린더 동기화</button><button class="btn" data-mail-send>알림 메일 발송</button><button class="btn" data-auto>${s.auto?'자동 실행 끄기':'자동 실행 켜기'}</button><button class="btn" data-check>첫 실행 점검</button></div></section>`;
+  if(A())h+=`<section class="panel pad"><h3>연동 설정 (드라이브·캘린더·노션·시간표·이메일)</h3><p class="ev-s">설정을 저장한 다음 동기화·발송을 실행하세요. 자동 실행을 켜면 약 10분 간격으로 처리합니다.</p><div class="ev-s">구글 드라이브: ${s.driveRootUrl?`<a href="${esc(s.driveRootUrl)}" target="_blank" rel="noopener">자료 폴더 열기 ↗</a>${s.driveCustom?'':' (자동 생성)'}`:'첫 파일을 올리면 자동으로 만들어집니다'}<br>캘린더: ${esc(s.calendarId||'미설정')}<br>이메일 알림: ${s.mailEnabled?'사용':'꺼짐'} · 자동 실행: ${s.auto?'사용':'꺼짐'}<br>최근 자동 실행: ${esc(s.lastRun||'없음')}${s.lastError?'<br>실행 오류: '+esc(s.lastError):''}</div><div class="row" style="margin-top:12px"><button class="btn" data-extra-settings>연동 설정 열기</button><button class="btn" data-storage-migrate>자료 저장소 이전</button><button class="btn" data-calendar-create ${s.calendarId?'disabled':''}>전용 캘린더 만들기</button><button class="btn" data-calendar-sync>캘린더 동기화</button><button class="btn" data-mail-send>알림 메일 발송</button><button class="btn" data-auto>${s.auto?'자동 실행 끄기':'자동 실행 켜기'}</button><button class="btn" data-check>첫 실행 점검</button></div></section>`;
   h+=`<section class="panel"><div class="pad"><h3>학생 이메일 수신 설정</h3></div>${D.roster.map(r=>{const c=D.contacts.find(c=>c.name===r.name);return `<div class="att"><div class="who"><b>${esc(r.name)}</b><small>${esc(c?.email||'미등록')} · ${c?.enabled?'수신':'수신 안 함'}</small></div><button class="btn sm" data-contact="${esc(r.name)}">수정</button></div>`;}).join('')}</section>`;
   h+=`<section class="panel pad"><details><summary>최근 이메일 발송 기록</summary>${D.mailLog.length?`<div class="tbl-wrap"><table><thead><tr><th>시각</th><th>수신자</th><th>종류</th><th>결과</th></tr></thead><tbody>${[...D.mailLog].reverse().map(x=>`<tr><td>${esc(x.at)}</td><td>${esc(x.name)}</td><td>${esc(x.kind)}</td><td>${esc(x.result)}</td></tr>`).join('')}</tbody></table></div>`:emptyBox('발송 기록이 없습니다')}</details></section>`;return h+styleSettings;
 }
+/* 최고관리자만 검증된 이전 계획을 직접 선택해 실행합니다. 인증정보를 파일에 넣지 않습니다. */
+function storageMigrationDlg(){
+ let running=false;
+ const lock=value=>{running=value;$('#storagePlanFile').disabled=value;const cancel=form.querySelector('[data-close]');if(cancel)cancel.disabled=value;};
+ openDlg('학교 Drive로 자료 이전','<p>원본 파일 ID를 유지하면서 학교 공유 드라이브로 옮기고 게시판·사진첩 연결을 맞춥니다. 이전 계획에는 폴더·파일 ID만 넣습니다.</p><label class="fld"><span>검증한 이전 계획 JSON</span><input type="file" id="storagePlanFile" accept=".json,application/json" required></label><p id="storageMoveProgress" role="status" aria-live="polite">계획 파일을 선택해 주세요.</p><p class="ev-s">비공개 자기소개서·개인정보·운영 시트는 이전 대상에서 제외합니다. 중단되면 같은 계획으로 다시 실행할 수 있습니다. 완료될 때까지 이 창을 열어 두세요.</p>','이전 시작',async()=>{
+  const box=$('#storageMoveProgress');let moved=0;lock(true);
+  try{const file=$('#storagePlanFile').files[0];if(!file||file.size>500000)throw Error('이전 계획 파일을 확인해 주세요');const plan=JSON.parse(await file.text());
+   if(!plan.source||!plan.target||!Array.isArray(plan.files)||!plan.files.length||plan.files.length>3000||!Array.isArray(plan.folders)||plan.folders.length>100)throw Error('이전 계획 형식이나 범위를 확인해 주세요');
+   for(let n=0;n<plan.files.length;n+=10){box.textContent='파일 이전 중 '+moved+' / '+plan.files.length+'개';const r=await call('moveStorageFiles',{source:plan.source,target:plan.target,files:plan.files.slice(n,n+10)});moved+=(r.moved||[]).length;if(r.error)throw Error(r.error);}
+   box.textContent='파일 '+moved+'개 확인 완료 · 폴더 연결 정리 중';await call('relinkStorageFolders',{source:plan.source,target:plan.target,folders:plan.folders,confirm:true});await reload();toast('자료 '+moved+'개 이전과 폴더 연결을 완료했습니다');return true;
+  }catch(e){box.textContent='이전 확인 '+moved+'개 · '+e.message+' · 같은 계획으로 다시 실행할 수 있습니다.';return false;}finally{lock(false);}
+ });
+ const guardCancel=e=>{if(running){e.preventDefault();e.stopImmediatePropagation();}},guardClick=e=>{if(running&&e.target.closest('[data-close]'))guardCancel(e);},guardUnload=e=>{if(running){e.preventDefault();e.returnValue='';}};
+ dlg.addEventListener('cancel',guardCancel);form.addEventListener('click',guardClick,true);window.addEventListener('beforeunload',guardUnload);
+ dlg.addEventListener('close',()=>{dlg.removeEventListener('cancel',guardCancel);form.removeEventListener('click',guardClick,true);window.removeEventListener('beforeunload',guardUnload);},{once:true});
+ $('#storagePlanFile').onchange=async()=>{try{const f=$('#storagePlanFile').files[0];if(!f||f.size>500000)throw Error();const p=JSON.parse(await f.text());if(!Array.isArray(p.files)||!Array.isArray(p.folders))throw Error();$('#storageMoveProgress').textContent='계획: 파일 '+p.files.length+'개 · 하위 폴더 '+p.folders.length+'개';}catch{$('#storageMoveProgress').textContent='이전 계획 파일을 확인해 주세요.';}};
+}
+$('#main').addEventListener('click',e=>{if(e.target.closest('[data-storage-migrate]')&&A())storageMigrationDlg();});
+
 function contactDlg(name){const c=T()?D.contacts.find(c=>c.name===name)||{}:D.contact;openDlg((name||D.me.name)+' · 이메일 알림',field('이메일','email',c.email||'','email')+`<label class="check"><input type="checkbox" name="enabled" ${c.enabled?'checked':''}> 알림 메일 수신</label>`,'저장',fd=>act('saveContact',{name,...fd},'수신 설정을 저장했습니다'));}
 /* ---------- 시간표·급식 (나이스 · 컴시간알리미) ---------- */
 let schWeek = null, ttGrade = "1", ttCls = "3", ttClasses = [];
@@ -2210,7 +2258,7 @@ function render(){
   evStore.clear();
   const draft = $("#replyText") ? $("#replyText").value : null, anonDraft = $("#anonText") ? $("#anonText").value : null;
   if(D.homeOnly&&!["today","school","equipment","tools"].includes(tab)&&!(tab==='projects'&&projSub==='overview')){ $("#main").innerHTML=navigationBar()+fullLoadNotice();if(!fullLoadError)hydrateFullData();return;}
-  $("#main").innerHTML = navigationBar()+({today:vToday, notices:vNotices, schedule:vSchedule, requests:vRequests, anon:vAnon, training:vTraining, purchases:()=>vPurchases()+noticeCategorySection("준비물·구매"), ojtcalendar:vOjtCalendar, roster:vRosterSub, register:vRegisterSub, attendance:vAttendance, units:vUnits, portfolio:vCareerPortfolio,intro:vCareerPortfolio,tools:vEducationTools, board:vProjectHub, projects:vProjectHub, materials:vMaterialsSub, photos:vPhotos, equipment:vEquipment, contest:vContestTop, cert:vCertTop, company:vCompany, school:vSchool, me:vMe}[tab] || vToday)();
+  $("#main").innerHTML = navigationBar()+({today:vToday, notices:vNotices, schedule:vSchedule, requests:vRequests, anon:vAnon, training:vTraining, journal:vTrainingJournal, purchases:()=>vPurchases()+noticeCategorySection("준비물·구매"), ojtcalendar:vOjtCalendar, roster:vRosterSub, register:vRegisterSub, attendance:vAttendance, units:vUnits, portfolio:vCareerPortfolio,intro:vCareerPortfolio,tools:vEducationTools, board:vProjectHub, projects:vProjectHub, materials:vMaterialsSub, photos:vPhotos, equipment:vEquipment, contest:vContestTop, cert:vCertTop, company:vCompany, school:vSchool, me:vMe}[tab] || vToday)();
 
   if (D.loginDisabled) $("#main").insertAdjacentHTML("afterbegin", `<div class="banner" role="status">${D.localTest ? "PC 테스트 · 입력한 자료는 이 컴퓨터에만 저장됩니다. 실제 구글시트에는 반영되지 않습니다." : "로그인 없는 테스트 모드 · 주소를 아는 사람은 학생 기록 조회와 작성·관리를 할 수 있습니다."}</div>`);
   if(isGuest())document.querySelectorAll('[data-board-new],[data-cert-new],[data-contest-new],[data-cert-post-new],#boardCommentForm').forEach(e=>e.remove());
@@ -2421,6 +2469,11 @@ $("#main").addEventListener("click", e => {
   if(d.calBulk!==undefined)return calBulkDlg();
   if (d.editev) return eventDlg(D.events.find(x => x.id === d.editev));
   if (d.stprivate) return studentPrivateDlg(D.roster.find(r=>String(r.row)===d.stprivate));
+  if(d.rosterAll!==undefined){(D.roster||[]).filter(r=>rosterGroup==='all'||r.group===rosterGroup).forEach(r=>rosterSelected.add(r.name));return render();}
+  if(d.rosterClear!==undefined){rosterSelected.clear();return render();}
+  if(d.rosterGroup!==undefined)return rosterManageDlg(D.roster.filter(r=>rosterSelected.has(r.name)),'group',$('#rosterNewGroup').value);
+  if(d.rosterDelete!==undefined)return rosterManageDlg(D.roster.filter(r=>rosterSelected.has(r.name)),'delete');
+  if(d.excludeLearner){const st=D.roster.find(r=>String(r.row)===d.excludeLearner);if(st)return rosterManageDlg([st],'group','general');return;}
   if (d.editst) return studentDlg(D.roster.find(r => String(r.row) === d.editst));
   if (d.delst){ const st = D.roster.find(r => String(r.row) === d.delst); if (!st || !arm(t, "st" + d.delst)) return; return act("deleteStudent", { row: st.row, name: st.name }, st.name + " 학생을 명단에서 삭제했습니다 (훈련 기록은 남아 있습니다)"); }
   if (d.readers){ openReaders.has(d.readers) ? openReaders.delete(d.readers) : openReaders.add(d.readers); return render(); }
